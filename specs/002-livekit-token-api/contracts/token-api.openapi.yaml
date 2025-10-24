@@ -1,0 +1,255 @@
+openapi: 3.0.3
+info:
+  title: LiveKit Token Generation API
+  description: |
+    Azure Functions API for generating LiveKit access tokens for voice chat sessions.
+    
+    This API provides a single endpoint for the frontend application to obtain JWT tokens
+    that grant authenticated access to LiveKit rooms with audio publish/subscribe permissions.
+  version: 1.0.0
+  contact:
+    name: MeliorAgent Development Team
+
+servers:
+  - url: http://localhost:7071/api
+    description: Local development server
+  - url: https://{functionAppName}.azurewebsites.net/api
+    description: Azure Functions production
+    variables:
+      functionAppName:
+        default: melior-agent-backend
+        description: Azure Function App name
+
+paths:
+  /token:
+    post:
+      summary: Generate LiveKit access token
+      description: |
+        Generates a JWT access token for a participant to join a LiveKit room with audio permissions.
+        
+        The token is signed using the LiveKit API credentials configured in Azure App Settings
+        and grants the participant permission to publish and subscribe to audio tracks in the
+        specified room.
+      operationId: generateToken
+      tags:
+        - Token Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+            examples:
+              basic:
+                summary: Basic token request
+                value:
+                  roomName: consultation-room-123
+                  participantIdentity: user-abc-456
+              withExpiration:
+                summary: Token request with custom expiration
+                value:
+                  roomName: consultation-room-123
+                  participantIdentity: user-abc-456
+                  expirationSeconds: 7200
+                  participantName: Dr. Smith
+      responses:
+        '200':
+          description: Token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              examples:
+                success:
+                  summary: Successful token generation
+                  value:
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mjk3ODk4MDAsImlzcyI6IkFQSWtleSIsIm5iZiI6MTcyOTc4NjIwMCwic3ViIjoidXNlci1hYmMtNDU2IiwidmlkZW8iOnsicm9vbSI6ImNvbnN1bHRhdGlvbi1yb29tLTEyMyIsInJvb21Kb2luIjp0cnVlLCJjYW5QdWJsaXNoIjp0cnVlLCJjYW5TdWJzY3JpYmUiOnRydWV9fQ.signature
+                    expiresAt: '2025-10-24T16:30:00Z'
+                    roomName: consultation-room-123
+                    participantIdentity: user-abc-456
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingRoomName:
+                  summary: Missing room name
+                  value:
+                    statusCode: 400
+                    errorCode: VALIDATION_ERROR
+                    message: Request validation failed
+                    validationErrors:
+                      - field: roomName
+                        message: Room name is required
+                    timestamp: '2025-10-24T15:30:00Z'
+                invalidRoomName:
+                  summary: Invalid room name format
+                  value:
+                    statusCode: 400
+                    errorCode: VALIDATION_ERROR
+                    message: Request validation failed
+                    validationErrors:
+                      - field: roomName
+                        message: Room name contains invalid characters
+                    timestamp: '2025-10-24T15:30:00Z'
+                invalidExpiration:
+                  summary: Expiration out of range
+                  value:
+                    statusCode: 400
+                    errorCode: VALIDATION_ERROR
+                    message: Request validation failed
+                    validationErrors:
+                      - field: expirationSeconds
+                        message: Maximum expiration is 24 hours
+                    timestamp: '2025-10-24T15:30:00Z'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingCredentials:
+                  summary: Missing LiveKit credentials
+                  value:
+                    statusCode: 500
+                    errorCode: MISSING_CREDENTIALS
+                    message: LIVEKIT_API_KEY and LIVEKIT_API_SECRET must be configured
+                    timestamp: '2025-10-24T15:30:00Z'
+                generationFailed:
+                  summary: Token generation failed
+                  value:
+                    statusCode: 500
+                    errorCode: TOKEN_GENERATION_FAILED
+                    message: Failed to generate LiveKit token
+                    timestamp: '2025-10-24T15:30:00Z'
+
+components:
+  schemas:
+    TokenRequest:
+      type: object
+      required:
+        - roomName
+        - participantIdentity
+      properties:
+        roomName:
+          type: string
+          pattern: '^[a-zA-Z0-9_-]+$'
+          maxLength: 255
+          description: |
+            The LiveKit room name the participant will join.
+            Must contain only alphanumeric characters, hyphens, and underscores.
+          example: consultation-room-123
+        participantIdentity:
+          type: string
+          pattern: '^[a-zA-Z0-9_-]+$'
+          maxLength: 255
+          description: |
+            Unique identifier for the participant.
+            Typically user ID or session ID from the frontend.
+            Must contain only alphanumeric characters, hyphens, and underscores.
+          example: user-abc-456
+        expirationSeconds:
+          type: integer
+          minimum: 60
+          maximum: 86400
+          default: 3600
+          description: |
+            Token expiration time in seconds from now.
+            Default is 1 hour (3600 seconds).
+            Minimum: 60 seconds, Maximum: 24 hours (86400 seconds).
+          example: 3600
+        participantName:
+          type: string
+          maxLength: 255
+          description: |
+            Optional display name for the participant.
+            If not provided, uses participantIdentity.
+          example: Dr. Smith
+
+    TokenResponse:
+      type: object
+      required:
+        - token
+        - expiresAt
+        - roomName
+        - participantIdentity
+      properties:
+        token:
+          type: string
+          description: |
+            JWT access token for LiveKit authentication.
+            This token should be provided to the LiveKit client SDK to establish connection.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        expiresAt:
+          type: string
+          format: date-time
+          description: |
+            ISO 8601 timestamp when the token expires.
+            The frontend should request a new token before this time.
+          example: '2025-10-24T16:30:00Z'
+        roomName:
+          type: string
+          description: The room name this token is valid for (echo from request)
+          example: consultation-room-123
+        participantIdentity:
+          type: string
+          description: The participant identity encoded in the token (echo from request)
+          example: user-abc-456
+
+    ErrorResponse:
+      type: object
+      required:
+        - statusCode
+        - errorCode
+        - message
+        - timestamp
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        errorCode:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - MISSING_CREDENTIALS
+            - TOKEN_GENERATION_FAILED
+            - INTERNAL_ERROR
+          description: Machine-readable error code for programmatic handling
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          description: Human-readable error message for developers
+          example: Request validation failed
+        validationErrors:
+          type: array
+          description: Array of field-level validation errors (only present for VALIDATION_ERROR)
+          items:
+            $ref: '#/components/schemas/ValidationError'
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the error occurred
+          example: '2025-10-24T15:30:00Z'
+
+    ValidationError:
+      type: object
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+          description: The field that failed validation
+          example: roomName
+        message:
+          type: string
+          description: Description of the validation failure
+          example: Room name contains invalid characters
+
+tags:
+  - name: Token Management
+    description: Operations for generating and managing LiveKit access tokens

@@ -9,6 +9,8 @@ Last updated: 2025-10-24
 - **LiveKit Client 2.x** for WebRTC voice communication
 - **Angular Signals** for reactive state management (signal, computed, input, output)
 - **Jasmine/Karma** for testing with Zone.js polyfills
+- TypeScript 5.x with Azure Functions TypeScript v4 (Node.js 18+) + LiveKit Server SDK for Node.js (@livekit/server-sdk), Azure Functions Core Tools v4 (002-livekit-token-api)
+- N/A (stateless token generation) (002-livekit-token-api)
 
 ## Project Structure
 
@@ -135,11 +137,9 @@ $theme: mat.define-light-theme((
 - Signals: `camelCase` (private with `_` prefix)
 
 ## Recent Changes
+- 002-livekit-token-api: Added TypeScript 5.x with Azure Functions TypeScript v4 (Node.js 18+) + LiveKit Server SDK for Node.js (@livekit/server-sdk), Azure Functions Core Tools v4
 - ✅ Phase 1-3 Complete: Connection lifecycle implementation with LiveKit
 - ✅ Test suite configured with Zone.js for zoneless app
-- ✅ Smart/presentational component architecture established
-- ✅ Signal-based state management implemented
-- 🔧 Known issue: ConnectionError needs Error class extension
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
