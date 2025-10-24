@@ -37,7 +37,97 @@ export class LiveKitConnectionService {
 }
 ```
 
-### 2. Real-Time Transcription Implementation
+### 2. LiveKit Token Acquisition via Backend API
+
+**Unknown**: How to securely obtain LiveKit access tokens from the backend API (002-livekit-token-api feature)
+
+**Decision**: Use Angular `HttpClient` to call Azure Functions token endpoint with typed request/response models
+
+**Rationale**:
+- Client-side token generation is insecure as it exposes LiveKit API credentials
+- The 002-livekit-token-api feature provides a secure backend endpoint at `/api/token`
+- Azure Functions backend validates requests and generates tokens using LiveKit Server SDK
+- TypeScript interfaces ensure type safety for HTTP communication
+- Environment-based configuration allows different endpoints for development vs. production
+
+**Integration Approach**:
+```typescript
+// token.service.ts
+export interface TokenRequest {
+  roomName: string;
+  participantIdentity: string;
+  expirationMinutes?: number;
+}
+
+export interface TokenResponse {
+  token: string;
+  expiresAt: string;
+  roomName: string;
+  participantIdentity: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class TokenService {
+  private readonly apiUrl = inject(ENVIRONMENT).tokenApiUrl;
+  private http = inject(HttpClient);
+
+  generateToken(request: TokenRequest): Observable<TokenResponse> {
+    return this.http.post<TokenResponse>(`${this.apiUrl}/token`, request).pipe(
+      retry({ count: 2, delay: 1000 }),
+      catchError(this.handleError)
+    );
+  }
+}
+```
+
+**Environment Configuration**:
+```typescript
+// environment.development.ts
+export const environment = {
+  production: false,
+  tokenApiUrl: 'http://localhost:7071/api',  // Local Azure Functions
+  liveKitUrl: 'ws://localhost:7880'
+};
+
+// environment.ts (production)
+export const environment = {
+  production: true,
+  tokenApiUrl: 'https://your-function-app.azurewebsites.net/api',
+  liveKitUrl: 'wss://your-livekit-server.com'
+};
+```
+
+**Error Handling**:
+- 400 Bad Request: Invalid room name or participant identity (show user-friendly validation message)
+- 500 Internal Server Error: Backend token generation failed (retry with exponential backoff)
+- Network errors: Offline detection with retry prompt
+- CORS errors: Configuration issue, needs backend CORS setup verification
+
+**Best Practices**:
+- Always call token API before attempting LiveKit connection
+- Cache tokens in memory (not localStorage for security) if re-connection needed within expiration window
+- Implement retry logic for transient failures (network issues, cold start)
+- Show loading state while token is being generated
+- Clear error messages mapped from backend ErrorResponse format
+
+**Security Considerations**:
+- Never expose LiveKit API key/secret in frontend code
+- Token has limited expiration (default 1 hour per backend API spec)
+- Token has limited permissions (audio publish/subscribe only)
+- HTTPS required for production token endpoint
+- Future: Add authentication layer when backend implements it
+
+**Testing Strategy**:
+- Unit tests: Mock HttpClient responses for token service
+- Integration tests: Call real backend API in local development
+- E2E tests: Full flow with token acquisition + LiveKit connection
+
+**Dependencies**:
+- Backend API must be running (see `specs/002-livekit-token-api/quickstart.md`)
+- Backend API must have valid LiveKit credentials configured
+- CORS must be configured to allow frontend origin
+
+### 3. Real-Time Transcription Implementation
 
 **Unknown**: Best practices for handling LiveKit transcription streams in Angular
 
@@ -63,7 +153,7 @@ room.on(RoomEvent.TranscriptionReceived, (segments: TranscriptionSegment[]) => {
 });
 ```
 
-### 3. Mobile Performance Optimization
+### 4. Mobile Performance Optimization
 
 **Unknown**: Best practices for mobile performance with real-time audio and transcription
 
@@ -91,7 +181,7 @@ room.on(RoomEvent.TranscriptionReceived, (segments: TranscriptionSegment[]) => {
 - Transcription latency: <500ms
 - Frame rate: Maintain 60fps during UI updates
 
-### 4. Microphone Permission Handling
+### 5. Microphone Permission Handling
 
 **Unknown**: Best practices for requesting and managing microphone permissions
 
@@ -124,7 +214,7 @@ try {
 }
 ```
 
-### 5. Network Interruption Handling
+### 6. Network Interruption Handling
 
 **Unknown**: Best practices for handling network disconnections during active voice sessions
 
@@ -158,7 +248,7 @@ room.on(RoomEvent.Disconnected, (reason) => {
 });
 ```
 
-### 6. Accessibility for Dynamic Transcription
+### 7. Accessibility for Dynamic Transcription
 
 **Unknown**: WCAG 2.1 AA compliance patterns for real-time transcription updates
 
@@ -191,7 +281,7 @@ room.on(RoomEvent.Disconnected, (reason) => {
 </div>
 ```
 
-### 7. TypeScript Type Safety with LiveKit SDK
+### 8. TypeScript Type Safety with LiveKit SDK
 
 **Unknown**: Best practices for typing LiveKit SDK interactions in strict TypeScript
 
@@ -242,10 +332,13 @@ export interface VoiceSession {
 
 All technical unknowns have been resolved. The implementation will use:
 - **LiveKit Integration**: `livekit-client` SDK with custom Angular service wrapper
+- **Token Acquisition**: Angular HttpClient calling Azure Functions backend API (002-livekit-token-api) for secure token generation
 - **State Management**: Angular Signals for reactive state, RxJS for event streaming
 - **Performance**: OnPush change detection, virtual scrolling, performance budgets
 - **Accessibility**: ARIA live regions, semantic HTML, keyboard navigation
 - **Type Safety**: Strict TypeScript with discriminated unions and custom interfaces
-- **Error Handling**: Permission management, network reconnection, graceful degradation
+- **Error Handling**: Permission management, network reconnection, graceful degradation, token API error mapping
+
+**Key Integration Point**: Frontend depends on backend token API running and configured with valid LiveKit credentials. See `specs/002-livekit-token-api/quickstart.md` for backend setup instructions.
 
 No additional research required. Ready to proceed to Phase 1 (Design & Contracts).

@@ -264,9 +264,105 @@ export const DEFAULT_ROOM_OPTIONS: RoomOptions = {
 };
 ```
 
+**Validation Rules**:
+- `serverUrl` must be a valid WebSocket URL (ws:// or wss://)
+- `token` must be a non-empty string (JWT format)
+- `roomName` must match regex: `^[a-zA-Z0-9_-]+$` (alphanumeric, underscore, hyphen)
+- `maxRetries` must be >= 0
+- `retryDelayMs` must be > 0
+- `maxRetryDelayMs` must be >= `retryDelayMs`
+
+### 6. Token Request/Response Models
+
+Represents the data models for communicating with the backend token API (002-livekit-token-api).
+
+```typescript
+/**
+ * Request payload for token generation API
+ */
+export interface TokenRequest {
+  readonly roomName: string;
+  readonly participantIdentity: string;
+  readonly expirationMinutes?: number;
+}
+
+/**
+ * Success response from token generation API
+ */
+export interface TokenResponse {
+  readonly token: string;
+  readonly expiresAt: string;  // ISO 8601 timestamp
+  readonly roomName: string;
+  readonly participantIdentity: string;
+}
+
+/**
+ * Error response from token generation API
+ */
+export interface TokenApiError {
+  readonly statusCode: number;
+  readonly error: string;
+  readonly message: string;
+  readonly details?: Record<string, string[]>;  // Validation errors
+}
+```
+
+**Validation Rules**:
+- `roomName` must match regex: `^[a-zA-Z0-9_-]+$`, max length 128 characters
+- `participantIdentity` must be non-empty string, max length 64 characters
+- `expirationMinutes` if provided must be between 1 and 1440 (24 hours)
+- `expiresAt` must be a valid ISO 8601 timestamp
+- `token` must be a valid JWT string (format validated by LiveKit SDK)
+
+**Usage Pattern**:
+```typescript
+// Request token from backend API
+const request: TokenRequest = {
+  roomName: 'voice-session-123',
+  participantIdentity: 'user-abc',
+  expirationMinutes: 60
+};
+
+// Use token to connect to LiveKit
+const response: TokenResponse = await tokenService.generateToken(request);
+const config: LiveKitConfig = {
+  serverUrl: environment.liveKitUrl,
+  token: response.token,
+  roomName: response.roomName
+};
+```
+
+**Error Handling**:
+```typescript
+try {
+  const token = await tokenService.generateToken(request);
+} catch (error) {
+  if (isTokenApiError(error)) {
+    // Handle specific API errors
+    if (error.statusCode === 400) {
+      // Show validation errors from error.details
+    } else if (error.statusCode === 500) {
+      // Retry or show generic error
+    }
+  }
+}
+
+function isTokenApiError(error: unknown): error is TokenApiError {
+  return typeof error === 'object' && 
+         error !== null && 
+         'statusCode' in error;
+}
+```
+
+**Integration Notes**:
+- Backend API endpoint: `POST /api/token`
+- See `specs/002-livekit-token-api/contracts/token-api.openapi.yaml` for full API specification
+- CORS must be configured on backend to allow frontend origin
+- HTTP client should implement retry logic for 5xx errors
+
 ## UI Models
 
-### 6. Connection Button State
+### 7. Connection Button State
 
 Represents the state of the connection button UI component.
 

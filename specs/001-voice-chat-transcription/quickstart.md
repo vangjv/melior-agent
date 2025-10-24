@@ -75,29 +75,55 @@ npm install @angular/cdk
 
 ## Configuration
 
-### 1. Environment Configuration
+### 1. Backend Token API Setup
 
-Create or update environment files:
+**IMPORTANT**: The voice chat app requires the backend token API to be running. This API securely generates LiveKit access tokens.
+
+1. Navigate to the backend API directory:
+   ```bash
+   cd api
+   ```
+
+2. Follow the setup instructions in `specs/002-livekit-token-api/quickstart.md`:
+   - Install backend dependencies
+   - Configure LiveKit credentials in `local.settings.json`
+   - Start the Azure Functions backend
+
+3. Verify backend is running:
+   ```bash
+   # Backend should be available at http://localhost:7071
+   curl http://localhost:7071/api/token -X POST -H "Content-Type: application/json" -d "{\"roomName\":\"test\",\"participantIdentity\":\"user\"}"
+   ```
+
+4. Return to frontend directory:
+   ```bash
+   cd ..
+   ```
+
+### 2. Frontend Environment Configuration
+
+Create or update environment files to point to the backend token API:
 
 **src/environments/environment.development.ts**:
 ```typescript
 export const environment = {
   production: false,
-  livekit: {
-    serverUrl: 'wss://your-project.livekit.cloud',
-    // NOTE: In production, get token from backend API
-    // For development, you can generate tokens at https://cloud.livekit.io
-  },
+  tokenApiUrl: 'http://localhost:7071/api',  // Backend token API
+  liveKitUrl: 'ws://localhost:7880',         // Local LiveKit server (or cloud URL)
 };
 ```
 
-**src/environments/environment.ts**:
+**Note**: For local development, you can either:
+- Use a local LiveKit server (see LiveKit docs for setup)
+- Use LiveKit Cloud URL: `wss://your-project.livekit.cloud`
+
+**src/environments/environment.ts** (Production):
 ```typescript
 export const environment = {
   production: true,
-  livekit: {
-    serverUrl: 'wss://your-project.livekit.cloud',
-  },
+  tokenApiUrl: 'https://your-function-app.azurewebsites.net/api',
+  liveKitUrl: 'wss://your-project.livekit.cloud',
+
 };
 ```
 
@@ -363,11 +389,68 @@ Ensure all components meet WCAG 2.1 AA standards:
 
 ## Common Issues & Solutions
 
+### Issue: Backend Token API Not Running
+
+**Symptoms**: 
+- Frontend shows "Unable to connect" error
+- Browser console shows 404 or network error when calling `/api/token`
+- Connection fails immediately
+
+**Solution**:
+1. Ensure backend API is running:
+   ```bash
+   cd api
+   func start --typescript
+   ```
+2. Verify backend is accessible:
+   ```bash
+   curl http://localhost:7071/api/token
+   ```
+3. Check backend logs for errors
+4. Verify `local.settings.json` has valid LiveKit credentials
+5. See `specs/002-livekit-token-api/quickstart.md` for detailed backend setup
+
+### Issue: CORS Error When Calling Token API
+
+**Symptoms**:
+- Browser console shows CORS policy error
+- Network tab shows OPTIONS preflight request failing
+
+**Solution**:
+1. Check `api/host.json` has CORS configured:
+   ```json
+   {
+     "extensions": {
+       "http": {
+         "routePrefix": "api",
+         "cors": {
+           "allowedOrigins": ["http://localhost:4200"]
+         }
+       }
+     }
+   }
+   ```
+2. Restart backend API after changes
+3. Clear browser cache
+
+### Issue: Token Generation Fails (400 Bad Request)
+
+**Symptoms**:
+- Backend returns 400 error with validation message
+- Error details show which fields are invalid
+
+**Solution**:
+- Ensure `roomName` contains only alphanumeric, dash, underscore characters
+- Ensure `participantIdentity` is not empty
+- Check request payload matches `TokenRequest` interface
+- Review validation errors in error response `details` field
+
 ### Issue: LiveKit Connection Fails
 
 **Solution**: Check browser console for errors. Ensure:
 - Valid LiveKit token (not expired)
-- Correct server URL in environment config
+- Backend API generated token successfully  
+- Correct LiveKit server URL in environment config
 - Microphone permission granted
 - WebRTC supported in browser
 
@@ -375,8 +458,9 @@ Ensure all components meet WCAG 2.1 AA standards:
 
 **Solution**:
 - Verify LiveKit agent has transcription enabled
-- Check browser console for `RoomEvent.TranscriptionReceived` events
+- Check browser console for `RoomEvent.DataReceived` or transcription events
 - Ensure transcription service is properly subscribed to room events
+- Verify agent is publishing transcription data messages
 
 ### Issue: High Memory Usage
 

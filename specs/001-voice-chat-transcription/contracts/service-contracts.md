@@ -189,7 +189,132 @@ export interface TranscriptionServiceEvents {
 
 ---
 
-## 3. LiveKit Room Events Contract
+## 3. Token Service Contract
+
+### ITokenService
+
+Defines the contract for obtaining LiveKit access tokens from the backend API (002-livekit-token-api).
+
+```typescript
+/**
+ * Service interface for LiveKit token acquisition
+ * Communicates with Azure Functions backend API
+ */
+export interface ITokenService {
+  /**
+   * Generate a LiveKit access token via backend API
+   * @param request Token request parameters
+   * @returns Observable with token response
+   * @throws TokenApiError on validation or server errors
+   */
+  generateToken(request: TokenRequest): Observable<TokenResponse>;
+
+  /**
+   * Validate token request before sending to backend
+   * @param request Token request to validate
+   * @returns Validation result with errors if invalid
+   */
+  validateTokenRequest(request: TokenRequest): ValidationResult;
+}
+```
+
+### Token Service Models
+
+```typescript
+/**
+ * Request payload for token generation
+ */
+export interface TokenRequest {
+  readonly roomName: string;          // Room identifier (alphanumeric, -, _)
+  readonly participantIdentity: string; // User identifier
+  readonly expirationMinutes?: number;  // Optional: 1-1440 (default 60)
+}
+
+/**
+ * Success response from backend API
+ */
+export interface TokenResponse {
+  readonly token: string;              // JWT access token
+  readonly expiresAt: string;          // ISO 8601 expiration timestamp
+  readonly roomName: string;           // Echo of request room name
+  readonly participantIdentity: string; // Echo of request identity
+}
+
+/**
+ * Error response from backend API
+ */
+export interface TokenApiError extends Error {
+  readonly statusCode: number;         // HTTP status code
+  readonly error: string;              // Error type
+  readonly message: string;            // Human-readable message
+  readonly details?: Record<string, string[]>; // Validation errors
+}
+```
+
+### Token Service Behavior
+
+**Success Flow**:
+1. Frontend calls `generateToken()` with room name and participant identity
+2. Service validates request locally (fail fast)
+3. HTTP POST request sent to `/api/token` backend endpoint
+4. Backend generates LiveKit token using Server SDK
+5. Service returns `TokenResponse` with JWT token
+6. Frontend uses token to connect to LiveKit room
+
+**Error Flow**:
+1. If validation fails: throw `TokenApiError` with statusCode 400 and validation details
+2. If backend returns 4xx: map to user-friendly validation error
+3. If backend returns 5xx: implement retry logic (2 attempts, 1s delay)
+4. If network error: throw with retry guidance for user
+
+**Retry Policy**:
+```typescript
+// Configured via RxJS retry operator
+const retryConfig = {
+  count: 2,               // Retry up to 2 times
+  delay: 1000,            // Wait 1 second between attempts
+  resetOnSuccess: true    // Reset counter on successful response
+};
+```
+
+**Environment Configuration**:
+```typescript
+// Service uses environment.tokenApiUrl
+// Development: http://localhost:7071/api
+// Production: https://your-function-app.azurewebsites.net/api
+```
+
+**Testing Approach**:
+```typescript
+// Unit tests mock HttpClient
+class MockTokenService implements ITokenService {
+  generateToken(request: TokenRequest): Observable<TokenResponse> {
+    return of({
+      token: 'mock-jwt-token',
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      roomName: request.roomName,
+      participantIdentity: request.participantIdentity
+    });
+  }
+
+  validateTokenRequest(request: TokenRequest): ValidationResult {
+    const errors: string[] = [];
+    if (!request.roomName) errors.push('Room name required');
+    if (!request.participantIdentity) errors.push('Participant identity required');
+    return { valid: errors.length === 0, errors };
+  }
+}
+```
+
+**CORS Requirements**:
+- Backend API must configure CORS to allow frontend origin
+- Required headers: `Content-Type: application/json`, `Accept: application/json`
+- Allowed methods: POST
+- See `specs/002-livekit-token-api/` for backend CORS configuration
+
+---
+
+## 4. LiveKit Room Events Contract
 
 ### LiveKit SDK Events Used
 
@@ -290,7 +415,7 @@ export function mapLiveKitSegmentToMessage(
 
 ---
 
-## 4. Configuration Service Contract
+## 5. Configuration Service Contract
 
 ### IConfigurationService
 
@@ -327,7 +452,7 @@ export interface FeatureFlags {
 
 ---
 
-## 5. Component Contracts
+## 6. Component Contracts
 
 ### Voice Chat Component Interface
 
@@ -428,7 +553,7 @@ export interface ITranscriptionDisplayComponent {
 
 ---
 
-## 6. Error Handling Contract
+## 7. Error Handling Contract
 
 ### Error Handler Interface
 
@@ -462,7 +587,7 @@ export interface ILiveKitErrorHandler {
 
 ---
 
-## 7. Testing Contracts
+## 8. Testing Contracts
 
 ### Mock LiveKit Room Interface
 

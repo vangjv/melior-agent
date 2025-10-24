@@ -11,6 +11,8 @@ Last updated: 2025-10-24
 - **Jasmine/Karma** for testing with Zone.js polyfills
 - TypeScript 5.x with Azure Functions TypeScript v4 (Node.js 18+) + LiveKit Server SDK for Node.js (@livekit/server-sdk), Azure Functions Core Tools v4 (002-livekit-token-api)
 - N/A (stateless token generation) (002-livekit-token-api)
+- TypeScript 5.9.2 with Angular 20.0.0 + Angular Material 20.0.0, LiveKit Client SDK 2.x, RxJS 7.x, Angular CDK (001-voice-chat-transcription)
+- Browser sessionStorage for temporary transcription history (no persistent backend storage) (001-voice-chat-transcription)
 
 ## Project Structure
 
@@ -137,9 +139,9 @@ $theme: mat.define-light-theme((
 - Signals: `camelCase` (private with `_` prefix)
 
 ## Recent Changes
+- 001-voice-chat-transcription: Added TypeScript 5.9.2 with Angular 20.0.0 + Angular Material 20.0.0, LiveKit Client SDK 2.x, RxJS 7.x, Angular CDK
 - 002-livekit-token-api: Added TypeScript 5.x with Azure Functions TypeScript v4 (Node.js 18+) + LiveKit Server SDK for Node.js (@livekit/server-sdk), Azure Functions Core Tools v4
 - ✅ Phase 1-3 Complete: Connection lifecycle implementation with LiveKit
-- ✅ Test suite configured with Zone.js for zoneless app
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

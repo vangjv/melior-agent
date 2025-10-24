@@ -3,8 +3,9 @@
  */
 export interface LiveKitConfig {
   readonly serverUrl: string;
-  readonly token: string;
+  readonly token?: string; // Optional - obtained from backend if not provided
   readonly roomName: string;
+  readonly participantIdentity?: string;
   readonly options?: RoomOptions;
 }
 

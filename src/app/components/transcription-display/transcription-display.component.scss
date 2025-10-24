@@ -35,6 +35,30 @@
       background: var(--primary-dark-color, #555);
     }
   }
+
+  // T105: Virtual scroll viewport height adjustments for mobile
+  &.virtual-scroll {
+    // Ensure minimum height for mobile devices
+    min-height: 300px;
+
+    // Mobile portrait (320px - 480px)
+    @media (max-width: 480px) {
+      min-height: 250px;
+      max-height: 50vh; // Don't take up more than half the viewport
+    }
+
+    // Mobile landscape (481px - 768px)
+    @media (min-width: 481px) and (max-width: 768px) {
+      min-height: 200px;
+      max-height: 60vh;
+    }
+
+    // Tablet and above (769px+)
+    @media (min-width: 769px) {
+      min-height: 400px;
+      max-height: 70vh;
+    }
+  }
 }
 
 .transcription-list {

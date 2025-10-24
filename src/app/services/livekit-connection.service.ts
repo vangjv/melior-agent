@@ -1,4 +1,4 @@
-import { Injectable, Signal, signal, computed } from '@angular/core';
+import { Injectable, Signal, signal, computed, inject } from '@angular/core';
 import { Room, RoomEvent, ConnectionQuality as LKConnectionQuality } from 'livekit-client';
 import {
   ConnectionState,
@@ -8,6 +8,9 @@ import {
 } from '../models/connection-state.model';
 import { VoiceSession, SessionMetadata } from '../models/session.model';
 import { LiveKitConfig, DEFAULT_ROOM_OPTIONS } from '../models/livekit-config.model';
+import { TokenService } from './token.service';
+import { TokenApiError } from '../models/token.model';
+import { environment } from '../../environments/environment';
 
 /**
  * Service interface for LiveKit connection management
@@ -58,6 +61,12 @@ export interface ILiveKitConnectionService {
    * @returns Promise with granted permission
    */
   requestMicrophonePermission(): Promise<boolean>;
+
+  /**
+   * Get the current LiveKit Room instance
+   * @returns Room instance if connected, null otherwise
+   */
+  getRoom(): Room | null;
 }
 
 /**
@@ -68,11 +77,19 @@ export interface ILiveKitConnectionService {
   providedIn: 'root',
 })
 export class LiveKitConnectionService implements ILiveKitConnectionService {
+  // Injected services
+  private readonly tokenService = inject(TokenService);
+
   // Private state
   private _connectionState = signal<ConnectionState>({ status: 'disconnected' });
   private _currentSession = signal<VoiceSession | null>(null);
   private _room: Room | null = null;
   private _lastConfig: LiveKitConfig | null = null;
+
+  // Reconnection state
+  private _reconnectAttempt = 0;
+  private _maxReconnectAttempts = 5;
+  private _reconnectTimer: number | null = null;
 
   // Public signals
   readonly connectionState = this._connectionState.asReadonly();
@@ -117,10 +134,14 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
   }
 
   /**
-   * T026-T033: Implement connection logic
+   * T026-T033: Implement connection logic with token acquisition
+   * T122: Add performance marks for connection time monitoring
    */
   async connect(config: LiveKitConfig): Promise<void> {
     try {
+      // T122: Mark start of connection process
+      performance.mark('livekit-connection-start');
+
       // T020: Transition to connecting state
       this._connectionState.set({
         status: 'connecting',
@@ -134,15 +155,160 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
         throw this.createConnectionError('PERMISSION_DENIED');
       }
 
+      // T042-T043: Obtain LiveKit access token from backend API
+      let tokenResponse;
+      try {
+        tokenResponse = await this.tokenService.generateToken({
+          roomName: config.roomName,
+          participantIdentity: config.participantIdentity || `user-${Date.now()}`,
+          expirationMinutes: 60 // 1 hour default
+        }).toPromise();
+
+        if (!tokenResponse) {
+          throw this.createConnectionError('AUTHENTICATION_FAILED');
+        }
+      } catch (error) {
+        // T030: Handle token acquisition failure
+        if (error && typeof error === 'object' && 'statusCode' in error) {
+          const tokenError = error as TokenApiError;
+          if (tokenError.statusCode === 400) {
+            const authError = this.createConnectionError('AUTHENTICATION_FAILED');
+            this._connectionState.set({
+              status: 'error',
+              error: authError,
+            });
+            throw authError;
+          } else if (tokenError.statusCode === 0) {
+            const networkError = this.createConnectionError('NETWORK_ERROR');
+            this._connectionState.set({
+              status: 'error',
+              error: networkError,
+            });
+            throw networkError;
+          }
+        }
+        const serverError = this.createConnectionError('SERVER_UNAVAILABLE');
+        this._connectionState.set({
+          status: 'error',
+          error: serverError,
+        });
+        throw serverError;
+      }
+
       // Store config for potential reconnection
       this._lastConfig = config;
 
-      // Create LiveKit room
-      const room = new Room();
+      // Create LiveKit room with audio options
+      const room = new Room({
+        audioCaptureDefaults: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
 
       // T031: Add connection quality changed handler
       room.on(RoomEvent.ConnectionQualityChanged, (quality: LKConnectionQuality) => {
         this.updateConnectionQuality(quality);
+      });
+
+      // T113-T114: Add reconnection event handlers
+      room.on(RoomEvent.Reconnecting, () => {
+        console.log('🔄 LiveKit triggered reconnection');
+        this._reconnectAttempt++;
+        this._connectionState.set({
+          status: 'reconnecting',
+          attempt: this._reconnectAttempt,
+          maxAttempts: this._maxReconnectAttempts,
+        });
+      });
+
+      room.on(RoomEvent.Reconnected, () => {
+        console.log('✅ Successfully reconnected to LiveKit');
+        this._reconnectAttempt = 0; // Reset attempt counter
+
+        // Restore connected state
+        const session = this._currentSession();
+        if (session && this._lastConfig) {
+          this._connectionState.set({
+            status: 'connected',
+            roomName: this._lastConfig.roomName,
+            sessionId: session.sessionId,
+            connectedAt: session.startTime,
+            connectionQuality: session.connectionQuality,
+          });
+        }
+      });
+
+      // Monitor participant connections (e.g., when agent joins)
+      room.on(RoomEvent.ParticipantConnected, (participant) => {
+        console.log('Participant connected:', participant.identity, participant.metadata);
+        console.log('Participant attributes:', participant.attributes);
+        console.log('Participant permissions:', participant.permissions);
+
+        // Listen for metadata changes (may contain transcription info)
+        participant.on('ParticipantMetadataChanged' as any, (metadata: string) => {
+          console.log(`🔄 Metadata changed for ${participant.identity}:`, metadata);
+          try {
+            const data = JSON.parse(metadata);
+            console.log('📋 Parsed metadata:', data);
+          } catch (e) {
+            console.log('📋 Metadata (not JSON):', metadata);
+          }
+        });
+
+        // Listen for attributes changes
+        participant.on('AttributesChanged' as any, (attributes: any) => {
+          console.log(`🔄 Attributes changed for ${participant.identity}:`, attributes);
+        });
+      });      room.on(RoomEvent.ParticipantDisconnected, (participant) => {
+        console.log('Participant disconnected:', participant.identity);
+      });
+
+      // Monitor track subscriptions
+      room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+        console.log(`Track subscribed from ${participant.identity}:`, track.kind, publication.source);
+
+        // Attach audio tracks to play them (required for transcription to work)
+        if (track.kind === 'audio') {
+          const audioElement = track.attach();
+          audioElement.style.display = 'none'; // Hide the audio element
+          document.body.appendChild(audioElement);
+          console.log('✅ Audio track attached and playing from:', participant.identity);
+        }
+      });
+
+      room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+        console.log(`Track unsubscribed from ${participant.identity}:`, track.kind);
+        // Detach the track to clean up
+        track.detach();
+      });
+
+      // Handle audio playback status (browser autoplay policies)
+      room.on(RoomEvent.AudioPlaybackStatusChanged, () => {
+        if (!room.canPlaybackAudio) {
+          console.warn('⚠️ Audio playback blocked by browser. User interaction required.');
+          console.log('Call room.startAudio() after user interaction to enable audio playback');
+        } else {
+          console.log('✅ Audio playback is enabled');
+        }
+      });
+
+      // Monitor ALL room events for debugging
+      room.on(RoomEvent.DataReceived, (payload, participant, kind, topic) => {
+        console.log('🔔 DataReceived event:', { participant: participant?.identity, kind, topic, payloadSize: payload.length });
+      });
+
+      room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+        console.log('🎤 Active speakers:', speakers.map(s => s.identity));
+      });
+
+      room.on(RoomEvent.TrackMuted, (publication, participant) => {
+        console.log('🔇 Track muted:', participant.identity, publication.source);
+      });
+
+      room.on(RoomEvent.TrackUnmuted, (publication, participant) => {
+        console.log('🔊 Track unmuted:', participant.identity, publication.source);
       });
 
       // T033: Add error handlers for network and server errors
@@ -161,10 +327,55 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
         }
       });
 
-      // T028: Connect to LiveKit room
-      await room.connect(config.serverUrl, config.token);
+      // T028: Connect to LiveKit room using token from backend
+      performance.mark('livekit-room-connect-start');
+      await room.connect(environment.liveKitUrl, tokenResponse.token);
+      performance.mark('livekit-room-connect-end');
+      performance.measure('livekit-room-connection', 'livekit-room-connect-start', 'livekit-room-connect-end');
 
       this._room = room;
+
+      console.log('Connected to LiveKit room:', room.name);
+      console.log('Local participant:', room.localParticipant.identity);
+      console.log('Remote participants:', Array.from(room.remoteParticipants.values()).map(p => p.identity));
+
+      // Enable and publish microphone after successful connection
+      try {
+        await room.localParticipant.setMicrophoneEnabled(true);
+        console.log('✅ Microphone enabled and published');
+
+        // Verify the track is actually publishing
+        const micPublication = room.localParticipant.getTrackPublication('microphone' as any);
+        if (micPublication) {
+          console.log('📢 Microphone track publication:', {
+            source: micPublication.source,
+            muted: micPublication.isMuted,
+            enabled: micPublication.isEnabled
+          });
+        }
+
+        // Log all published tracks
+        console.log('📤 All published tracks:',
+          Array.from(room.localParticipant.trackPublications.values()).map(p => ({
+            source: p.source,
+            kind: p.kind,
+            muted: p.isMuted
+          }))
+        );
+      } catch (error) {
+        console.error('❌ Failed to enable microphone:', error);
+        // Don't fail the connection, but log the error
+        // User may need to grant permissions or check their microphone
+      }
+
+      // Start audio playback (required for hearing agent responses)
+      try {
+        await room.startAudio();
+        console.log('✅ Audio playback started');
+      } catch (error) {
+        console.warn('⚠️ Could not start audio automatically:', error);
+        console.log('Audio playback may be blocked by browser autoplay policy');
+      }
 
       // T021: Transition to connected state
       const sessionId = crypto.randomUUID();
@@ -184,11 +395,25 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
         connectionQuality: 'good',
         metadata: this.createSessionMetadata(config.roomName, room.localParticipant.identity),
       });
+
+      // T122: Measure total connection time
+      performance.mark('livekit-connection-end');
+      performance.measure('livekit-total-connection', 'livekit-connection-start', 'livekit-connection-end');
+
+      // Log performance metrics
+      const connectionMeasure = performance.getEntriesByName('livekit-total-connection')[0];
+      if (connectionMeasure) {
+        console.log(`⏱️ Connection established in ${connectionMeasure.duration.toFixed(2)}ms`);
+      }
     } catch (error) {
       // T022: Handle connection failure
       let connectionError: ConnectionError;
 
-      if (error instanceof Error && 'code' in error && typeof (error as any).code === 'string') {
+      // Check if this is already a ConnectionError that was handled earlier
+      if (error && typeof error === 'object' && 'code' in error && 'timestamp' in error && 'recoverable' in error) {
+        // This is already a ConnectionError - don't re-wrap it
+        connectionError = error as ConnectionError;
+      } else if (error instanceof Error && 'code' in error && typeof (error as any).code === 'string') {
         // If error has code property that matches our ConnectionErrorCode
         const errorCode = (error as any).code as string;
         const validCodes: ConnectionErrorCode[] = [
@@ -225,9 +450,21 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
    * Cleanly disconnect from LiveKit room and clean up resources
    */
   async disconnect(): Promise<void> {
+    // Clear any pending reconnection timer
+    if (this._reconnectTimer !== null) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = null;
+    }
+
+    // Reset reconnection attempt counter
+    this._reconnectAttempt = 0;
+
     // T052: Clean up Room instance
     if (this._room) {
       try {
+        // Disable microphone before disconnecting
+        await this._room.localParticipant.setMicrophoneEnabled(false);
+
         // Disconnect from LiveKit room
         await this._room.disconnect();
         this._room = null;
@@ -252,9 +489,133 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
     }
   }
 
+  /**
+   * T112-T116: Implement reconnection with exponential backoff
+   * Attempts to reconnect to LiveKit room with retry logic
+   */
   async reconnect(): Promise<void> {
-    // Implementation will be added in Phase 7 (Reconnection)
-    throw new Error('Not implemented yet');
+    // Can only reconnect if we have a previous configuration
+    if (!this._lastConfig) {
+      throw new Error('No previous connection configuration available');
+    }
+
+    // Clear any existing reconnection timer
+    if (this._reconnectTimer !== null) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = null;
+    }
+
+    // Reset attempt counter when manually reconnecting
+    this._reconnectAttempt = 0;
+
+    // T112: Implement reconnection logic with retry
+    await this.attemptReconnection(this._lastConfig);
+  }
+
+  /**
+   * T115: Helper method to attempt reconnection with exponential backoff
+   */
+  private async attemptReconnection(config: LiveKitConfig): Promise<void> {
+    // T116: Check if we've exceeded max attempts
+    if (this._reconnectAttempt >= this._maxReconnectAttempts) {
+      const error = this.createConnectionError(
+        'NETWORK_ERROR',
+        'Maximum reconnection attempts reached. Please try connecting again manually.'
+      );
+      this._connectionState.set({
+        status: 'error',
+        error,
+      });
+      return;
+    }
+
+    this._reconnectAttempt++;
+
+    // Update state to show reconnection attempt
+    this._connectionState.set({
+      status: 'reconnecting',
+      attempt: this._reconnectAttempt,
+      maxAttempts: this._maxReconnectAttempts,
+    });
+
+    // T115: Calculate backoff delay (1s, 2s, 4s, 8s, 16s max)
+    const baseDelay = 1000; // 1 second
+    const maxDelay = 16000; // 16 seconds
+    const delay = Math.min(baseDelay * Math.pow(2, this._reconnectAttempt - 1), maxDelay);
+
+    console.log(`🔄 Reconnection attempt ${this._reconnectAttempt}/${this._maxReconnectAttempts} in ${delay}ms`);
+
+    // Wait for backoff delay
+    await new Promise(resolve => {
+      this._reconnectTimer = window.setTimeout(resolve, delay);
+    });
+
+    try {
+      // Attempt to reconnect using the stored config
+      await this.connect(config);
+
+      // If successful, reset attempt counter
+      this._reconnectAttempt = 0;
+      console.log('✅ Reconnection successful');
+    } catch (error) {
+      console.error(`❌ Reconnection attempt ${this._reconnectAttempt} failed:`, error);
+
+      // If we haven't hit max attempts, try again
+      if (this._reconnectAttempt < this._maxReconnectAttempts) {
+        // Store the last error in the reconnecting state
+        const connectionError = error as ConnectionError;
+        this._connectionState.set({
+          status: 'reconnecting',
+          attempt: this._reconnectAttempt,
+          maxAttempts: this._maxReconnectAttempts,
+          lastError: connectionError,
+        });
+
+        // Recursively attempt reconnection
+        await this.attemptReconnection(config);
+      } else {
+        // Max attempts reached, set to error state
+        const finalError = this.createConnectionError(
+          'NETWORK_ERROR',
+          'Maximum reconnection attempts reached. Please try connecting again manually.'
+        );
+        this._connectionState.set({
+          status: 'error',
+          error: finalError,
+        });
+      }
+    }
+  }
+
+  /**
+   * Get the current LiveKit Room instance
+   * Used by TranscriptionService to subscribe to events
+   * @returns Room instance if connected, null otherwise
+   */
+  getRoom(): Room | null {
+    return this._room;
+  }
+
+  /**
+   * Get information about all participants in the room
+   * @returns Array of participant identities
+   */
+  getParticipants(): string[] {
+    if (!this._room) {
+      return [];
+    }
+
+    const participants: string[] = [this._room.localParticipant.identity];
+    this._room.remoteParticipants.forEach(p => participants.push(p.identity));
+    return participants;
+  }
+
+  /**
+   * Get count of remote participants (e.g., agents)
+   * @returns Number of remote participants
+   */
+  getRemoteParticipantCount(): number {
+    return this._room?.remoteParticipants.size ?? 0;
   }
 
   // Helper methods

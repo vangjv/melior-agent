@@ -10,6 +10,27 @@
     "
     aria-live="polite"
   >
+    <!-- T117-T118: Reconnection status display -->
+    @if (connectionState().status === 'reconnecting') {
+      @let reconnectState = connectionState();
+      @if (reconnectState.status === 'reconnecting') {
+        <div class="reconnection-status" role="alert">
+          <mat-spinner diameter="24" class="reconnect-spinner"></mat-spinner>
+          <div class="reconnect-message">
+            <strong>Reconnecting...</strong>
+            <span class="attempt-count">
+              Attempt {{ reconnectState.attempt }} of {{ reconnectState.maxAttempts }}
+            </span>
+            @if (reconnectState.lastError) {
+              <span class="last-error">
+                {{ reconnectState.lastError.message }}
+              </span>
+            }
+          </div>
+        </div>
+      }
+    }
+
     <!-- Connection quality indicator -->
     @if (isConnected()) {
       <div class="quality-indicator" [attr.data-quality]="connectionQuality()">

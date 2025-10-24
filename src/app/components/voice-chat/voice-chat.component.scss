@@ -37,6 +37,47 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.reconnection-status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: #fff3e0;
+  border-left: 4px solid #ff9800;
+  border-radius: 4px;
+
+  .reconnect-spinner {
+    flex-shrink: 0;
+  }
+
+  .reconnect-message {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    flex: 1;
+
+    strong {
+      color: #e65100;
+      font-size: 16px;
+    }
+
+    .attempt-count {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .last-error {
+      font-size: 12px;
+      color: #d84315;
+      font-style: italic;
+    }
+  }
+
+  @media (prefers-contrast: high) {
+    border: 2px solid #ff9800;
+  }
+}
+
 .quality-indicator {
   display: flex;
   align-items: center;

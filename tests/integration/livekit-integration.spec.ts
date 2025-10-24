@@ -1,15 +1,152 @@
 import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { LiveKitConnectionService } from '../../src/app/services/livekit-connection.service';
+import { TokenService } from '../../src/app/services/token.service';
 import { Room } from 'livekit-client';
+import { environment } from '../../src/environments/environment';
 
 describe('LiveKit Integration Tests', () => {
   let service: LiveKitConnectionService;
+  let httpMock: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [LiveKitConnectionService],
+      imports: [HttpClientTestingModule],
+      providers: [LiveKitConnectionService, TokenService],
     });
     service = TestBed.inject(LiveKitConnectionService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  // T033: Integration test for token acquisition + connection flow
+  describe('Token Acquisition and Connection Flow', () => {
+    it('should obtain token from backend API then connect to LiveKit', async () => {
+      const config = {
+        serverUrl: environment.liveKitUrl,
+        roomName: 'test-room',
+        participantIdentity: 'test-user',
+      };
+
+      // Mock microphone permission
+      spyOn(navigator.mediaDevices, 'getUserMedia').and.returnValue(
+        Promise.resolve({
+          getTracks: () => [{ stop: () => {} }],
+        } as unknown as MediaStream)
+      );
+
+      // Start connection (will fail at LiveKit connection but that's OK for this test)
+      const connectPromise = service.connect(config).catch(() => {
+        // Expected to fail at LiveKit connection - we're testing token acquisition
+      });
+
+      // Expect HTTP POST to token API
+      const req = httpMock.expectOne(`${environment.tokenApiUrl}/token`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({
+        roomName: config.roomName,
+        participantIdentity: config.participantIdentity,
+        expirationMinutes: 60,
+      });
+
+      // Respond with mock token
+      req.flush({
+        token: 'mock-livekit-token',
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        roomName: config.roomName,
+        participantIdentity: config.participantIdentity,
+      });
+
+      await connectPromise;
+
+      // Verify no pending HTTP requests
+      httpMock.verify();
+    });
+
+    it('should handle backend API errors during token acquisition', async () => {
+      const config = {
+        serverUrl: environment.liveKitUrl,
+        roomName: 'test-room',
+        participantIdentity: 'test-user',
+      };
+
+      // Mock microphone permission
+      spyOn(navigator.mediaDevices, 'getUserMedia').and.returnValue(
+        Promise.resolve({
+          getTracks: () => [{ stop: () => {} }],
+        } as unknown as MediaStream)
+      );
+
+      // Start connection
+      const connectPromise = service.connect(config);
+
+      // Expect HTTP POST to token API
+      const req = httpMock.expectOne(`${environment.tokenApiUrl}/token`);
+
+      // Respond with error
+      req.flush(
+        { error: 'Bad Request', message: 'Invalid room name' },
+        { status: 400, statusText: 'Bad Request' }
+      );
+
+      // Verify connection failed with appropriate error
+      await expectAsync(connectPromise).toBeRejected();
+
+      const state = service.connectionState();
+      expect(state.status).toBe('error');
+      if (state.status === 'error') {
+        expect(state.error.code).toBe('AUTHENTICATION_FAILED');
+      }
+    });
+
+    it('should retry on backend API server errors', async () => {
+      const config = {
+        serverUrl: environment.liveKitUrl,
+        roomName: 'test-room',
+        participantIdentity: 'test-user',
+      };
+
+      // Mock microphone permission
+      spyOn(navigator.mediaDevices, 'getUserMedia').and.returnValue(
+        Promise.resolve({
+          getTracks: () => [{ stop: () => {} }],
+        } as unknown as MediaStream)
+      );
+
+      // Start connection
+      const connectPromise = service.connect(config).catch(() => {
+        // Expected to fail after retries
+      });
+
+      // First attempt - server error
+      const req1 = httpMock.expectOne(`${environment.tokenApiUrl}/token`);
+      req1.flush(
+        { error: 'Internal Server Error', message: 'Token generation failed' },
+        { status: 500, statusText: 'Internal Server Error' }
+      );
+
+      // Wait for retry delay
+      await new Promise(resolve => setTimeout(resolve, 1100));
+
+      // Second attempt - server error again
+      const req2 = httpMock.expectOne(`${environment.tokenApiUrl}/token`);
+      req2.flush(
+        { error: 'Internal Server Error', message: 'Token generation failed' },
+        { status: 500, statusText: 'Internal Server Error' }
+      );
+
+      await connectPromise;
+
+      // Verify error state
+      const state = service.connectionState();
+      expect(state.status).toBe('error');
+      if (state.status === 'error') {
+        expect(state.error.code).toBe('SERVER_UNAVAILABLE');
+      }
+    });
   });
 
   // T025: Integration test for full connection flow

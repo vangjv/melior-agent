@@ -1,5 +1,5 @@
 import { Injectable, Signal, signal, computed } from '@angular/core';
-import { Room } from 'livekit-client';
+import { Room, RoomEvent, TranscriptionSegment, Participant, TrackPublication } from 'livekit-client';
 import {
   TranscriptionMessage,
   InterimTranscription,
@@ -72,8 +72,12 @@ export class TranscriptionService implements ITranscriptionService {
   // Room reference for event handling
   private _room: Room | null = null;
 
-  // Event handler reference for cleanup
-  private _transcriptionHandler: ((data: any) => void) | null = null;
+  // Event handler references for cleanup
+  private _transcriptionReceivedHandler: ((
+    segments: TranscriptionSegment[],
+    participant?: Participant,
+    publication?: TrackPublication
+  ) => void) | null = null;
 
   // T070: Public readonly signals
   readonly transcriptions = this._transcriptions.asReadonly();
@@ -88,28 +92,47 @@ export class TranscriptionService implements ITranscriptionService {
   startTranscription(room: Room): void {
     this._room = room;
 
-    // T073: Subscribe to RoomEvent.TranscriptionReceived
-    // Note: LiveKit's transcription event name may vary - using placeholder
-    this._transcriptionHandler = (data: any) => {
-      this.handleTranscriptionEvent(data);
+    // Use the correct LiveKit TranscriptionReceived event
+    this._transcriptionReceivedHandler = (
+      segments: TranscriptionSegment[],
+      participant?: Participant,
+      publication?: TrackPublication
+    ) => {
+      console.log('� TranscriptionReceived event:', {
+        participantIdentity: participant?.identity,
+        segmentCount: segments.length,
+        segments: segments.map(s => ({
+          id: s.id,
+          text: s.text,
+          final: s.final,
+          language: s.language,
+        })),
+      });
+
+      // Process each transcription segment
+      segments.forEach((segment) => {
+        this.handleTranscriptionSegment(segment, participant);
+      });
     };
 
-    // TODO: Replace with actual LiveKit transcription event when available
-    // For now, this is a placeholder for the event subscription pattern
-    // room.on(RoomEvent.TranscriptionReceived, this._transcriptionHandler);
-  }
+    // Subscribe to TranscriptionReceived event (the correct way to get transcriptions)
+    room.on(RoomEvent.TranscriptionReceived, this._transcriptionReceivedHandler);
 
-  /**
+    console.log('✅ Transcription service started for room:', room.name);
+    console.log('🔍 Listening for: TranscriptionReceived events');
+  }  /**
    * T077: Stop listening for transcriptions and cleanup
    */
   stopTranscription(): void {
-    if (this._room && this._transcriptionHandler) {
+    if (this._room) {
       // T077: Unsubscribe from events
-      // TODO: Replace with actual LiveKit event cleanup
-      // this._room.off(RoomEvent.TranscriptionReceived, this._transcriptionHandler);
-      this._transcriptionHandler = null;
+      if (this._transcriptionReceivedHandler) {
+        this._room.off(RoomEvent.TranscriptionReceived, this._transcriptionReceivedHandler);
+        this._transcriptionReceivedHandler = null;
+      }
     }
     this._room = null;
+    console.log('Transcription service stopped');
   }
 
   /**
@@ -141,18 +164,41 @@ export class TranscriptionService implements ITranscriptionService {
   }
 
   /**
-   * T074-T076: Handle incoming transcription events from LiveKit
+   * T074-T076: Handle incoming transcription segments from LiveKit
+   * T123: Add performance marks for transcription latency tracking
    */
-  private handleTranscriptionEvent(data: any): void {
-    // T074: Map LiveKit segment to our TranscriptionMessage model
-    const message = this.mapLiveKitSegmentToMessage(data);
+  private handleTranscriptionSegment(segment: TranscriptionSegment, participant?: Participant): void {
+    // T123: Mark start of transcription processing
+    const perfMark = `transcription-${segment.id}`;
+    performance.mark(perfMark);
 
-    if (message.isFinal) {
+    console.log('Processing transcription segment:', {
+      id: segment.id,
+      text: segment.text,
+      final: segment.final,
+      participantIdentity: participant?.identity,
+    });
+
+    // T074: Map LiveKit segment to our TranscriptionMessage model
+    const message = this.mapLiveKitSegmentToMessage(segment, participant);
+
+    if (segment.final) {
       // T075: Update transcriptions signal for final transcription
       this._transcriptions.update((messages: readonly TranscriptionMessage[]) => [...messages, message]);
 
       // Clear interim transcription when final is received
       this._interimTranscription.set(null);
+
+      console.log('✅ Final transcription added:', message.text);
+
+      // T123: Measure transcription latency
+      performance.mark(`${perfMark}-end`);
+      performance.measure(`transcription-latency-${segment.id}`, perfMark, `${perfMark}-end`);
+
+      const latencyMeasure = performance.getEntriesByName(`transcription-latency-${segment.id}`)[0];
+      if (latencyMeasure) {
+        console.log(`⏱️ Transcription processed in ${latencyMeasure.duration.toFixed(2)}ms`);
+      }
     } else {
       // T076: Update interim transcription signal for non-final transcription
       const interim: InterimTranscription = {
@@ -161,23 +207,22 @@ export class TranscriptionService implements ITranscriptionService {
         timestamp: message.timestamp,
       };
       this._interimTranscription.set(interim);
+
+      console.log('🔄 Interim transcription updated:', message.text);
     }
   }
 
   /**
    * T074: Map LiveKit transcription segment to our message model
    */
-  private mapLiveKitSegmentToMessage(data: any): TranscriptionMessage {
-    // TODO: Replace with actual LiveKit transcription data structure
-    // This is a placeholder implementation
+  private mapLiveKitSegmentToMessage(segment: TranscriptionSegment, participant?: Participant): TranscriptionMessage {
     const message: TranscriptionMessage = {
-      id: data.id || crypto.randomUUID(),
-      speaker: this.determineSpeaker(data),
-      text: data.text || data.transcript || '',
-      timestamp: new Date(data.timestamp || Date.now()),
-      confidence: data.confidence,
-      isFinal: data.isFinal ?? data.final ?? true,
-      language: data.language,
+      id: segment.id,
+      speaker: this.determineSpeaker(participant),
+      text: segment.text,
+      timestamp: new Date(),
+      isFinal: segment.final,
+      language: segment.language,
     };
     return message;
   }
@@ -185,9 +230,15 @@ export class TranscriptionService implements ITranscriptionService {
   /**
    * Determine if speaker is user or agent based on LiveKit participant
    */
-  private determineSpeaker(data: any): Speaker {
-    // TODO: Replace with actual logic based on LiveKit participant identity
-    // For now, assume agent is any non-local participant
-    return data.isLocal || data.participant?.isLocal ? 'user' : 'agent';
+  private determineSpeaker(participant?: Participant): Speaker {
+    // If no participant or participant is local, it's the user
+    // Otherwise it's the agent
+    if (!participant) {
+      return 'agent'; // Default to agent for server-generated transcriptions
+    }
+
+    // Check if this is the local participant (user)
+    const isLocal = participant.isLocal ?? false;
+    return isLocal ? 'user' : 'agent';
   }
 }

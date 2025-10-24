@@ -1,4 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ConnectionButtonComponent } from '../connection-button/connection-button.component';
 import { TranscriptionDisplayComponent } from '../transcription-display/transcription-display.component';
 import { LiveKitConnectionService } from '../../services/livekit-connection.service';
@@ -12,7 +13,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-voice-chat',
   standalone: true,
-  imports: [ConnectionButtonComponent, TranscriptionDisplayComponent],
+  imports: [ConnectionButtonComponent, TranscriptionDisplayComponent, MatProgressSpinnerModule],
   templateUrl: './voice-chat.component.html',
   styleUrl: './voice-chat.component.scss',
 })
@@ -32,34 +33,58 @@ export class VoiceChatComponent {
 
   // Computed properties for UI
   readonly isConnected = computed(() => this.connectionState().status === 'connected');
+
+  // T082: User-friendly error messages including token acquisition failures
   readonly errorMessage = computed(() => {
     const state = this.connectionState();
-    return state.status === 'error' ? state.error.message : null;
+    if (state.status === 'error') {
+      const errorCode = state.error.code;
+
+      // Map error codes to user-friendly messages
+      switch (errorCode) {
+        case 'AUTHENTICATION_FAILED':
+          return 'Failed to obtain access token. Please try again.';
+        case 'NETWORK_ERROR':
+          return 'Network error. Please check your connection and try again.';
+        case 'SERVER_UNAVAILABLE':
+          return 'Service temporarily unavailable. Please try again later.';
+        case 'PERMISSION_DENIED':
+          return 'Microphone permission denied. Please grant access and try again.';
+        case 'MICROPHONE_NOT_FOUND':
+          return 'No microphone detected. Please connect a microphone and try again.';
+        case 'ROOM_NOT_FOUND':
+          return 'Voice room not found. Please try again.';
+        case 'TIMEOUT':
+          return 'Connection timeout. Please try again.';
+        default:
+          return state.error.message || 'An unexpected error occurred. Please try again.';
+      }
+    }
+    return null;
   });
 
   // T041 & T089: Handle connect button click and start transcription
   async handleConnect(): Promise<void> {
     try {
-      // TODO: In production, get token from backend API
-      // For now, using placeholder - this will fail without valid LiveKit credentials
+      // T082: Connection config without token - service obtains it from backend
       const config = {
-        serverUrl: environment.livekit.serverUrl,
-        token: 'PLACEHOLDER_TOKEN', // Replace with actual token from backend
-        roomName: 'voice-agent-room',
+        serverUrl: environment.liveKitUrl,
+        roomName: crypto.randomUUID(),
+        participantIdentity: `user-${Date.now()}`,
       };
 
       await this.connectionService.connect(config);
 
       // T089: Start transcription on successful connection
-      // Note: In real implementation, we'd get the Room instance from the service
-      // For now, this is a placeholder pattern
-      // const room = this.connectionService.getRoom();
-      // if (room) {
-      //   this.transcriptionService.startTranscription(room);
-      // }
+      const room = this.connectionService.getRoom();
+      if (room) {
+        this.transcriptionService.startTranscription(room);
+      } else {
+        console.warn('Connection succeeded but Room instance not available');
+      }
     } catch (error) {
       console.error('Connection failed:', error);
-      // Error state is handled by the service
+      // T082: Error state and messages are handled by the service and displayed in UI
     }
   }
 

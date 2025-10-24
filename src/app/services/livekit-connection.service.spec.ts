@@ -1,11 +1,16 @@
 import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { of, throwError } from 'rxjs';
 import { LiveKitConnectionService } from './livekit-connection.service';
+import { TokenService } from './token.service';
+import { TokenApiError } from '../models/token.model';
 
 describe('LiveKitConnectionService', () => {
   let service: LiveKitConnectionService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
       providers: [],
     });
     service = TestBed.inject(LiveKitConnectionService);
@@ -98,6 +103,157 @@ describe('LiveKitConnectionService', () => {
       expect(state.status).toBe('connecting');
       if (state.status === 'connecting') {
         expect(state.startedAt).toBeInstanceOf(Date);
+      }
+    });
+  });
+
+  // T026: Unit test for connect() first obtains token from TokenService
+  describe('connect - token acquisition', () => {
+    it('should call TokenService.generateToken() before connecting to LiveKit', async () => {
+      const config = {
+        serverUrl: 'wss://test.livekit.cloud',
+        roomName: 'test-room',
+        participantIdentity: 'test-user',
+      };
+
+      // Get the injected TokenService
+      const tokenService = TestBed.inject(TokenService);
+
+      // Mock the token service response
+      spyOn(tokenService, 'generateToken').and.returnValue(
+        of({
+          token: 'mock-livekit-token',
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          roomName: config.roomName,
+          participantIdentity: config.participantIdentity,
+        })
+      );
+
+      // Mock microphone permission
+      spyOn(service, 'requestMicrophonePermission').and.returnValue(Promise.resolve(true));
+
+      // Attempt connection - will fail at LiveKit connection but that's OK
+      await service.connect(config).catch(() => {
+        // Expected to fail at LiveKit connection - we're just testing token acquisition
+      });
+
+      // Verify token service was called with correct parameters
+      expect(tokenService.generateToken).toHaveBeenCalledWith({
+        roomName: config.roomName,
+        participantIdentity: config.participantIdentity,
+        expirationMinutes: 60,
+      });
+    });
+  });
+
+  // T030: Unit test for connect() handles token acquisition failure gracefully
+  describe('connect - token acquisition failure', () => {
+    it('should transition to error state when token acquisition fails with validation error', async () => {
+      const config = {
+        serverUrl: 'wss://test.livekit.cloud',
+        roomName: 'test-room',
+        participantIdentity: 'test-user',
+      };
+
+      // Get the injected TokenService
+      const tokenService = TestBed.inject(TokenService);
+
+      // Mock token service to return validation error
+      const tokenError: TokenApiError = {
+        name: 'ValidationError',
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Invalid room name',
+        details: { roomName: ['Room name is required'] },
+      };
+
+      spyOn(tokenService, 'generateToken').and.returnValue(
+        throwError(() => tokenError)
+      );
+
+      // Mock microphone permission
+      spyOn(service, 'requestMicrophonePermission').and.returnValue(Promise.resolve(true));
+
+      // Attempt connection
+      await expectAsync(service.connect(config)).toBeRejected();
+
+      // Verify state transitioned to error
+      const state = service.connectionState();
+      expect(state.status).toBe('error');
+      if (state.status === 'error') {
+        expect(state.error.code).toBe('AUTHENTICATION_FAILED');
+      }
+    });
+
+    it('should transition to error state when token API is unavailable', async () => {
+      const config = {
+        serverUrl: 'wss://test.livekit.cloud',
+        roomName: 'test-room',
+        participantIdentity: 'test-user',
+      };
+
+      // Get the injected TokenService
+      const tokenService = TestBed.inject(TokenService);
+
+      // Mock token service to return network error (status 0)
+      const networkError: TokenApiError = {
+        name: 'NetworkError',
+        statusCode: 0,
+        error: 'Network Error',
+        message: 'Failed to fetch',
+      };
+
+      spyOn(tokenService, 'generateToken').and.returnValue(
+        throwError(() => networkError)
+      );
+
+      // Mock microphone permission
+      spyOn(service, 'requestMicrophonePermission').and.returnValue(Promise.resolve(true));
+
+      // Attempt connection
+      await expectAsync(service.connect(config)).toBeRejected();
+
+      // Verify state transitioned to error
+      const state = service.connectionState();
+      expect(state.status).toBe('error');
+      if (state.status === 'error') {
+        expect(state.error.code).toBe('NETWORK_ERROR');
+      }
+    });
+
+    it('should transition to error state when token API returns server error', async () => {
+      const config = {
+        serverUrl: 'wss://test.livekit.cloud',
+        roomName: 'test-room',
+        participantIdentity: 'test-user',
+      };
+
+      // Get the injected TokenService
+      const tokenService = TestBed.inject(TokenService);
+
+      // Mock token service to return server error
+      const serverError: TokenApiError = {
+        name: 'ServerError',
+        statusCode: 500,
+        error: 'Internal Server Error',
+        message: 'Token generation failed',
+      };
+
+      spyOn(tokenService, 'generateToken').and.returnValue(
+        throwError(() => serverError)
+      );
+
+      // Mock microphone permission
+      spyOn(service, 'requestMicrophonePermission').and.returnValue(Promise.resolve(true));
+
+      // Attempt connection
+      await expectAsync(service.connect(config)).toBeRejected();
+
+      // Verify state transitioned to error
+      const state = service.connectionState();
+      expect(state.status).toBe('error');
+      if (state.status === 'error') {
+        expect(state.error.code).toBe('SERVER_UNAVAILABLE');
       }
     });
   });
@@ -223,6 +379,92 @@ describe('LiveKitConnectionService', () => {
       // 3. Verify room.disconnect() was called
       // 4. Verify all event listeners were removed
       // 5. Verify the room reference is cleared
+    });
+  });
+
+  // T110: Unit test for reconnect() method with exponential backoff
+  describe('reconnect', () => {
+    it('should implement exponential backoff when reconnecting', async () => {
+      // This test verifies reconnection logic with exponential backoff
+      // Mark as pending until we implement the reconnect() method
+      pending('Requires reconnect() implementation with exponential backoff');
+
+      // When implemented, this test should verify:
+      // 1. First retry happens after 1 second
+      // 2. Second retry after 2 seconds
+      // 3. Third retry after 4 seconds
+      // 4. Fourth retry after 8 seconds
+      // 5. Fifth retry after 16 seconds (max)
+      // 6. No more retries after max attempts reached
+    });
+
+    it('should respect max retry limit of 5 attempts', async () => {
+      // This test verifies max retry limit enforcement
+      pending('Requires reconnect() implementation');
+
+      // When implemented:
+      // 1. Simulate connection failures
+      // 2. Verify exactly 5 retry attempts
+      // 3. Verify transitions to error state after max retries
+      // 4. Verify reconnection state shows attempt count
+    });
+
+    it('should reuse last connection config when reconnecting', async () => {
+      // Verify reconnect uses stored configuration
+      pending('Requires reconnect() implementation');
+
+      // When implemented:
+      // 1. Store initial connection config
+      // 2. Trigger reconnect
+      // 3. Verify same config is used
+      // 4. Verify new token is obtained
+    });
+
+    it('should transition to error state if all retry attempts fail', async () => {
+      // Verify final error state after exhausting retries
+      pending('Requires reconnect() implementation');
+
+      // When implemented:
+      // 1. Mock connection failures
+      // 2. Exhaust all 5 retry attempts
+      // 3. Verify final state is 'error'
+      // 4. Verify error indicates manual reconnection required
+    });
+  });
+
+  // T111: Unit test for RoomEvent.Reconnecting state transition
+  describe('RoomEvent.Reconnecting handler', () => {
+    it('should transition to reconnecting state when LiveKit triggers reconnection', async () => {
+      // Test automatic reconnection triggered by LiveKit SDK
+      pending('Requires LiveKit Room event mocking');
+
+      // When implemented:
+      // 1. Mock Room instance
+      // 2. Emit RoomEvent.Reconnecting
+      // 3. Verify state transitions to 'reconnecting'
+      // 4. Verify attempt counter is set
+    });
+
+    it('should handle RoomEvent.Reconnected to restore connected state', async () => {
+      // Test successful automatic reconnection
+      pending('Requires LiveKit Room event mocking');
+
+      // When implemented:
+      // 1. Set state to 'reconnecting'
+      // 2. Emit RoomEvent.Reconnected
+      // 3. Verify state transitions to 'connected'
+      // 4. Verify session information is restored
+    });
+
+    it('should preserve transcription state during reconnection', async () => {
+      // Verify transcription isn't lost during reconnection
+      pending('Requires integration with TranscriptionService');
+
+      // When implemented:
+      // 1. Have active transcription session
+      // 2. Trigger reconnection
+      // 3. Verify transcriptions are not cleared
+      // 4. Verify transcription resumes after reconnection
     });
   });
 });

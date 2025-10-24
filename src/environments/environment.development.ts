@@ -1,13 +1,10 @@
 /**
  * Development environment configuration
- * IMPORTANT: Create environment.development.local.ts for your personal LiveKit credentials
- * DO NOT commit actual credentials to version control
+ * IMPORTANT: Create environment.development.local.ts for your personal configuration
+ * DO NOT commit actual credentials or local URLs to version control
  */
 export const environment = {
   production: false,
-  livekit: {
-    serverUrl: 'wss://your-project.livekit.cloud', // Replace with your LiveKit server URL
-    // Note: In production, get token from backend API
-    // For development, generate tokens at https://cloud.livekit.io
-  },
+  tokenApiUrl: 'http://localhost:7071/api',  // Backend token API (002-livekit-token-api)
+  liveKitUrl: 'ws://localhost:7880'           // Local LiveKit server or wss://your-project.livekit.cloud
 };
