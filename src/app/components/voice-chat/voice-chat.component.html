@@ -1,0 +1,47 @@
+<!-- T043: Voice chat component template -->
+<div class="voice-chat-container">
+  <!-- T045 & T059: ARIA labels for connection state and disconnection announcements -->
+  <div
+    class="connection-status"
+    role="status"
+    [attr.aria-label]="
+      'Connection status: ' +
+      (isConnected() ? 'connected' : connectionState().status === 'disconnected' ? 'disconnected from voice agent' : connectionState().status)
+    "
+    aria-live="polite"
+  >
+    <!-- Connection quality indicator -->
+    @if (isConnected()) {
+      <div class="quality-indicator" [attr.data-quality]="connectionQuality()">
+        <span class="quality-label">Quality:</span>
+        <span class="quality-value">{{ connectionQuality() }}</span>
+      </div>
+    }
+
+    <!-- Error message display -->
+    @if (errorMessage(); as error) {
+      <div class="error-message" role="alert">
+        {{ error }}
+      </div>
+    }
+  </div>
+
+  <!-- Connection button -->
+  <div class="button-container">
+    <app-connection-button
+      [connectionState]="connectionState()"
+      (onConnect)="handleConnect()"
+      (onDisconnect)="handleDisconnect()"
+    />
+  </div>
+
+  <!-- T091-T092: Transcription display during active connection -->
+  @if (isConnected()) {
+    <div class="transcription-container">
+      <h2 class="transcription-title">Conversation</h2>
+      <app-transcription-display
+        [transcriptions]="transcriptions()"
+      />
+    </div>
+  }
+</div>

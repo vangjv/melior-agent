@@ -1,0 +1,45 @@
+// T038: Connection button styling with mobile touch targets
+.connection-button {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  font-size: 16px;
+  font-weight: 500;
+  padding: var(--spacing-md) var(--spacing-lg);
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  // High contrast mode support
+  @media (prefers-contrast: high) {
+    border: 2px solid currentColor;
+  }
+}
+
+.button-spinner {
+  display: inline-block;
+  vertical-align: middle;
+
+  ::ng-deep circle {
+    stroke: currentColor;
+  }
+}
+
+// Mobile-specific adjustments
+@media (max-width: 768px) {
+  .connection-button {
+    width: 100%;
+    max-width: 300px;
+    font-size: 18px; // Larger on mobile for readability
+  }
+}

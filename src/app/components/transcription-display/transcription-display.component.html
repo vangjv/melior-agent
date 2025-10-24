@@ -1,0 +1,43 @@
+<!-- T082-T086: Transcription Display Template -->
+<div class="transcription-scroll-container" #scrollContainer>
+  <!-- T083: ARIA live region for accessibility -->
+  <div
+    class="transcription-list"
+    role="log"
+    aria-live="polite"
+    aria-label="Voice chat transcription messages"
+  >
+    @if (transcriptions().length === 0) {
+      <!-- Empty state when no transcriptions -->
+      <div class="empty-state">
+        <p class="hint">Transcription messages will appear here during your conversation.</p>
+      </div>
+    } @else {
+      <!-- T082: @for loop with trackBy using message.id -->
+      @for (message of transcriptions(); track trackByMessageId($index, message)) {
+        <div
+          class="transcription-message"
+          [attr.data-speaker]="message.speaker"
+        >
+          <div class="message-header">
+            <span class="speaker-label">
+              {{ message.speaker === 'user' ? 'You' : 'Agent' }}
+            </span>
+            <!-- T086: Timestamp display with Angular date pipe -->
+            <span class="timestamp">
+              {{ message.timestamp | date: 'short' }}
+            </span>
+          </div>
+          <div class="message-text">
+            {{ message.text }}
+          </div>
+          @if (message.confidence !== undefined && message.confidence < 0.8) {
+            <div class="confidence-indicator" [attr.data-confidence]="message.confidence">
+              <span class="confidence-label">Low confidence</span>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

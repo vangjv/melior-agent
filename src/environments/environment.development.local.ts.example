@@ -1,0 +1,11 @@
+/**
+ * Local development environment configuration (example)
+ * Copy this file to environment.development.local.ts and add your credentials
+ */
+export const environment = {
+  production: false,
+  livekit: {
+    serverUrl: 'wss://your-project.livekit.cloud',
+    // Add your local development settings here
+  },
+};

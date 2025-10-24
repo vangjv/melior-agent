@@ -1,0 +1,142 @@
+// T044: Voice chat component mobile-first responsive layout
+.voice-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: var(--spacing-md);
+  gap: var(--spacing-lg);
+  background-color: #fafafa;
+
+  // Mobile portrait (320px - 480px)
+  @media (min-width: 320px) {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-md);
+  }
+
+  // Mobile landscape & tablet (480px+)
+  @media (min-width: 480px) {
+    padding: var(--spacing-md);
+    gap: var(--spacing-lg);
+  }
+
+  // Desktop (1024px+)
+  @media (min-width: 1024px) {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+  }
+}
+
+.connection-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.quality-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 14px;
+
+  .quality-label {
+    font-weight: 500;
+    color: #666;
+  }
+
+  .quality-value {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  &[data-quality='excellent'] .quality-value {
+    background-color: #4caf50;
+    color: white;
+  }
+
+  &[data-quality='good'] .quality-value {
+    background-color: #8bc34a;
+    color: white;
+  }
+
+  &[data-quality='poor'] .quality-value {
+    background-color: #ff9800;
+    color: white;
+  }
+
+  &[data-quality='unknown'] .quality-value {
+    background-color: #9e9e9e;
+    color: white;
+  }
+}
+
+.error-message {
+  padding: var(--spacing-md);
+  background-color: #ffebee;
+  color: #c62828;
+  border-left: 4px solid #c62828;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+
+  @media (prefers-contrast: high) {
+    border: 2px solid #c62828;
+  }
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-md);
+}
+
+.transcription-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  min-height: 0; // Allow flex child to shrink
+
+  .transcription-title {
+    padding: var(--spacing-md);
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  app-transcription-display {
+    flex: 1;
+    min-height: 0;
+  }
+
+  @media (min-width: 768px) {
+    .transcription-title {
+      font-size: 1.5rem;
+      padding: var(--spacing-lg);
+    }
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .voice-chat-container {
+    border: 1px solid #000;
+  }
+
+  .connection-status,
+  .transcription-container {
+    border: 1px solid #000;
+  }
+}
