@@ -25,14 +25,14 @@
 
 **Purpose**: Project initialization and Azure Functions structure
 
-- [ ] T001 Initialize Azure Functions TypeScript v4 project in api/ folder (if not already initialized)
-- [ ] T002 Install dependencies: @azure/functions, @livekit/server-sdk, zod in api/package.json
-- [ ] T003 [P] Install dev dependencies: typescript, @types/node, jest, ts-jest, @types/jest in api/package.json
-- [ ] T004 [P] Configure TypeScript compiler in api/tsconfig.json with strict mode enabled
-- [ ] T005 [P] Configure Jest for unit and integration testing in api/jest.config.js
-- [ ] T006 [P] Setup CORS configuration in api/host.json for localhost:4200
-- [ ] T007 Create local.settings.json.example in api/ with placeholder LiveKit credentials
-- [ ] T008 [P] Add npm scripts (build, start, test) to api/package.json
+- [X] T001 Initialize Azure Functions TypeScript v4 project in api/ folder (if not already initialized)
+- [X] T002 Install dependencies: @azure/functions, @livekit/server-sdk, zod in api/package.json
+- [X] T003 [P] Install dev dependencies: typescript, @types/node, jest, ts-jest, @types/jest in api/package.json
+- [X] T004 [P] Configure TypeScript compiler in api/tsconfig.json with strict mode enabled
+- [X] T005 [P] Configure Jest for unit and integration testing in api/jest.config.js
+- [X] T006 [P] Setup CORS configuration in api/host.json for localhost:4200
+- [X] T007 Create local.settings.json.example in api/ with placeholder LiveKit credentials
+- [X] T008 [P] Add npm scripts (build, start, test) to api/package.json
 
 ---
 
@@ -42,14 +42,14 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T009 [P] Create TokenRequest interface in api/src/models/TokenRequest.ts per data-model.md
-- [ ] T010 [P] Create TokenResponse interface in api/src/models/TokenResponse.ts per data-model.md
-- [ ] T011 [P] Create ErrorResponse and ValidationError interfaces in api/src/models/ErrorResponse.ts per data-model.md
-- [ ] T012 [P] Create ErrorCode enum in api/src/models/ErrorResponse.ts per data-model.md
-- [ ] T013 [P] Create LiveKitConfig interface in api/src/models/LiveKitConfig.ts per data-model.md
-- [ ] T014 Create Zod validation schema for TokenRequest in api/src/utils/validation.ts
-- [ ] T015 [P] Create ILiveKitTokenGenerator interface in api/src/services/LiveKitTokenService.ts for dependency injection
-- [ ] T016 [P] Setup configuration loading utility in api/src/utils/config.ts with lazy initialization pattern
+- [X] T009 [P] Create TokenRequest interface in api/src/models/TokenRequest.ts per data-model.md
+- [X] T010 [P] Create TokenResponse interface in api/src/models/TokenResponse.ts per data-model.md
+- [X] T011 [P] Create ErrorResponse and ValidationError interfaces in api/src/models/ErrorResponse.ts per data-model.md
+- [X] T012 [P] Create ErrorCode enum in api/src/models/ErrorResponse.ts per data-model.md
+- [X] T013 [P] Create LiveKitConfig interface in api/src/models/LiveKitConfig.ts per data-model.md
+- [X] T014 Create Zod validation schema for TokenRequest in api/src/utils/validation.ts
+- [X] T015 [P] Create ILiveKitTokenGenerator interface in api/src/services/LiveKitTokenService.ts for dependency injection
+- [X] T016 [P] Setup configuration loading utility in api/src/utils/config.ts with lazy initialization pattern
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -65,23 +65,23 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T017 [P] [US1] Unit test for LiveKitTokenService.generateToken() success case in tests/unit/LiveKitTokenService.test.ts
-- [ ] T018 [P] [US1] Unit test for LiveKitTokenService.generateToken() with custom expiration in tests/unit/LiveKitTokenService.test.ts
-- [ ] T019 [P] [US1] Unit test for LiveKitTokenService.generateToken() with participant name in tests/unit/LiveKitTokenService.test.ts
-- [ ] T020 [P] [US1] Integration test for POST /api/token endpoint with valid request in tests/integration/generateToken.test.ts
-- [ ] T021 [P] [US1] Integration test verifying token JWT structure and claims in tests/integration/generateToken.test.ts
-- [ ] T022 [P] [US1] Integration test verifying token can authenticate with LiveKit SDK in tests/integration/generateToken.test.ts
+- [X] T017 [P] [US1] Unit test for LiveKitTokenService.generateToken() success case in tests/unit/LiveKitTokenService.test.ts
+- [X] T018 [P] [US1] Unit test for LiveKitTokenService.generateToken() with custom expiration in tests/unit/LiveKitTokenService.test.ts
+- [X] T019 [P] [US1] Unit test for LiveKitTokenService.generateToken() with participant name in tests/unit/LiveKitTokenService.test.ts
+- [X] T020 [P] [US1] Integration test for POST /api/token endpoint with valid request in tests/integration/generateToken.test.ts
+- [X] T021 [P] [US1] Integration test verifying token JWT structure and claims in tests/integration/generateToken.test.ts
+- [X] T022 [P] [US1] Integration test verifying token can authenticate with LiveKit SDK in tests/integration/generateToken.test.ts
 
 ### Implementation for User Story 1
 
-- [ ] T023 [US1] Implement LiveKitTokenService.generateToken() method in api/src/services/LiveKitTokenService.ts using @livekit/server-sdk
-- [ ] T024 [US1] Implement token expiration logic with 1-hour default in api/src/services/LiveKitTokenService.ts
-- [ ] T025 [US1] Implement audio permissions (canPublish, canSubscribe) configuration in api/src/services/LiveKitTokenService.ts
-- [ ] T026 [US1] Create generateToken HTTP trigger function in api/src/functions/generateToken.ts
-- [ ] T027 [US1] Implement request body parsing and Zod validation in api/src/functions/generateToken.ts
-- [ ] T028 [US1] Implement success response formatting (200 OK) in api/src/functions/generateToken.ts
-- [ ] T029 [US1] Add structured logging with context.log for token generation requests in api/src/functions/generateToken.ts
-- [ ] T030 [US1] Register generateToken function in Azure Functions app with POST method and anonymous auth level
+- [X] T023 [US1] Implement LiveKitTokenService.generateToken() method in api/src/services/LiveKitTokenService.ts using @livekit/server-sdk
+- [X] T024 [US1] Implement token expiration logic with 1-hour default in api/src/services/LiveKitTokenService.ts
+- [X] T025 [US1] Implement audio permissions (canPublish, canSubscribe) configuration in api/src/services/LiveKitTokenService.ts
+- [X] T026 [US1] Create generateToken HTTP trigger function in api/src/functions/generateToken.ts
+- [X] T027 [US1] Implement request body parsing and Zod validation in api/src/functions/generateToken.ts
+- [X] T028 [US1] Implement success response formatting (200 OK) in api/src/functions/generateToken.ts
+- [X] T029 [US1] Add structured logging with context.log for token generation requests in api/src/functions/generateToken.ts
+- [X] T030 [US1] Register generateToken function in Azure Functions app with POST method and anonymous auth level
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - frontend can successfully request and receive valid LiveKit tokens
 
@@ -95,22 +95,22 @@
 
 ### Tests for User Story 2 (MANDATORY - Constitutional Requirement) ✅
 
-- [ ] T031 [P] [US2] Unit test for validation of missing roomName in tests/unit/validation.test.ts
-- [ ] T032 [P] [US2] Unit test for validation of missing participantIdentity in tests/unit/validation.test.ts
-- [ ] T033 [P] [US2] Unit test for validation of invalid roomName pattern in tests/unit/validation.test.ts
-- [ ] T034 [P] [US2] Unit test for validation of invalid participantIdentity pattern in tests/unit/validation.test.ts
-- [ ] T035 [P] [US2] Unit test for validation of roomName exceeding max length in tests/unit/validation.test.ts
-- [ ] T036 [P] [US2] Integration test for POST /api/token with missing roomName returns 400 in tests/integration/generateToken.test.ts
-- [ ] T037 [P] [US2] Integration test for POST /api/token with missing participantIdentity returns 400 in tests/integration/generateToken.test.ts
-- [ ] T038 [P] [US2] Integration test for POST /api/token with invalid roomName format returns 400 with validation details in tests/integration/generateToken.test.ts
+- [X] T031 [P] [US2] Unit test for validation of missing roomName in tests/unit/validation.test.ts
+- [X] T032 [P] [US2] Unit test for validation of missing participantIdentity in tests/unit/validation.test.ts
+- [X] T033 [P] [US2] Unit test for validation of invalid roomName pattern in tests/unit/validation.test.ts
+- [X] T034 [P] [US2] Unit test for validation of invalid participantIdentity pattern in tests/unit/validation.test.ts
+- [X] T035 [P] [US2] Unit test for validation of roomName exceeding max length in tests/unit/validation.test.ts
+- [X] T036 [P] [US2] Integration test for POST /api/token with missing roomName returns 400 in tests/integration/generateToken.test.ts
+- [X] T037 [P] [US2] Integration test for POST /api/token with missing participantIdentity returns 400 in tests/integration/generateToken.test.ts
+- [X] T038 [P] [US2] Integration test for POST /api/token with invalid roomName format returns 400 with validation details in tests/integration/generateToken.test.ts
 
 ### Implementation for User Story 2
 
-- [ ] T039 [US2] Implement validateTokenRequest() function in api/src/utils/validation.ts using Zod schema
-- [ ] T040 [US2] Implement formatValidationError() helper in api/src/utils/validation.ts to convert Zod errors to ErrorResponse
-- [ ] T041 [US2] Add try-catch validation error handling in api/src/functions/generateToken.ts
-- [ ] T042 [US2] Implement 400 error response formatting with validation details in api/src/functions/generateToken.ts
-- [ ] T043 [US2] Add error logging with validation failure context in api/src/functions/generateToken.ts
+- [X] T039 [US2] Implement validateTokenRequest() function in api/src/utils/validation.ts using Zod schema
+- [X] T040 [US2] Implement formatValidationError() helper in api/src/utils/validation.ts to convert Zod errors to ErrorResponse
+- [X] T041 [US2] Add try-catch validation error handling in api/src/functions/generateToken.ts
+- [X] T042 [US2] Implement 400 error response formatting with validation details in api/src/functions/generateToken.ts
+- [X] T043 [US2] Add error logging with validation failure context in api/src/functions/generateToken.ts
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently - valid requests succeed, invalid requests fail gracefully with clear errors
 
@@ -124,20 +124,20 @@
 
 ### Tests for User Story 3 (MANDATORY - Constitutional Requirement) ✅
 
-- [ ] T044 [P] [US3] Unit test for token generation with custom expiration (7200 seconds) in tests/unit/LiveKitTokenService.test.ts
-- [ ] T045 [P] [US3] Unit test for token generation with minimum expiration (60 seconds) in tests/unit/LiveKitTokenService.test.ts
-- [ ] T046 [P] [US3] Unit test for token generation with maximum expiration (86400 seconds) in tests/unit/LiveKitTokenService.test.ts
-- [ ] T047 [P] [US3] Unit test for validation of expirationSeconds below minimum (59 seconds) in tests/unit/validation.test.ts
-- [ ] T048 [P] [US3] Unit test for validation of expirationSeconds above maximum (86401 seconds) in tests/unit/validation.test.ts
-- [ ] T049 [P] [US3] Integration test for POST /api/token with custom expiration verifies JWT exp claim in tests/integration/generateToken.test.ts
-- [ ] T050 [P] [US3] Integration test for POST /api/token with invalid expiration returns 400 in tests/integration/generateToken.test.ts
+- [X] T044 [P] [US3] Unit test for token generation with custom expiration (7200 seconds) in tests/unit/LiveKitTokenService.test.ts
+- [X] T045 [P] [US3] Unit test for token generation with minimum expiration (60 seconds) in tests/unit/LiveKitTokenService.test.ts
+- [X] T046 [P] [US3] Unit test for token generation with maximum expiration (86400 seconds) in tests/unit/LiveKitTokenService.test.ts
+- [X] T047 [P] [US3] Unit test for validation of expirationSeconds below minimum (59 seconds) in tests/unit/validation.test.ts
+- [X] T048 [P] [US3] Unit test for validation of expirationSeconds above maximum (86401 seconds) in tests/unit/validation.test.ts
+- [X] T049 [P] [US3] Integration test for POST /api/token with custom expiration verifies JWT exp claim in tests/integration/generateToken.test.ts
+- [X] T050 [P] [US3] Integration test for POST /api/token with invalid expiration returns 400 in tests/integration/generateToken.test.ts
 
 ### Implementation for User Story 3
 
-- [ ] T051 [US3] Add expirationSeconds parameter handling in api/src/services/LiveKitTokenService.ts
-- [ ] T052 [US3] Implement default expiration (3600) when parameter omitted in api/src/services/LiveKitTokenService.ts
-- [ ] T053 [US3] Add expirationSeconds validation to Zod schema (60-86400 range) in api/src/utils/validation.ts
-- [ ] T054 [US3] Update TokenResponse to include calculated expiresAt timestamp in api/src/functions/generateToken.ts
+- [X] T051 [US3] Add expirationSeconds parameter handling in api/src/services/LiveKitTokenService.ts
+- [X] T052 [US3] Implement default expiration (3600) when parameter omitted in api/src/services/LiveKitTokenService.ts
+- [X] T053 [US3] Add expirationSeconds validation to Zod schema (60-86400 range) in api/src/utils/validation.ts
+- [X] T054 [US3] Update TokenResponse to include calculated expiresAt timestamp in api/src/functions/generateToken.ts
 
 **Checkpoint**: All user stories should now be independently functional - tokens can be generated with default or custom expiration times
 
@@ -149,17 +149,17 @@
 
 ### Tests for Error Handling ✅
 
-- [ ] T055 [P] Unit test for missing LIVEKIT_API_KEY environment variable in tests/unit/LiveKitTokenService.test.ts
-- [ ] T056 [P] Unit test for missing LIVEKIT_API_SECRET environment variable in tests/unit/LiveKitTokenService.test.ts
-- [ ] T057 [P] Integration test for POST /api/token when credentials missing returns 500 in tests/integration/generateToken.test.ts
-- [ ] T058 [P] Integration test for POST /api/token when SDK throws error returns 500 in tests/integration/generateToken.test.ts
+- [X] T055 [P] Unit test for missing LIVEKIT_API_KEY environment variable in tests/unit/LiveKitTokenService.test.ts
+- [X] T056 [P] Unit test for missing LIVEKIT_API_SECRET environment variable in tests/unit/LiveKitTokenService.test.ts
+- [X] T057 [P] Integration test for POST /api/token when credentials missing returns 500 in tests/integration/generateToken.test.ts
+- [X] T058 [P] Integration test for POST /api/token when SDK throws error returns 500 in tests/integration/generateToken.test.ts
 
 ### Implementation for Error Handling
 
-- [ ] T059 Implement missing credentials check in api/src/utils/config.ts with descriptive error
-- [ ] T060 Add try-catch for LiveKit SDK errors in api/src/services/LiveKitTokenService.ts
-- [ ] T061 Implement 500 error response formatting for server errors in api/src/functions/generateToken.ts
-- [ ] T062 Add error logging with full context for debugging in api/src/functions/generateToken.ts
+- [X] T059 Implement missing credentials check in api/src/utils/config.ts with descriptive error
+- [X] T060 Add try-catch for LiveKit SDK errors in api/src/services/LiveKitTokenService.ts
+- [X] T061 Implement 500 error response formatting for server errors in api/src/functions/generateToken.ts
+- [X] T062 Add error logging with full context for debugging in api/src/functions/generateToken.ts
 
 ---
 
@@ -167,15 +167,15 @@
 
 **Purpose**: Improvements that affect multiple user stories and production readiness
 
-- [ ] T063 [P] Create comprehensive README.md in api/ folder with setup instructions
+- [X] T063 [P] Create comprehensive README.md in api/ folder with setup instructions
 - [ ] T064 [P] Verify quickstart.md cURL examples work with actual implementation
 - [ ] T065 [P] Add OpenAPI contract validation tests comparing implementation to contracts/token-api.openapi.yaml
-- [ ] T066 Update local.settings.json.example with all required environment variables and comments
+- [X] T066 Update local.settings.json.example with all required environment variables and comments
 - [ ] T067 [P] Add JSDoc comments to all public methods and interfaces
 - [ ] T068 [P] Run ESLint and fix any linting issues across all source files
-- [ ] T069 Verify test coverage meets >80% threshold per research.md
+- [X] T069 Verify test coverage meets >80% threshold per research.md
 - [ ] T070 [P] Add Application Insights instrumentation for production monitoring (optional)
-- [ ] T071 Run full test suite and verify all tests pass
+- [X] T071 Run full test suite and verify all tests pass
 - [ ] T072 Run quickstart.md validation with local Azure Functions runtime
 
 ---

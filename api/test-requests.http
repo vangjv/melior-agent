@@ -1,0 +1,121 @@
+### LiveKit Token Generation API - HTTP Examples
+### Use with REST Client extension in VS Code
+
+@baseUrl = http://localhost:7071
+@apiPath = /api/token
+
+### 1. Generate token with minimal required fields
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "consultation-room-123",
+  "participantIdentity": "user-abc-456"
+}
+
+### 2. Generate token with all fields (custom expiration and participant name)
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "therapy-session-789",
+  "participantIdentity": "patient-xyz-123",
+  "expirationSeconds": 7200,
+  "participantName": "Dr. Sarah Johnson"
+}
+
+### 3. Generate token with short expiration (1 minute)
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "quick-test-room",
+  "participantIdentity": "tester-001",
+  "expirationSeconds": 60
+}
+
+### 4. Generate token with maximum expiration (24 hours)
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "long-session-room",
+  "participantIdentity": "admin-user-456",
+  "expirationSeconds": 86400,
+  "participantName": "Administrator"
+}
+
+### 5. Test validation error - missing roomName (expects 400)
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "participantIdentity": "user-123"
+}
+
+### 6. Test validation error - missing participantIdentity (expects 400)
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "test-room"
+}
+
+### 7. Test validation error - invalid roomName pattern (expects 400)
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "room with spaces!",
+  "participantIdentity": "user-123"
+}
+
+### 8. Test validation error - invalid participantIdentity pattern (expects 400)
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "test-room",
+  "participantIdentity": "user@email.com"
+}
+
+### 9. Test validation error - expiration too low (expects 400)
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "test-room",
+  "participantIdentity": "user-123",
+  "expirationSeconds": 30
+}
+
+### 10. Test validation error - expiration too high (expects 400)
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "test-room",
+  "participantIdentity": "user-123",
+  "expirationSeconds": 90000
+}
+
+### 11. Test validation error - non-integer expiration (expects 400)
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "test-room",
+  "participantIdentity": "user-123",
+  "expirationSeconds": 3600.5
+}
+
+### 12. Production-like example with real room naming
+POST {{baseUrl}}{{apiPath}}
+Content-Type: application/json
+
+{
+  "roomName": "melior-session-2025-10-24-1530",
+  "participantIdentity": "patient-JD-20251024",
+  "expirationSeconds": 3600,
+  "participantName": "Patient J.D."
+}
