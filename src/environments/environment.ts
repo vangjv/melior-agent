@@ -5,6 +5,6 @@
 export const environment = {
   production: true,
   livekit: {
-    serverUrl: '', // Set via environment variable or deployment config
+    serverUrl: 'wss://meliority-ovsmyj9c.livekit.cloud', // Set via environment variable or deployment config
   },
 };
