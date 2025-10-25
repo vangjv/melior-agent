@@ -131,6 +131,54 @@
   }
 }
 
+// T072-T074: Mode error message display (User Story 2)
+.mode-error-message {
+  padding: var(--spacing-md);
+  background-color: #fff3e0;
+  color: #e65100;
+  border-left: 4px solid #ff9800;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+
+  @media (prefers-contrast: high) {
+    border: 2px solid #ff9800;
+  }
+}
+
+// T057, T140: Mode toggle container with responsive positioning
+.mode-toggle-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-md);
+
+  // T140: Desktop - top-right positioning
+  @media (min-width: 768px) {
+    position: fixed;
+    top: var(--spacing-lg);
+    right: var(--spacing-lg);
+    padding: 0;
+    z-index: 100;
+  }
+
+  // T140: Mobile - bottom-right fixed position
+  @media (max-width: 767px) {
+    position: fixed;
+    bottom: calc(var(--spacing-xl) + 60px); // Above connection button
+    right: var(--spacing-md);
+    padding: 0;
+    z-index: 100;
+  }
+
+  // T142: Landscape mode handling
+  @media (max-height: 500px) and (orientation: landscape) {
+    position: static;
+    justify-content: flex-end;
+    padding: var(--spacing-sm);
+  }
+}
+
 .button-container {
   display: flex;
   justify-content: center;

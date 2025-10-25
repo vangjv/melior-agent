@@ -1,0 +1,86 @@
+/**
+ * T044: Mode Toggle Button Styles
+ * Ensures minimum 44x44px touch target and sufficient color contrast
+ */
+
+:host {
+  display: block;
+}
+
+.mode-toggle-button {
+  // T044: Minimum 44x44px touch target for accessibility
+  min-width: 44px;
+  min-height: 44px;
+
+  // Ensure comfortable spacing
+  padding: 12px 24px;
+
+  // Flex layout for icon and label
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  // T143: Use rem units for font size to support browser text scaling (US5)
+  font-size: 1rem;
+
+  // Ensure text doesn't wrap awkwardly
+  white-space: nowrap;
+
+  // Smooth transitions for better UX
+  transition: all 0.2s ease-in-out;
+
+  mat-icon {
+    // Icon sizing
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+
+    // Prevent icon from shrinking
+    flex-shrink: 0;
+  }
+
+  .button-spinner {
+    // Spinner sizing to match icon
+    flex-shrink: 0;
+  }
+
+  .button-label {
+    // Ensure label is visible
+    display: inline-block;
+  }
+}
+
+// T069: Color theming - different colors for voice (primary) vs chat (accent)
+// Voice mode uses primary color (defined in Material theme)
+// Chat mode uses accent color (defined in Material theme)
+// Material button automatically handles color contrast for accessibility
+
+// T138: Mobile responsive styles (User Story 5)
+@media (max-width: 767px) {
+  .mode-toggle-button {
+    // T139: Ensure minimum touch target on mobile
+    min-width: 44px;
+    min-height: 44px;
+
+    // Adjust padding for mobile
+    padding: 10px 20px;
+
+    // Slightly smaller font on very small screens
+    @media (max-width: 360px) {
+      font-size: 0.9rem;
+      padding: 8px 16px;
+    }
+  }
+}
+
+// T142: Landscape mode handling (User Story 5)
+@media (max-height: 500px) and (orientation: landscape) {
+  .mode-toggle-button {
+    // Reduce vertical padding in landscape
+    padding: 8px 20px;
+
+    // Ensure minimum touch target is still met
+    min-height: 44px;
+  }
+}

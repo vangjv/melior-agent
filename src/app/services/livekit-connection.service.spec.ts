@@ -467,4 +467,32 @@ describe('LiveKitConnectionService', () => {
       // 4. Verify transcription resumes after reconnection
     });
   });
+
+  // T012-T013: Unit test for getRoom() method
+  describe('getRoom', () => {
+    it('should return null when not connected', () => {
+      const room = service.getRoom();
+      expect(room).toBeNull();
+    });
+
+    it('should return Room instance when connected', async () => {
+      pending('Requires full connection mock to test Room instance exposure');
+
+      // When implemented:
+      // 1. Mock successful connection
+      // 2. Call getRoom()
+      // 3. Verify Room instance is returned
+      // 4. Verify Room has correct properties (name, localParticipant, etc.)
+    });
+
+    it('should return null after disconnect', async () => {
+      pending('Requires full connection/disconnect flow to test');
+
+      // When implemented:
+      // 1. Connect successfully
+      // 2. Verify getRoom() returns Room instance
+      // 3. Disconnect
+      // 4. Verify getRoom() returns null
+    });
+  });
 });

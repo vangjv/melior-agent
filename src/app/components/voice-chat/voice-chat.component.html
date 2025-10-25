@@ -45,7 +45,25 @@
         {{ error }}
       </div>
     }
+
+    <!-- T072-T074: Mode error message display (User Story 2) -->
+    @if (modeErrorMessage(); as modeError) {
+      <div class="mode-error-message" role="alert">
+        {{ modeError }}
+      </div>
+    }
   </div>
+
+  <!-- T054-T057: Mode toggle button (positioned prominently) -->
+  @if (isConnected()) {
+    <div class="mode-toggle-container">
+      <app-mode-toggle-button
+        [currentMode]="currentMode()"
+        [isPending]="isPending()"
+        (onToggle)="handleModeToggle()"
+      />
+    </div>
+  }
 
   <!-- Connection button -->
   <div class="button-container">

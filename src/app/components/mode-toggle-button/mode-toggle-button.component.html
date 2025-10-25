@@ -1,0 +1,21 @@
+<!-- T043: Mode Toggle Button Template -->
+<button
+  mat-raised-button
+  [color]="currentMode() === 'voice' ? 'primary' : 'accent'"
+  [disabled]="isButtonDisabled()"
+  [attr.aria-label]="ariaLabel()"
+  [attr.aria-pressed]="currentMode() === 'voice'"
+  [attr.aria-busy]="isPending()"
+  (click)="handleClick()"
+  class="mode-toggle-button"
+>
+  <!-- Show spinner when pending -->
+  @if (isPending()) {
+    <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
+  } @else {
+    <mat-icon [attr.aria-hidden]="true">{{ buttonIcon() }}</mat-icon>
+  }
+
+  <!-- Button label -->
+  <span class="button-label">{{ pendingLabel() }}</span>
+</button>

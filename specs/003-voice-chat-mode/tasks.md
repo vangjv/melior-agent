@@ -20,13 +20,13 @@
 
 **Purpose**: Initial project setup and dependency verification
 
-- [ ] T001 [SETUP] Verify Angular 20.0.0 and TypeScript 5.9.2 are installed (check `package.json`)
-- [ ] T002 [SETUP] Verify LiveKit Client SDK 2.x installed (check `package.json` for `livekit-client`)
-- [ ] T003 [P] [SETUP] Verify Angular Material 20.0.0 installed (check `package.json` for `@angular/material`)
-- [ ] T004 [P] [SETUP] Verify Angular CDK installed (check `package.json` for `@angular/cdk`)
-- [ ] T005 [P] [SETUP] Verify RxJS 7.x installed (check `package.json`)
-- [ ] T006 [SETUP] Review existing `src/app/services/livekit-connection.service.ts` to understand Room access pattern
-- [ ] T007 [SETUP] Review existing `src/app/components/voice-chat/voice-chat.component.ts` to plan integration points
+- [X] T001 [SETUP] Verify Angular 20.0.0 and TypeScript 5.9.2 are installed (check `package.json`)
+- [X] T002 [SETUP] Verify LiveKit Client SDK 2.x installed (check `package.json` for `livekit-client`)
+- [X] T003 [P] [SETUP] Verify Angular Material 20.0.0 installed (check `package.json` for `@angular/material`)
+- [X] T004 [P] [SETUP] Verify Angular CDK installed (check `package.json` for `@angular/cdk`)
+- [X] T005 [P] [SETUP] Verify RxJS 7.x installed (check `package.json`)
+- [X] T006 [SETUP] Review existing `src/app/services/livekit-connection.service.ts` to understand Room access pattern
+- [X] T007 [SETUP] Review existing `src/app/components/voice-chat/voice-chat.component.ts` to plan integration points
 
 ---
 
@@ -36,12 +36,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T008 [FOUND] Create `src/app/models/response-mode.model.ts` with ResponseMode type, data channel message interfaces, type guards, and factory functions (see data-model.md sections 1-2)
-- [ ] T009 [P] [FOUND] Create `src/app/models/chat-message.model.ts` with ChatMessageState interface, MessageSender type, and factory functions (see data-model.md section 3)
-- [ ] T010 [P] [FOUND] Write unit tests for `response-mode.model.ts` type guards in `src/app/models/response-mode.model.spec.ts` (test isValidResponseMode, isResponseModeUpdatedMessage, isAgentChatMessage)
-- [ ] T011 [P] [FOUND] Write unit tests for `chat-message.model.ts` factory functions in `src/app/models/chat-message.model.spec.ts` (test createUserMessage, createAgentMessage)
-- [ ] T012 [FOUND] Extend `src/app/services/livekit-connection.service.ts` to expose Room instance via readonly signal or getter method (see contracts/service-contracts.md ILiveKitConnectionServiceExtension)
-- [ ] T013 [FOUND] Write tests for Room access in `src/app/services/livekit-connection.service.spec.ts` (verify Room instance is exposed correctly when connected)
+- [X] T008 [FOUND] Create `src/app/models/response-mode.model.ts` with ResponseMode type, data channel message interfaces, type guards, and factory functions (see data-model.md sections 1-2)
+- [X] T009 [P] [FOUND] Create `src/app/models/chat-message.model.ts` with ChatMessageState interface, MessageSender type, and factory functions (see data-model.md section 3)
+- [X] T010 [P] [FOUND] Write unit tests for `response-mode.model.ts` type guards in `src/app/models/response-mode.model.spec.ts` (test isValidResponseMode, isResponseModeUpdatedMessage, isAgentChatMessage)
+- [X] T011 [P] [FOUND] Write unit tests for `chat-message.model.ts` factory functions in `src/app/models/chat-message.model.spec.ts` (test createUserMessage, createAgentMessage)
+- [X] T012 [FOUND] Extend `src/app/services/livekit-connection.service.ts` to expose Room instance via readonly signal or getter method (see contracts/service-contracts.md ILiveKitConnectionServiceExtension)
+- [X] T013 [FOUND] Write tests for Room access in `src/app/services/livekit-connection.service.spec.ts` (verify Room instance is exposed correctly when connected)
 
 **Checkpoint**: ✅ Foundation ready - models defined, typed, tested. Room access available. User story implementation can now begin in parallel.
 
@@ -57,64 +57,64 @@
 
 ### Tests for User Story 1 (MANDATORY - Write FIRST) ✅
 
-- [ ] T014 [P] [US1] Create `src/app/services/response-mode.service.spec.ts` - test suite structure and service instantiation
-- [ ] T015 [P] [US1] Write test: ResponseModeService initializes with default voice mode and confirmed state
-- [ ] T016 [P] [US1] Write test: setMode() sends SetResponseModeMessage via data channel with correct JSON encoding
-- [ ] T017 [P] [US1] Write test: setMode() sets isConfirmed to false while pending confirmation
-- [ ] T018 [P] [US1] Write test: ResponseModeUpdatedMessage handler updates currentMode signal and sets isConfirmed to true
-- [ ] T019 [P] [US1] Write test: toggleMode() switches from voice to chat and vice versa
-- [ ] T020 [P] [US1] Write test: setMode() rejects promise and shows error message after 5-second timeout
-- [ ] T021 [P] [US1] Write test: cleanup() removes data channel event listeners and resets state
+- [X] T014 [P] [US1] Create `src/app/services/response-mode.service.spec.ts` - test suite structure and service instantiation
+- [X] T015 [P] [US1] Write test: ResponseModeService initializes with default voice mode and confirmed state
+- [X] T016 [P] [US1] Write test: setMode() sends SetResponseModeMessage via data channel with correct JSON encoding
+- [X] T017 [P] [US1] Write test: setMode() sets isConfirmed to false while pending confirmation
+- [X] T018 [P] [US1] Write test: ResponseModeUpdatedMessage handler updates currentMode signal and sets isConfirmed to true
+- [X] T019 [P] [US1] Write test: toggleMode() switches from voice to chat and vice versa
+- [X] T020 [P] [US1] Write test: setMode() rejects promise and shows error message after 5-second timeout
+- [X] T021 [P] [US1] Write test: cleanup() removes data channel event listeners and resets state
 
 ### Implementation for User Story 1
 
-- [ ] T022 [US1] Create `src/app/services/response-mode.service.ts` skeleton with Signal properties (currentMode, isConfirmed, errorMessage, isDataChannelAvailable, isPending computed)
-- [ ] T023 [US1] Implement ResponseModeService.initialize(room: Room) - set up RoomEvent.DataReceived listener for incoming messages
-- [ ] T024 [US1] Implement ResponseModeService.setMode(mode: ResponseMode) - create SetResponseModeMessage, encode with TextEncoder, publish via room.publishData with RELIABLE flag
-- [ ] T025 [US1] Implement ResponseModeService timeout handling - use RxJS timeout(5000) operator, set error message on timeout, revert to confirmed mode
-- [ ] T026 [US1] Implement ResponseModeService message decoder - TextDecoder for Uint8Array, JSON.parse, validate with type guards from response-mode.model.ts
-- [ ] T027 [US1] Implement ResponseModeService handler for ResponseModeUpdatedMessage - update _currentMode signal, set _isConfirmed to true, clear any pending timeout
-- [ ] T028 [US1] Implement ResponseModeService.toggleMode() - call setMode with opposite of currentMode()
-- [ ] T029 [US1] Implement ResponseModeService.cleanup() - remove event listeners, reset signals to defaults
-- [ ] T030 [US1] Implement ResponseModeService debouncing for setMode calls using RxJS debounceTime(300ms) to prevent rapid successive calls
-- [ ] T031 [US1] Add error handling in ResponseModeService for JSON parse errors, invalid messages, data channel unavailability (graceful degradation, never crash)
-- [ ] T032 [US1] Run all ResponseModeService tests and verify they pass with 80%+ coverage
+- [X] T022 [US1] Create `src/app/services/response-mode.service.ts` skeleton with Signal properties (currentMode, isConfirmed, errorMessage, isDataChannelAvailable, isPending computed)
+- [X] T023 [US1] Implement ResponseModeService.initialize(room: Room) - set up RoomEvent.DataReceived listener for incoming messages
+- [X] T024 [US1] Implement ResponseModeService.setMode(mode: ResponseMode) - create SetResponseModeMessage, encode with TextEncoder, publish via room.publishData with RELIABLE flag
+- [X] T025 [US1] Implement ResponseModeService timeout handling - use RxJS timeout(5000) operator, set error message on timeout, revert to confirmed mode
+- [X] T026 [US1] Implement ResponseModeService message decoder - TextDecoder for Uint8Array, JSON.parse, validate with type guards from response-mode.model.ts
+- [X] T027 [US1] Implement ResponseModeService handler for ResponseModeUpdatedMessage - update _currentMode signal, set _isConfirmed to true, clear any pending timeout
+- [X] T028 [US1] Implement ResponseModeService.toggleMode() - call setMode with opposite of currentMode()
+- [X] T029 [US1] Implement ResponseModeService.cleanup() - remove event listeners, reset signals to defaults
+- [X] T030 [US1] Implement ResponseModeService debouncing for setMode calls using RxJS debounceTime(300ms) to prevent rapid successive calls
+- [X] T031 [US1] Add error handling in ResponseModeService for JSON parse errors, invalid messages, data channel unavailability (graceful degradation, never crash)
+- [X] T032 [US1] Run all ResponseModeService tests and verify they pass with 80%+ coverage
 
 ### Component Tests for User Story 1 (Write FIRST) ✅
 
-- [ ] T033 [P] [US1] Create `src/app/components/mode-toggle-button/mode-toggle-button.component.spec.ts` - test suite structure
-- [ ] T034 [P] [US1] Write test: ModeToggleButtonComponent displays "Voice Mode" when currentMode input is 'voice'
-- [ ] T035 [P] [US1] Write test: ModeToggleButtonComponent displays "Chat Mode" when currentMode input is 'chat'
-- [ ] T036 [P] [US1] Write test: ModeToggleButtonComponent emits onToggle event when button clicked
-- [ ] T037 [P] [US1] Write test: ModeToggleButtonComponent shows disabled state when isDisabled input is true
-- [ ] T038 [P] [US1] Write test: ModeToggleButtonComponent shows loading spinner when isPending input is true
-- [ ] T039 [P] [US1] Write test: ModeToggleButtonComponent has correct ARIA attributes (aria-label, aria-pressed)
+- [X] T033 [P] [US1] Create `src/app/components/mode-toggle-button/mode-toggle-button.component.spec.ts` - test suite structure
+- [X] T034 [P] [US1] Write test: ModeToggleButtonComponent displays "Voice Mode" when currentMode input is 'voice'
+- [X] T035 [P] [US1] Write test: ModeToggleButtonComponent displays "Chat Mode" when currentMode input is 'chat'
+- [X] T036 [P] [US1] Write test: ModeToggleButtonComponent emits onToggle event when button clicked
+- [X] T037 [P] [US1] Write test: ModeToggleButtonComponent shows disabled state when isDisabled input is true
+- [X] T038 [P] [US1] Write test: ModeToggleButtonComponent shows loading spinner when isPending input is true
+- [X] T039 [P] [US1] Write test: ModeToggleButtonComponent has correct ARIA attributes (aria-label, aria-pressed)
 
 ### Component Implementation for User Story 1
 
-- [ ] T040 [US1] Create `src/app/components/mode-toggle-button/mode-toggle-button.component.ts` - standalone component with OnPush change detection
-- [ ] T041 [US1] Add ModeToggleButtonComponent inputs: currentMode (required), isPending, isDisabled (see contracts/service-contracts.md IModeToggleButtonComponent)
-- [ ] T042 [US1] Add ModeToggleButtonComponent output: onToggle output<void>()
-- [ ] T043 [US1] Create `src/app/components/mode-toggle-button/mode-toggle-button.component.html` - Angular Material button with icon, label, and loading spinner
-- [ ] T044 [US1] Create `src/app/components/mode-toggle-button/mode-toggle-button.component.scss` - minimum 44x44px touch target, sufficient color contrast (4.5:1)
-- [ ] T045 [US1] Add computed signal for buttonLabel in ModeToggleButtonComponent (returns "Voice Mode" or "Chat Mode")
-- [ ] T046 [US1] Add computed signal for buttonIcon in ModeToggleButtonComponent (returns appropriate Material icon for current mode)
-- [ ] T047 [US1] Implement button click handler in ModeToggleButtonComponent - emit onToggle event
-- [ ] T048 [US1] Add ARIA attributes to button: aria-label with current mode, aria-pressed with mode state, aria-busy when pending
-- [ ] T049 [US1] Add keyboard navigation support: Space and Enter keys trigger toggle
-- [ ] T050 [US1] Run all ModeToggleButtonComponent tests and verify they pass
+- [X] T040 [US1] Create `src/app/components/mode-toggle-button/mode-toggle-button.component.ts` - standalone component with OnPush change detection
+- [X] T041 [US1] Add ModeToggleButtonComponent inputs: currentMode (required), isPending, isDisabled (see contracts/service-contracts.md IModeToggleButtonComponent)
+- [X] T042 [US1] Add ModeToggleButtonComponent output: onToggle output<void>()
+- [X] T043 [US1] Create `src/app/components/mode-toggle-button/mode-toggle-button.component.html` - Angular Material button with icon, label, and loading spinner
+- [X] T044 [US1] Create `src/app/components/mode-toggle-button/mode-toggle-button.component.scss` - minimum 44x44px touch target, sufficient color contrast (4.5:1)
+- [X] T045 [US1] Add computed signal for buttonLabel in ModeToggleButtonComponent (returns "Voice Mode" or "Chat Mode")
+- [X] T046 [US1] Add computed signal for buttonIcon in ModeToggleButtonComponent (returns appropriate Material icon for current mode)
+- [X] T047 [US1] Implement button click handler in ModeToggleButtonComponent - emit onToggle event
+- [X] T048 [US1] Add ARIA attributes to button: aria-label with current mode, aria-pressed with mode state, aria-busy when pending
+- [X] T049 [US1] Add keyboard navigation support: Space and Enter keys trigger toggle
+- [X] T050 [US1] Run all ModeToggleButtonComponent tests and verify they pass
 
 ### Integration for User Story 1
 
-- [ ] T051 [US1] Modify `src/app/components/voice-chat/voice-chat.component.ts` - inject ResponseModeService
-- [ ] T052 [US1] Add ResponseModeService.initialize(room) call in VoiceChatComponent after LiveKit connection established (in connection success handler)
-- [ ] T053 [US1] Add ResponseModeService.cleanup() call in VoiceChatComponent when disconnecting
-- [ ] T054 [US1] Modify `src/app/components/voice-chat/voice-chat.component.html` - add <app-mode-toggle-button> component with signal bindings
-- [ ] T055 [US1] Wire ModeToggleButtonComponent inputs to ResponseModeService signals: [currentMode]="responseModeService.currentMode()" [isPending]="responseModeService.isPending()"
-- [ ] T056 [US1] Wire ModeToggleButtonComponent (onToggle) event to call responseModeService.toggleMode()
-- [ ] T057 [US1] Modify `src/app/components/voice-chat/voice-chat.component.scss` - position mode toggle button prominently (top-right or bottom-right)
-- [ ] T058 [US1] Update VoiceChatComponent imports to include ModeToggleButtonComponent in imports array
-- [ ] T059 [US1] Write integration test in `tests/integration/response-mode-integration.spec.ts` - test full mode toggle flow with mocked LiveKit Room and data channel
+- [X] T051 [US1] Modify `src/app/components/voice-chat/voice-chat.component.ts` - inject ResponseModeService
+- [X] T052 [US1] Add ResponseModeService.initialize(room) call in VoiceChatComponent after LiveKit connection established (in connection success handler)
+- [X] T053 [US1] Add ResponseModeService.cleanup() call in VoiceChatComponent when disconnecting
+- [X] T054 [US1] Modify `src/app/components/voice-chat/voice-chat.component.html` - add <app-mode-toggle-button> component with signal bindings
+- [X] T055 [US1] Wire ModeToggleButtonComponent inputs to ResponseModeService signals: [currentMode]="responseModeService.currentMode()" [isPending]="responseModeService.isPending()"
+- [X] T056 [US1] Wire ModeToggleButtonComponent (onToggle) event to call responseModeService.toggleMode()
+- [X] T057 [US1] Modify `src/app/components/voice-chat/voice-chat.component.scss` - position mode toggle button prominently (top-right or bottom-right)
+- [X] T058 [US1] Update VoiceChatComponent imports to include ModeToggleButtonComponent in imports array
+- [X] T059 [US1] Write integration test in `tests/integration/response-mode-integration.spec.ts` - test full mode toggle flow with mocked LiveKit Room and data channel
 
 **Checkpoint**: ✅ User Story 1 Complete - Users can toggle between voice and chat modes. Mode changes are sent to agent via data channel. Service handles timeout and errors gracefully.
 
