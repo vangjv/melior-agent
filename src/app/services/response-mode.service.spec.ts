@@ -4,7 +4,7 @@
  */
 import { TestBed } from '@angular/core/testing';
 import { ResponseModeService } from './response-mode.service';
-import { Room, RoomEvent } from 'livekit-client';
+import { Room, RoomEvent, DataPacket_Kind } from 'livekit-client';
 import { ResponseMode } from '../models/response-mode.model';
 
 describe('ResponseModeService', () => {
@@ -305,6 +305,192 @@ describe('ResponseModeService', () => {
     it('should use RxJS timer for auto-clear mechanism', () => {
       pending('To be implemented with T075 - auto-clear implementation');
       // This will test that the service uses RxJS timer(5000) for error clearing
+    });
+  });
+
+  // User Story 4 Tests: Maintain Mode Across Connection Lifecycle (T117-T122)
+  describe('User Story 4: Connection lifecycle and persistence', () => {
+    const STORAGE_KEY = 'melior-agent-response-mode';
+
+    beforeEach(() => {
+      // Clear localStorage before each test
+      localStorage.clear();
+    });
+
+    afterEach(() => {
+      // Clean up localStorage after each test
+      localStorage.clear();
+    });
+
+    // T117: Mode preference is saved to localStorage when changed
+    it('should save mode preference to localStorage when changed', (done) => {
+      service.initialize(mockRoom);
+      const publishDataSpy = mockRoom.localParticipant.publishData as jasmine.Spy;
+      publishDataSpy.and.returnValue(Promise.resolve());
+
+      // Change mode to chat
+      service.setMode('chat');
+
+      // Simulate confirmation from agent
+      setTimeout(() => {
+        const confirmMessage = {
+          type: 'response_mode_updated',
+          mode: 'chat',
+        };
+        const encoder = new TextEncoder();
+        const data = encoder.encode(JSON.stringify(confirmMessage));
+
+        // Trigger the data received handler manually
+        const onCallback = mockRoom.on.calls.argsFor(0)[1] as any;
+        onCallback(data, null, DataPacket_Kind.RELIABLE, null);
+
+        // Verify localStorage was updated
+        setTimeout(() => {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          expect(stored).toBe('chat');
+          service.cleanup();
+          done();
+        }, 50);
+      }, 50);
+    });
+
+    // T118: Mode preference is loaded from localStorage on service initialization
+    it('should load mode preference from localStorage on initialization', () => {
+      // Set localStorage before service is created
+      localStorage.setItem(STORAGE_KEY, 'chat');
+
+      // Create new service instance
+      const newService = TestBed.inject(ResponseModeService);
+
+      // Should initialize with chat mode from localStorage
+      expect(newService.currentMode()).toBe('chat');
+      expect(newService.isConfirmed()).toBe(true);
+
+      newService.cleanup();
+    });
+
+    // T118: Should handle invalid localStorage values
+    it('should fallback to default mode if localStorage has invalid value', () => {
+      localStorage.setItem(STORAGE_KEY, 'invalid-mode');
+
+      const newService = TestBed.inject(ResponseModeService);
+
+      // Should use default 'voice' mode for invalid value
+      expect(newService.currentMode()).toBe('voice');
+
+      newService.cleanup();
+    });
+
+    // T119: Mode resets to voice (default) when disconnecting
+    it('should reset mode to voice when cleanup is called', (done) => {
+      service.initialize(mockRoom);
+      const publishDataSpy = mockRoom.localParticipant.publishData as jasmine.Spy;
+      publishDataSpy.and.returnValue(Promise.resolve());
+
+      // Change to chat mode
+      service.setMode('chat');
+
+      setTimeout(() => {
+        // Simulate confirmation
+        const confirmMessage = {
+          type: 'response_mode_updated',
+          mode: 'chat',
+        };
+        const encoder = new TextEncoder();
+        const data = encoder.encode(JSON.stringify(confirmMessage));
+        const onCallback = mockRoom.on.calls.argsFor(0)[1] as any;
+        onCallback(data, null, DataPacket_Kind.RELIABLE, null);
+
+        setTimeout(() => {
+          expect(service.currentMode()).toBe('chat');
+
+          // Now cleanup (disconnect)
+          service.cleanup();
+
+          // Should reset to voice
+          expect(service.currentMode()).toBe('voice');
+          expect(service.isConfirmed()).toBe(true);
+          done();
+        }, 50);
+      }, 50);
+    });
+
+    // T120: Mode automatically requests saved preference after reconnection
+    it('should auto-request saved preference after reconnection', (done) => {
+      // Set preferred mode in localStorage
+      localStorage.setItem(STORAGE_KEY, 'chat');
+
+      service.initialize(mockRoom);
+      const publishDataSpy = mockRoom.localParticipant.publishData as jasmine.Spy;
+      publishDataSpy.and.returnValue(Promise.resolve());
+
+      // After initialization, service should attempt to set mode to saved preference
+      // This happens after a brief delay (500ms)
+      setTimeout(() => {
+        expect(publishDataSpy).toHaveBeenCalled();
+
+        // Decode the sent message
+        const callArgs = publishDataSpy.calls.mostRecent().args;
+        const sentData = callArgs[0] as Uint8Array;
+        const decoder = new TextDecoder();
+        const message = JSON.parse(decoder.decode(sentData));
+
+        expect(message.type).toBe('set_response_mode');
+        expect(message.mode).toBe('chat');
+
+        service.cleanup();
+        done();
+      }, 600); // Wait for 500ms delay + buffer
+    });
+
+    // T121: ChatStorageService.clearHistory() is called when disconnecting
+    it('should clear chat history when cleanup is called', () => {
+      service.initialize(mockRoom);
+
+      // Add a chat message
+      const chatMessage = {
+        type: 'chat_message',
+        message: 'Test message',
+        timestamp: Date.now(),
+      };
+      const encoder = new TextEncoder();
+      const data = encoder.encode(JSON.stringify(chatMessage));
+      const onCallback = mockRoom.on.calls.argsFor(0)[1] as any;
+      onCallback(data, null, DataPacket_Kind.RELIABLE, null);
+
+      // Get chat storage service
+      const chatStorage = (service as any).chatStorageService;
+      expect(chatStorage.getHistory().length).toBe(1);
+
+      // Cleanup
+      service.cleanup();
+
+      // Chat history should be cleared
+      expect(chatStorage.getHistory().length).toBe(0);
+    });
+
+    // T122: Mode state is reset to confirmed when cleanup() is called
+    it('should reset mode state to confirmed on cleanup', (done) => {
+      service.initialize(mockRoom);
+      const publishDataSpy = mockRoom.localParticipant.publishData as jasmine.Spy;
+      publishDataSpy.and.returnValue(Promise.resolve());
+
+      // Start mode change (will be pending)
+      service.setMode('chat');
+
+      expect(service.isPending()).toBe(true);
+      expect(service.isConfirmed()).toBe(false);
+
+      // Cleanup before confirmation
+      setTimeout(() => {
+        service.cleanup();
+
+        // Should be reset to confirmed state
+        expect(service.isPending()).toBe(false);
+        expect(service.isConfirmed()).toBe(true);
+        expect(service.currentMode()).toBe('voice');
+        done();
+      }, 50);
     });
   });
 });

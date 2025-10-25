@@ -1,5 +1,5 @@
-import { Injectable, Signal, signal, computed } from '@angular/core';
-import { Room, RoomEvent, DataPacket_Kind, RemoteParticipant } from 'livekit-client';
+import { Injectable, Signal, signal, computed, inject, effect } from '@angular/core';
+import { Room, RoomEvent, DataPacket_Kind, RemoteParticipant, TranscriptionSegment, Participant, TrackPublication } from 'livekit-client';
 import {
   ResponseMode,
   DEFAULT_RESPONSE_MODE,
@@ -7,8 +7,10 @@ import {
   isResponseModeUpdatedMessage,
   isAgentChatMessage,
   isIncomingMessage,
+  isValidResponseMode,
   BaseDataChannelMessage,
 } from '../models/response-mode.model';
+import { ChatStorageService } from './chat-storage.service';
 
 /**
  * Service for managing voice/chat response mode state and data channel communication
@@ -18,11 +20,20 @@ import {
  * - Listen for mode confirmation and chat messages from agent
  * - Manage response mode state with timeout handling
  * - Provide reactive state via Angular Signals
+ * - Coordinate with ChatStorageService to store agent chat messages
+ * - Coordinate with transcription events to store user messages in chat mode (T109)
+ * - Persist mode preference to localStorage (T123-T124)
  */
 @Injectable({
   providedIn: 'root',
 })
 export class ResponseModeService {
+  // T124: LocalStorage key for mode preference persistence
+  private static readonly STORAGE_KEY_MODE_PREFERENCE = 'melior-agent-response-mode';
+
+  // Inject ChatStorageService for handling agent chat messages
+  private readonly chatStorageService = inject(ChatStorageService);
+
   // Private mutable state
   private _currentMode = signal<ResponseMode>(DEFAULT_RESPONSE_MODE);
   private _isConfirmed = signal<boolean>(true);
@@ -36,6 +47,13 @@ export class ResponseModeService {
     participant?: RemoteParticipant,
     kind?: DataPacket_Kind,
     topic?: string
+  ) => void) | null = null;
+
+  // T109: Transcription event handler for user messages in chat mode
+  private _transcriptionReceivedHandler: ((
+    segments: TranscriptionSegment[],
+    participant?: Participant,
+    publication?: TrackPublication
   ) => void) | null = null;
 
   // Timeout handling for mode confirmations
@@ -52,11 +70,25 @@ export class ResponseModeService {
   // Computed signals
   readonly isPending = computed(() => !this._isConfirmed());
 
-  constructor() {}
+  constructor() {
+    // T126: Load preferred mode from localStorage on initialization
+    const preferredMode = this.loadPreferredMode();
+    this._currentMode.set(preferredMode);
+
+    // T123: Save mode preference to localStorage when changed (using effect)
+    effect(() => {
+      const mode = this._currentMode();
+      if (this._isConfirmed()) {
+        // Only save confirmed mode changes
+        localStorage.setItem(ResponseModeService.STORAGE_KEY_MODE_PREFERENCE, mode);
+      }
+    });
+  }
 
   /**
    * Initialize the service with a LiveKit Room instance
-   * Sets up data channel listeners
+   * Sets up data channel listeners and transcription listeners
+   * Auto-requests preferred mode after initialization (T128)
    *
    * @param room - LiveKit Room instance
    */
@@ -68,12 +100,30 @@ export class ResponseModeService {
     this._dataReceivedHandler = this.handleDataReceived.bind(this);
     room.on(RoomEvent.DataReceived, this._dataReceivedHandler);
 
+    // T109: Set up transcription event listener for user messages in chat mode
+    const handler = this.handleTranscriptionReceived.bind(this);
+    this._transcriptionReceivedHandler = handler;
+    room.on(RoomEvent.TranscriptionReceived, handler);
+
     console.log('ResponseModeService initialized with Room');
+
+    // T128: Auto-request preferred mode after brief delay to allow connection to stabilize
+    setTimeout(() => {
+      const preferredMode = this.loadPreferredMode();
+      if (preferredMode !== DEFAULT_RESPONSE_MODE) {
+        // Only request if different from default
+        this.setMode(preferredMode).catch((error) => {
+          console.warn('Failed to restore preferred mode:', error);
+        });
+      }
+    }, 500);
   }
 
   /**
    * Cleanup when disconnecting
    * Removes event listeners and resets state
+   * Clears chat message history (T127)
+   * Resets mode to voice (T129)
    */
   cleanup(): void {
     // Clear any pending timeout
@@ -89,15 +139,24 @@ export class ResponseModeService {
       this._pendingModeResolve = null;
     }
 
-    // Remove event listener
-    if (this._room && this._dataReceivedHandler) {
-      this._room.off(RoomEvent.DataReceived, this._dataReceivedHandler);
-      this._dataReceivedHandler = null;
+    // Remove event listeners
+    if (this._room) {
+      if (this._dataReceivedHandler) {
+        this._room.off(RoomEvent.DataReceived, this._dataReceivedHandler);
+        this._dataReceivedHandler = null;
+      }
+      if (this._transcriptionReceivedHandler) {
+        this._room.off(RoomEvent.TranscriptionReceived, this._transcriptionReceivedHandler);
+        this._transcriptionReceivedHandler = null;
+      }
     }
 
-    // Reset state
+    // T127: Clear chat message history
+    this.chatStorageService.clearHistory();
+
+    // T129: Reset state to voice mode (default) and confirmed
     this._room = null;
-    this._currentMode.set(DEFAULT_RESPONSE_MODE);
+    this._currentMode.set('voice');
     this._isConfirmed.set(true);
     this._errorMessage.set(null);
     this._isDataChannelAvailable.set(false);
@@ -261,12 +320,59 @@ export class ResponseModeService {
 
   /**
    * Handle AgentChatMessage from agent
-   * (Will be integrated with ChatStorageService in User Story 3)
+   * Stores the message in ChatStorageService for display
    *
    * @private
    */
   private handleAgentChatMessage(message: string, timestamp: number): void {
     console.log(`Received AgentChatMessage: ${message} at ${timestamp}`);
-    // TODO: Integrate with ChatStorageService in User Story 3 (T108)
+
+    // Add agent message to chat history (T108)
+    this.chatStorageService.addMessage(message, 'agent');
+  }
+
+  /**
+   * Handle transcription events for user messages in chat mode (T109)
+   * When in chat mode, store final user transcriptions as chat messages
+   *
+   * @private
+   */
+  private handleTranscriptionReceived(
+    segments: TranscriptionSegment[],
+    participant?: Participant,
+    publication?: TrackPublication
+  ): void {
+    // Only process if in chat mode
+    if (this._currentMode() !== 'chat') {
+      return;
+    }
+
+    // Process each transcription segment
+    segments.forEach((segment) => {
+      // Only store final transcriptions from the local participant (user)
+      if (segment.final && participant?.isLocal) {
+        this.chatStorageService.addMessage(segment.text, 'user');
+        console.log(`Added user message to chat: ${segment.text}`);
+      }
+    });
+  }
+
+  /**
+   * T125: Load preferred mode from localStorage
+   * Returns stored mode if valid, otherwise returns default
+   *
+   * @private
+   * @returns Preferred ResponseMode from localStorage or default
+   */
+  private loadPreferredMode(): ResponseMode {
+    try {
+      const stored = localStorage.getItem(ResponseModeService.STORAGE_KEY_MODE_PREFERENCE);
+      if (stored && isValidResponseMode(stored)) {
+        return stored;
+      }
+    } catch (error) {
+      console.warn('Failed to load mode preference from localStorage:', error);
+    }
+    return DEFAULT_RESPONSE_MODE;
   }
 }

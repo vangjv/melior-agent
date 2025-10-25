@@ -6,7 +6,8 @@ Voice chat transcription application built with Angular 20, LiveKit, and Azure F
 
 - 🎤 **Voice Chat**: Connect to LiveKit voice agent for real-time conversation
 - 📝 **Live Transcription**: Real-time transcription of both user and agent speech
-- 🔄 **Auto-Reconnection**: Automatic reconnection with exponential backoff on network interruptions
+- � **Chat Mode Toggle**: Switch between voice and text-based chat responses
+- �🔄 **Auto-Reconnection**: Automatic reconnection with exponential backoff on network interruptions
 - 📱 **Mobile-First**: Responsive design optimized for mobile devices
 - ♿ **Accessible**: WCAG 2.1 AA compliant with screen reader support
 - 🔒 **Secure**: Token-based authentication via Azure Functions backend
@@ -62,9 +63,36 @@ Voice chat transcription application built with Angular 20, LiveKit, and Azure F
 1. Open http://localhost:4200 in your browser
 2. Click "Connect" to start a voice session
 3. Grant microphone permissions when prompted
-4. Start speaking - your speech will be transcribed in real-time
-5. The AI agent will respond, and responses will also be transcribed
-6. Click "Disconnect" when finished
+4. **Toggle Response Mode** (optional):
+   - Click the mode toggle button to switch between **Voice Mode** and **Chat Mode**
+   - **Voice Mode**: Agent responds with synthesized speech (default)
+   - **Chat Mode**: Agent responds with text messages displayed on screen
+   - Your preference is saved and automatically applied on reconnect
+5. Start speaking - your speech will be transcribed in real-time
+6. The AI agent will respond according to the selected mode:
+   - In Voice Mode: Spoken responses are transcribed
+   - In Chat Mode: Text responses are displayed in the chat window
+7. Click "Disconnect" when finished
+
+### Response Mode Toggle
+
+The mode toggle button allows you to choose how the agent responds:
+
+- **🎤 Voice Mode** (default): Agent speaks responses aloud
+- **💬 Chat Mode**: Agent sends text messages to the chat display
+
+**Features:**
+- Seamless switching without disconnecting
+- Visual feedback shows current mode and pending state
+- Mode preference persists across sessions
+- Mobile-optimized with 44x44px touch target
+- Accessible with ARIA labels and keyboard navigation
+
+**Usage Tips:**
+- Use Voice Mode for hands-free conversation
+- Switch to Chat Mode in quiet environments or to review agent responses
+- Chat history is preserved during the session but cleared on disconnect
+- The button shows "Switching..." while waiting for agent confirmation
 
 ## Development
 
@@ -75,11 +103,17 @@ src/
   app/
     components/          # UI components
       connection-button/ # Connect/disconnect button
+      mode-toggle-button/ # Voice/Chat mode toggle (NEW)
+      chat-message-display/ # Chat message list (NEW)
       transcription-display/ # Transcription list view
       voice-chat/        # Main chat container
     models/              # TypeScript interfaces
+      chat-message.model.ts     # Chat message types (NEW)
+      response-mode.model.ts    # Response mode types (NEW)
     services/            # Business logic
       livekit-connection.service.ts  # Connection management
+      response-mode.service.ts      # Mode toggle logic (NEW)
+      chat-storage.service.ts       # Chat history (NEW)
       transcription.service.ts       # Transcription handling
       token.service.ts              # Backend API integration
   environments/          # Environment configs
@@ -192,9 +226,10 @@ Enable console logging by opening browser DevTools (F12). The app logs:
 
 ## Documentation
 
-- [Feature Specification](specs/001-voice-chat-transcription/spec.md)
+- [Voice Chat Transcription](specs/001-voice-chat-transcription/spec.md)
+- [LiveKit Token API](specs/002-livekit-token-api/spec.md)
+- [Voice/Chat Mode Toggle](specs/003-voice-chat-mode/spec.md) **NEW**
 - [Implementation Plan](specs/001-voice-chat-transcription/plan.md)
-- [API Documentation](specs/002-livekit-token-api/spec.md)
 - [Angular Best Practices](.github/copilot-instructions.md)
 
 ## License

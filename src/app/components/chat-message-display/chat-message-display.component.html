@@ -1,0 +1,58 @@
+<!-- Chat Message Display Component Template -->
+<div class="chat-messages-wrapper">
+  <!-- Virtual Scrolling for large message lists (>100 messages) -->
+  @if (useVirtualScrolling()) {
+    <cdk-virtual-scroll-viewport
+      itemSize="60"
+      class="chat-messages-container virtual-scroll"
+    >
+      <article
+        *cdkVirtualFor="let message of messages(); trackBy: trackByMessageId"
+        class="chat-message"
+        [class.user]="message.sender === 'user'"
+        [class.agent]="message.sender === 'agent'"
+      >
+        <div class="message-content">
+          <span class="message-text">{{ message.content }}</span>
+          <time
+            class="message-timestamp"
+            [attr.datetime]="message.timestamp.toISOString()"
+          >
+            {{ formatTimestamp(message.timestamp) }}
+          </time>
+        </div>
+      </article>
+    </cdk-virtual-scroll-viewport>
+  } @else {
+    <!-- Regular scrolling for smaller message lists -->
+    <div
+      #scrollContainer
+      class="chat-messages-container"
+      role="log"
+      aria-live="polite"
+      aria-atomic="false"
+    >
+      @for (message of messages(); track trackByMessageId($index, message)) {
+        <article
+          class="chat-message"
+          [class.user]="message.sender === 'user'"
+          [class.agent]="message.sender === 'agent'"
+        >
+          <div class="message-content">
+            <span class="message-text">{{ message.content }}</span>
+            <time
+              class="message-timestamp"
+              [attr.datetime]="message.timestamp.toISOString()"
+            >
+              {{ formatTimestamp(message.timestamp) }}
+            </time>
+          </div>
+        </article>
+      } @empty {
+        <div class="empty-state" aria-label="No messages yet">
+          <p>No messages yet. Start a conversation!</p>
+        </div>
+      }
+    </div>
+  }
+</div>

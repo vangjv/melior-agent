@@ -218,6 +218,49 @@
   }
 }
 
+// T113: Chat display container layout (User Story 3)
+.chat-display-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  min-height: 0; // Allow flex child to shrink
+
+  .chat-title {
+    padding: var(--spacing-md);
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  app-chat-message-display {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden; // Prevent overflow from child
+  }
+
+  @media (min-width: 768px) {
+    .chat-title {
+      font-size: 1.5rem;
+      padding: var(--spacing-lg);
+    }
+  }
+
+  // T144: Responsive layout for chat display
+  @media (max-width: 767px) {
+    width: 100%; // Full width on mobile
+  }
+
+  @media (min-width: 768px) {
+    max-width: 800px; // Max width on desktop
+  }
+}
+
 // High contrast mode support
 @media (prefers-contrast: high) {
   .voice-chat-container {
@@ -225,7 +268,8 @@
   }
 
   .connection-status,
-  .transcription-container {
+  .transcription-container,
+  .chat-display-container {
     border: 1px solid #000;
   }
 }

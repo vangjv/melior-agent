@@ -84,4 +84,12 @@
       />
     </div>
   }
+
+  <!-- T110-T112: Chat message display when in chat mode -->
+  @if (isConnected() && showChatDisplay()) {
+    <div class="chat-display-container">
+      <h2 class="chat-title">Chat Messages</h2>
+      <app-chat-message-display [messages]="chatMessages()" />
+    </div>
+  }
 </div>

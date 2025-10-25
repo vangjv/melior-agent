@@ -1,13 +1,16 @@
 /**
  * Integration tests for Response Mode Toggle feature
  * T059: Tests full mode toggle flow with mocked LiveKit Room and data channel
+ * T115: Tests receiving chat messages and verifying display
  */
 import { TestBed } from '@angular/core/testing';
 import { ResponseModeService } from '../../src/app/services/response-mode.service';
+import { ChatStorageService } from '../../src/app/services/chat-storage.service';
 import { Room, RoomEvent, DataPacket_Kind } from 'livekit-client';
 
 describe('Response Mode Integration Tests', () => {
   let service: ResponseModeService;
+  let chatStorageService: ChatStorageService;
   let mockRoom: jasmine.SpyObj<Room>;
   let dataReceivedCallback: Function;
 
@@ -30,10 +33,11 @@ describe('Response Mode Integration Tests', () => {
     });
 
     TestBed.configureTestingModule({
-      providers: [ResponseModeService],
+      providers: [ResponseModeService, ChatStorageService],
     });
 
     service = TestBed.inject(ResponseModeService);
+    chatStorageService = TestBed.inject(ChatStorageService);
   });
 
   afterEach(() => {
@@ -319,6 +323,260 @@ describe('Response Mode Integration Tests', () => {
       expect(service.errorMessage()).toBeNull();
 
       jasmine.clock().uninstall();
+    });
+  });
+
+  describe('Chat message integration (User Story 3 - T115)', () => {
+    it('should receive AgentChatMessage and store it in ChatStorageService', () => {
+      service.initialize(mockRoom);
+
+      // Initially no messages
+      expect(chatStorageService.getHistory().length).toBe(0);
+
+      // Simulate receiving a chat message from agent
+      const chatMessage = {
+        type: 'chat_message',
+        message: 'Hello from the agent',
+        timestamp: Date.now(),
+      };
+      const encoder = new TextEncoder();
+      const data = encoder.encode(JSON.stringify(chatMessage));
+
+      dataReceivedCallback(data, null, DataPacket_Kind.RELIABLE, null);
+
+      // Verify message was added to chat storage
+      const messages = chatStorageService.getHistory();
+      expect(messages.length).toBe(1);
+      expect(messages[0].content).toBe('Hello from the agent');
+      expect(messages[0].sender).toBe('agent');
+      expect(messages[0].timestamp).toBeDefined();
+    });
+
+    it('should handle multiple chat messages in sequence', () => {
+      service.initialize(mockRoom);
+
+      const encoder = new TextEncoder();
+
+      // Send first message
+      const message1 = {
+        type: 'chat_message',
+        message: 'First message',
+        timestamp: Date.now(),
+      };
+      dataReceivedCallback(
+        encoder.encode(JSON.stringify(message1)),
+        null,
+        DataPacket_Kind.RELIABLE,
+        null
+      );
+
+      // Send second message
+      const message2 = {
+        type: 'chat_message',
+        message: 'Second message',
+        timestamp: Date.now() + 1000,
+      };
+      dataReceivedCallback(
+        encoder.encode(JSON.stringify(message2)),
+        null,
+        DataPacket_Kind.RELIABLE,
+        null
+      );
+
+      // Verify both messages are stored
+      const messages = chatStorageService.getHistory();
+      expect(messages.length).toBe(2);
+      expect(messages[0].content).toBe('First message');
+      expect(messages[1].content).toBe('Second message');
+    });
+
+    it('should clear chat history on cleanup', () => {
+      service.initialize(mockRoom);
+
+      // Add some messages
+      const chatMessage = {
+        type: 'chat_message',
+        message: 'Test message',
+        timestamp: Date.now(),
+      };
+      const encoder = new TextEncoder();
+      dataReceivedCallback(
+        encoder.encode(JSON.stringify(chatMessage)),
+        null,
+        DataPacket_Kind.RELIABLE,
+        null
+      );
+
+      expect(chatStorageService.getHistory().length).toBe(1);
+
+      // Cleanup should clear history
+      service.cleanup();
+
+      expect(chatStorageService.getHistory().length).toBe(0);
+    });
+
+    it('should handle chat messages with special characters correctly', () => {
+      service.initialize(mockRoom);
+
+      const specialMessage = {
+        type: 'chat_message',
+        message: 'Hello! How are you? 😊 I\'m here to help with "quotes" and <html>',
+        timestamp: Date.now(),
+      };
+      const encoder = new TextEncoder();
+      dataReceivedCallback(
+        encoder.encode(JSON.stringify(specialMessage)),
+        null,
+        DataPacket_Kind.RELIABLE,
+        null
+      );
+
+      const messages = chatStorageService.getHistory();
+      expect(messages.length).toBe(1);
+      expect(messages[0].content).toContain('😊');
+      expect(messages[0].content).toContain('"quotes"');
+      expect(messages[0].content).toContain('<html>');
+    });
+  });
+
+  describe('Disconnect/reconnect cycle with mode persistence (User Story 4 - T131)', () => {
+    const STORAGE_KEY = 'melior-agent-response-mode';
+
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    afterEach(() => {
+      localStorage.clear();
+    });
+
+    it('should persist mode preference across disconnect/reconnect cycle', (done) => {
+      const publishDataSpy = mockRoom.localParticipant.publishData as jasmine.Spy;
+      publishDataSpy.and.returnValue(Promise.resolve());
+
+      // Initialize service
+      service.initialize(mockRoom);
+
+      // Change mode to chat
+      const setModePromise = service.setMode('chat');
+
+      setTimeout(() => {
+        // Simulate confirmation
+        const confirmMessage = {
+          type: 'response_mode_updated',
+          mode: 'chat',
+        };
+        const encoder = new TextEncoder();
+        dataReceivedCallback(
+          encoder.encode(JSON.stringify(confirmMessage)),
+          null,
+          DataPacket_Kind.RELIABLE,
+          null
+        );
+
+        setTimeout(async () => {
+          await setModePromise;
+
+          // Verify mode is chat
+          expect(service.currentMode()).toBe('chat');
+
+          // Verify localStorage was updated
+          expect(localStorage.getItem(STORAGE_KEY)).toBe('chat');
+
+          // Disconnect
+          service.cleanup();
+
+          // Mode should reset to voice on disconnect
+          expect(service.currentMode()).toBe('voice');
+          expect(chatStorageService.getHistory().length).toBe(0);
+
+          // But localStorage should still have chat preference
+          expect(localStorage.getItem(STORAGE_KEY)).toBe('chat');
+
+          // Reconnect - create new service instance to simulate fresh connection
+          const newService = TestBed.inject(ResponseModeService);
+
+          // Should load chat preference from localStorage
+          expect(newService.currentMode()).toBe('chat');
+
+          // Initialize with new connection
+          newService.initialize(mockRoom);
+
+          // Should auto-request the saved preference after 500ms
+          setTimeout(() => {
+            expect(publishDataSpy).toHaveBeenCalled();
+
+            // Find the call that sent set_response_mode for chat
+            const calls = publishDataSpy.calls.all();
+            const chatModeCall = calls.find((call) => {
+              const data = call.args[0] as Uint8Array;
+              const decoder = new TextDecoder();
+              const message = JSON.parse(decoder.decode(data));
+              return message.type === 'set_response_mode' && message.mode === 'chat';
+            });
+
+            expect(chatModeCall).toBeDefined();
+
+            newService.cleanup();
+            done();
+          }, 600);
+        }, 50);
+      }, 50);
+    });
+
+    it('should handle reconnection when localStorage has invalid value', () => {
+      // Set invalid mode in localStorage
+      localStorage.setItem(STORAGE_KEY, 'invalid-mode');
+
+      // Create service - should fallback to default
+      const newService = TestBed.inject(ResponseModeService);
+
+      expect(newService.currentMode()).toBe('voice');
+      expect(newService.isConfirmed()).toBe(true);
+
+      newService.cleanup();
+    });
+
+    it('should clear chat history on disconnect even if mode is chat', (done) => {
+      service.initialize(mockRoom);
+
+      // Add chat messages
+      const encoder = new TextEncoder();
+      const message1 = {
+        type: 'chat_message',
+        message: 'Message 1',
+        timestamp: Date.now(),
+      };
+      dataReceivedCallback(
+        encoder.encode(JSON.stringify(message1)),
+        null,
+        DataPacket_Kind.RELIABLE,
+        null
+      );
+
+      const message2 = {
+        type: 'chat_message',
+        message: 'Message 2',
+        timestamp: Date.now(),
+      };
+      dataReceivedCallback(
+        encoder.encode(JSON.stringify(message2)),
+        null,
+        DataPacket_Kind.RELIABLE,
+        null
+      );
+
+      setTimeout(() => {
+        expect(chatStorageService.getHistory().length).toBe(2);
+
+        // Disconnect
+        service.cleanup();
+
+        // Chat history should be cleared
+        expect(chatStorageService.getHistory().length).toBe(0);
+
+        done();
+      }, 50);
     });
   });
 });
