@@ -4,8 +4,8 @@
  *
  * Responsibilities:
  * - Render user and agent messages with distinct styling
- * - Display timestamps for each message
- * - Auto-scroll to bottom when new messages arrive
+ * - Display role labels and timestamps for each message
+ * - Auto-scroll to bottom when new messages arrive or text is streamed
  * - Use virtual scrolling for large message lists (>100 messages)
  *
  * Constitutional Compliance:
@@ -20,7 +20,7 @@ import {
   input,
   ViewChild,
   ElementRef,
-  AfterViewChecked,
+  effect,
   ChangeDetectionStrategy,
   computed,
 } from '@angular/core';
@@ -36,7 +36,7 @@ import { ChatMessageState } from '../../models/chat-message.model';
   styleUrl: './chat-message-display.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChatMessageDisplayComponent implements AfterViewChecked {
+export class ChatMessageDisplayComponent {
   /**
    * Required input: Array of chat messages to display
    */
@@ -60,60 +60,39 @@ export class ChatMessageDisplayComponent implements AfterViewChecked {
   @ViewChild(CdkVirtualScrollViewport)
   virtualScrollViewport?: CdkVirtualScrollViewport;
 
-  /**
-   * Track whether we should scroll on next view check
-   */
-  private shouldScrollToBottom = false;
-
-  /**
-   * Previous message count for detecting new messages
-   */
-  private previousMessageCount = 0;
-
-  constructor() {}
-
-  /**
-   * AfterViewChecked lifecycle hook
-   * Auto-scroll to bottom when new messages arrive
-   */
-  ngAfterViewChecked(): void {
-    const currentCount = this.messages().length;
-
-    // Check if new messages were added
-    if (currentCount > this.previousMessageCount) {
-      this.shouldScrollToBottom = true;
-      this.previousMessageCount = currentCount;
-    }
-
-    // Scroll to bottom if needed
-    if (this.shouldScrollToBottom) {
-      this.scrollToBottom();
-      this.shouldScrollToBottom = false;
-    }
+  constructor() {
+    // Auto-scroll effect when messages change
+    effect(() => {
+      const msgs = this.messages();
+      if (msgs.length > 0) {
+        this.scrollToBottom();
+      }
+    });
   }
 
   /**
    * Scroll to bottom of message list
    * Handles both regular and virtual scrolling containers
+   * Auto-scrolls on new messages and during streaming
    */
   private scrollToBottom(): void {
-    try {
-      if (this.useVirtualScrolling() && this.virtualScrollViewport) {
-        // Virtual scrolling: scroll to last index
-        const lastIndex = this.messages().length - 1;
-        this.virtualScrollViewport.scrollToIndex(lastIndex, 'smooth');
-      } else if (this.scrollContainer) {
-        // Regular scrolling: scroll to bottom
-        const element = this.scrollContainer.nativeElement;
-        element.scrollTo({
-          top: element.scrollHeight,
-          behavior: 'smooth',
-        });
+    // Use setTimeout to ensure DOM has updated
+    setTimeout(() => {
+      try {
+        if (this.useVirtualScrolling() && this.virtualScrollViewport) {
+          // Virtual scrolling: scroll to last index
+          const lastIndex = this.messages().length - 1;
+          this.virtualScrollViewport.scrollToIndex(lastIndex, 'smooth');
+        } else if (this.scrollContainer) {
+          // Regular scrolling: scroll to bottom
+          const element = this.scrollContainer.nativeElement;
+          element.scrollTop = element.scrollHeight;
+        }
+      } catch (error) {
+        // Graceful degradation - don't crash on scroll errors
+        console.warn('Auto-scroll failed:', error);
       }
-    } catch (error) {
-      // Graceful degradation - don't crash on scroll errors
-      console.warn('Auto-scroll failed:', error);
-    }
+    }, 0);
   }
 
   /**
@@ -122,18 +101,5 @@ export class ChatMessageDisplayComponent implements AfterViewChecked {
    */
   trackByMessageId(index: number, message: ChatMessageState): string {
     return message.id;
-  }
-
-  /**
-   * Format timestamp for display
-   * Shows time in HH:MM:SS format
-   */
-  formatTimestamp(date: Date): string {
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
   }
 }

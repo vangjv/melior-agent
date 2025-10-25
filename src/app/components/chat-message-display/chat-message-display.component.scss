@@ -1,6 +1,6 @@
 /**
  * Chat Message Display Component Styles
- * Provides distinct styling for user vs agent messages
+ * Matches transcription display styling for consistency
  * Ensures accessibility with proper contrast and semantic layout
  */
 
@@ -19,154 +19,188 @@
 }
 
 .chat-messages-container {
-  flex: 1;
+  width: 100%;
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  padding: 1rem;
+  background-color: var(--surface-color, #fafafa);
 
-  // Ensure smooth scrolling
+  // Smooth scrolling behavior
   scroll-behavior: smooth;
 
-  // Prevent horizontal scrolling on narrow screens
-  max-width: 100%;
-}
-
-// Virtual scrolling viewport
-.chat-messages-container.virtual-scroll {
-  height: 100%;
-
-  ::ng-deep .cdk-virtual-scroll-content-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px;
+  // Custom scrollbar styling
+  &::-webkit-scrollbar {
+    width: 8px;
   }
-}
 
-.chat-message {
-  display: flex;
-  max-width: 80%;
-  margin-bottom: 8px;
+  &::-webkit-scrollbar-track {
+    background: var(--surface-color, #f1f1f1);
+  }
 
-  // User messages: right-aligned, blue background
-  &.user {
-    align-self: flex-end;
-    justify-content: flex-end;
+  &::-webkit-scrollbar-thumb {
+    background: var(--primary-color, #888);
+    border-radius: 4px;
 
-    .message-content {
-      background-color: #1976d2; // Material blue 700
-      color: #ffffff;
-      border-radius: 18px 18px 4px 18px;
+    &:hover {
+      background: var(--primary-dark-color, #555);
     }
   }
 
-  // Agent messages: left-aligned, gray background
-  &.agent {
-    align-self: flex-start;
-    justify-content: flex-start;
+  // Virtual scroll viewport height adjustments for mobile
+  &.virtual-scroll {
+    // Ensure minimum height for mobile devices
+    min-height: 300px;
 
-    .message-content {
-      background-color: #e0e0e0; // Material gray 300
-      color: #000000;
-      border-radius: 18px 18px 18px 4px;
+    // Mobile portrait (320px - 480px)
+    @media (max-width: 480px) {
+      min-height: 250px;
+      max-height: 50vh;
+    }
+
+    // Mobile landscape (481px - 768px)
+    @media (min-width: 481px) and (max-width: 768px) {
+      min-height: 200px;
+      max-height: 60vh;
+    }
+
+    // Tablet and above (769px+)
+    @media (min-width: 769px) {
+      min-height: 400px;
+      max-height: 70vh;
     }
   }
 }
 
-.message-content {
-  padding: 12px 16px;
+.chat-message-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  max-width: 100%;
-}
-
-.message-text {
-  font-size: 14px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-}
-
-.message-timestamp {
-  font-size: 11px;
-  opacity: 0.7;
-  align-self: flex-end;
-  margin-top: 4px;
+  gap: 0.75rem;
+  min-height: 100%;
 }
 
 .empty-state {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: rgba(0, 0, 0, 0.54);
+  min-height: 200px;
+  padding: 2rem;
   text-align: center;
-  padding: 24px;
 
-  p {
+  .hint {
+    color: var(--text-secondary-color, #666);
+    font-size: 0.875rem;
+    line-height: 1.5;
     margin: 0;
-    font-size: 14px;
   }
 }
 
-// Responsive design for mobile
-@media (max-width: 767px) {
-  .chat-message {
-    max-width: 90%; // Wider messages on mobile
+.chat-message {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  max-width: 85%;
+  word-wrap: break-word;
+  animation: fadeIn 0.3s ease-in;
+
+  // User message styling
+  &[data-sender="user"] {
+    align-self: flex-end;
+    background-color: var(--user-message-bg, #e3f2fd);
+    border: 1px solid var(--user-message-border, #90caf9);
+    color: var(--user-message-text, #1565c0);
   }
 
-  .message-content {
-    padding: 10px 14px;
+  // Agent message styling
+  &[data-sender="agent"] {
+    align-self: flex-start;
+    background-color: var(--agent-message-bg, #f5f5f5);
+    border: 1px solid var(--agent-message-border, #e0e0e0);
+    color: var(--agent-message-text, #424242);
+  }
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.sender-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timestamp {
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.message-text {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive adjustments for larger screens
+@media (min-width: 768px) {
+  .chat-messages-container {
+    padding: 1.5rem;
+  }
+
+  .chat-message {
+    max-width: 70%;
   }
 
   .message-text {
-    font-size: 13px;
+    font-size: 1rem;
   }
 }
 
-// T145: Support for very narrow screens (320px minimum - iPhone SE)
-@media (max-width: 360px) {
-  .chat-message {
-    max-width: 95%; // Even wider on very small screens
-  }
-
-  .message-content {
-    padding: 8px 12px;
-  }
-
-  .message-text {
-    font-size: 12px;
-    word-break: break-word; // T146: Prevent horizontal scrolling
-  }
-
-  .message-time {
-    font-size: 10px;
-  }
-}
-
-// Ensure minimum contrast ratio (WCAG 2.1 AA)
-// User messages: white text on blue background (contrast ratio > 4.5:1)
-// Agent messages: black text on gray background (contrast ratio > 7:1)
-
-// Support for large text accessibility settings
+// Support for reduced motion preference
 @media (prefers-reduced-motion: reduce) {
   .chat-messages-container {
     scroll-behavior: auto;
+  }
+
+  .chat-message {
+    animation: none;
   }
 }
 
 // High contrast mode support
 @media (prefers-contrast: high) {
-  .chat-message.user .message-content {
-    border: 2px solid #ffffff;
-  }
+  .chat-message {
+    border-width: 2px;
 
-  .chat-message.agent .message-content {
-    border: 2px solid #000000;
+    &[data-sender="user"] {
+      background-color: #fff;
+      border-color: #000;
+      color: #000;
+    }
+
+    &[data-sender="agent"] {
+      background-color: #f0f0f0;
+      border-color: #000;
+      color: #000;
+    }
   }
 }

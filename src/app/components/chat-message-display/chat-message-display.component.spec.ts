@@ -43,8 +43,8 @@ describe('ChatMessageDisplayComponent', () => {
     expect(messageElements.length).toBe(1);
 
     const userMessageElement = messageElements[0];
-    expect(userMessageElement.nativeElement.classList.contains('user')).toBe(
-      true
+    expect(userMessageElement.nativeElement.getAttribute('data-sender')).toBe(
+      'user'
     );
     expect(userMessageElement.nativeElement.textContent).toContain(
       'Hello from user'
@@ -63,8 +63,8 @@ describe('ChatMessageDisplayComponent', () => {
     expect(messageElements.length).toBe(1);
 
     const agentMessageElement = messageElements[0];
-    expect(agentMessageElement.nativeElement.classList.contains('agent')).toBe(
-      true
+    expect(agentMessageElement.nativeElement.getAttribute('data-sender')).toBe(
+      'agent'
     );
     expect(agentMessageElement.nativeElement.textContent).toContain(
       'Hello from agent'
@@ -81,7 +81,7 @@ describe('ChatMessageDisplayComponent', () => {
     fixture.detectChanges();
 
     const timestampElements = fixture.debugElement.queryAll(
-      By.css('.message-timestamp')
+      By.css('.timestamp')
     );
     expect(timestampElements.length).toBe(2);
 

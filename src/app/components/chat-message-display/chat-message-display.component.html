@@ -3,25 +3,34 @@
   <!-- Virtual Scrolling for large message lists (>100 messages) -->
   @if (useVirtualScrolling()) {
     <cdk-virtual-scroll-viewport
-      itemSize="60"
+      itemSize="80"
       class="chat-messages-container virtual-scroll"
+      role="log"
+      aria-live="polite"
+      aria-label="Chat messages"
     >
-      <article
-        *cdkVirtualFor="let message of messages(); trackBy: trackByMessageId"
-        class="chat-message"
-        [class.user]="message.sender === 'user'"
-        [class.agent]="message.sender === 'agent'"
-      >
-        <div class="message-content">
-          <span class="message-text">{{ message.content }}</span>
-          <time
-            class="message-timestamp"
-            [attr.datetime]="message.timestamp.toISOString()"
-          >
-            {{ formatTimestamp(message.timestamp) }}
-          </time>
-        </div>
-      </article>
+      <div class="chat-message-list">
+        <article
+          *cdkVirtualFor="let message of messages(); trackBy: trackByMessageId"
+          class="chat-message"
+          [attr.data-sender]="message.sender"
+        >
+          <div class="message-header">
+            <span class="sender-label">
+              {{ message.sender === 'user' ? 'You' : 'Agent' }}
+            </span>
+            <time
+              class="timestamp"
+              [attr.datetime]="message.timestamp.toISOString()"
+            >
+              {{ message.timestamp | date: 'short' }}
+            </time>
+          </div>
+          <div class="message-text">
+            {{ message.content }}
+          </div>
+        </article>
+      </div>
     </cdk-virtual-scroll-viewport>
   } @else {
     <!-- Regular scrolling for smaller message lists -->
@@ -30,29 +39,35 @@
       class="chat-messages-container"
       role="log"
       aria-live="polite"
-      aria-atomic="false"
+      aria-label="Chat messages"
     >
-      @for (message of messages(); track trackByMessageId($index, message)) {
-        <article
-          class="chat-message"
-          [class.user]="message.sender === 'user'"
-          [class.agent]="message.sender === 'agent'"
-        >
-          <div class="message-content">
-            <span class="message-text">{{ message.content }}</span>
-            <time
-              class="message-timestamp"
-              [attr.datetime]="message.timestamp.toISOString()"
-            >
-              {{ formatTimestamp(message.timestamp) }}
-            </time>
+      <div class="chat-message-list">
+        @for (message of messages(); track trackByMessageId($index, message)) {
+          <article
+            class="chat-message"
+            [attr.data-sender]="message.sender"
+          >
+            <div class="message-header">
+              <span class="sender-label">
+                {{ message.sender === 'user' ? 'You' : 'Agent' }}
+              </span>
+              <time
+                class="timestamp"
+                [attr.datetime]="message.timestamp.toISOString()"
+              >
+                {{ message.timestamp | date: 'short' }}
+              </time>
+            </div>
+            <div class="message-text">
+              {{ message.content }}
+            </div>
+          </article>
+        } @empty {
+          <div class="empty-state" aria-label="No messages yet">
+            <p class="hint">Chat messages will appear here during your conversation.</p>
           </div>
-        </article>
-      } @empty {
-        <div class="empty-state" aria-label="No messages yet">
-          <p>No messages yet. Start a conversation!</p>
-        </div>
-      }
+        }
+      </div>
     </div>
   }
 </div>
