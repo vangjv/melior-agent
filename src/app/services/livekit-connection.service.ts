@@ -85,6 +85,7 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
   private _currentSession = signal<VoiceSession | null>(null);
   private _room: Room | null = null;
   private _lastConfig: LiveKitConfig | null = null;
+  private _agentConnected = signal<boolean>(false);
 
   // Reconnection state
   private _reconnectAttempt = 0;
@@ -94,6 +95,7 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
   // Public signals
   readonly connectionState = this._connectionState.asReadonly();
   readonly currentSession = this._currentSession.asReadonly();
+  readonly agentConnected = this._agentConnected.asReadonly();
   readonly connectionQuality = computed<ConnectionQuality>(() => {
     const state = this._connectionState();
     if (state.status === 'connected') {
@@ -246,6 +248,9 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
         console.log('Participant attributes:', participant.attributes);
         console.log('Participant permissions:', participant.permissions);
 
+        // Update agent connected status
+        this._agentConnected.set(this.getRemoteParticipantCount() > 0);
+
         // Listen for metadata changes (may contain transcription info)
         participant.on('ParticipantMetadataChanged' as any, (metadata: string) => {
           console.log(`🔄 Metadata changed for ${participant.identity}:`, metadata);
@@ -263,6 +268,9 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
         });
       });      room.on(RoomEvent.ParticipantDisconnected, (participant) => {
         console.log('Participant disconnected:', participant.identity);
+
+        // Update agent connected status
+        this._agentConnected.set(this.getRemoteParticipantCount() > 0);
       });
 
       // Monitor track subscriptions
@@ -387,6 +395,9 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
         connectionQuality: 'good', // Will be updated by quality change events
       });
 
+      // Check if any agents are already connected
+      this._agentConnected.set(this.getRemoteParticipantCount() > 0);
+
       // T030: Create session
       this._currentSession.set({
         sessionId,
@@ -476,6 +487,9 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
 
     // T053: Transition to disconnected state
     this._connectionState.set({ status: 'disconnected' });
+
+    // Reset agent connected status
+    this._agentConnected.set(false);
 
     // Clear session data
     const session = this._currentSession();
