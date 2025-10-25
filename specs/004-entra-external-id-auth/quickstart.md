@@ -30,8 +30,7 @@ This guide provides step-by-step instructions to implement Microsoft Entra Exter
 
 **Frontend:**
 ```bash
-npm install @azure/msal-browser@^3.7.0 --save
-npm install @types/msal@^1.0.0 --save-dev
+npm install @azure/msal-angular@^4.0.0 @azure/msal-browser@^3.7.0 --save
 ```
 
 **Backend (Azure Functions):**
@@ -39,6 +38,8 @@ npm install @types/msal@^1.0.0 --save-dev
 cd api
 npm install @azure/msal-node@^2.6.0 --save
 ```
+
+**Note**: `@azure/msal-browser` is a peer dependency of `@azure/msal-angular` and must be installed separately.
 
 ### 2. Configure Environment Variables
 
@@ -51,8 +52,9 @@ export const environment = {
     clientId: '4d072598-4248-45b0-be42-9a42e3bea85b',
     tenantId: '03e82745-fdd7-4afd-b750-f7a4749a3775',
     authority: 'https://login.microsoftonline.com/03e82745-fdd7-4afd-b750-f7a4749a3775',
-    redirectUri: 'http://localhost:4200/auth/callback',
-    postLogoutRedirectUri: 'http://localhost:4200'
+    redirectUri: 'http://localhost:4200',
+    postLogoutRedirectUri: 'http://localhost:4200',
+    scopes: ['openid', 'profile', 'email', 'offline_access']
   },
   livekit: {
     apiUrl: 'http://localhost:7071/api'
@@ -69,8 +71,9 @@ export const environment = {
     clientId: '4d072598-4248-45b0-be42-9a42e3bea85b',
     tenantId: '03e82745-fdd7-4afd-b750-f7a4749a3775',
     authority: 'https://login.microsoftonline.com/03e82745-fdd7-4afd-b750-f7a4749a3775',
-    redirectUri: 'https://your-production-domain.com/auth/callback',
-    postLogoutRedirectUri: 'https://your-production-domain.com'
+    redirectUri: 'https://your-production-domain.com',
+    postLogoutRedirectUri: 'https://your-production-domain.com',
+    scopes: ['openid', 'profile', 'email', 'offline_access']
   },
   livekit: {
     apiUrl: 'https://your-api.azurewebsites.net/api'
@@ -104,16 +107,140 @@ export const environment = {
 3. Go to "Authentication" → "Platform configurations"
 4. Add Single-page application (SPA) platform if not exists
 5. Add redirect URIs:
-   - Development: `http://localhost:4200/auth/callback`
-   - Production: `https://your-production-domain.com/auth/callback`
-6. Enable "Access tokens" and "ID tokens" under Implicit grant
+   - Development: `http://localhost:4200`
+   - Production: `https://your-production-domain.com`
+6. Enable "ID tokens" under Implicit grant (required for MSAL Angular)
 7. Save configuration
+
+**Important**: MSAL Angular v4 uses authorization code flow with PKCE by default. Do NOT use `/auth/callback` suffix - the redirect URI is the application root.
 
 ---
 
 ## Frontend Implementation
 
-### Step 1: Create Authentication Models
+### Step 1: Configure MSAL in app.config.ts
+
+**File: `src/app/app.config.ts`**
+
+```typescript
+import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { 
+  IPublicClientApplication, 
+  PublicClientApplication,
+  InteractionType,
+  BrowserCacheLocation,
+  LogLevel
+} from '@azure/msal-browser';
+import { 
+  MsalGuard, 
+  MsalInterceptor, 
+  MsalBroadcastService, 
+  MsalService,
+  MSAL_INSTANCE,
+  MSAL_GUARD_CONFIG,
+  MSAL_INTERCEPTOR_CONFIG,
+  MsalGuardConfiguration,
+  MsalInterceptorConfiguration
+} from '@azure/msal-angular';
+
+import { routes } from './app.routes';
+import { environment } from '../environments/environment';
+
+/**
+ * Factory function to create MSAL instance with PKCE flow
+ */
+export function MSALInstanceFactory(): IPublicClientApplication {
+  return new PublicClientApplication({
+    auth: {
+      clientId: environment.entraConfig.clientId,
+      authority: environment.entraConfig.authority,
+      redirectUri: environment.entraConfig.redirectUri,
+      postLogoutRedirectUri: environment.entraConfig.postLogoutRedirectUri
+    },
+    cache: {
+      cacheLocation: BrowserCacheLocation.SessionStorage,
+      storeAuthStateInCookie: false
+    },
+    system: {
+      loggerOptions: {
+        logLevel: environment.production ? LogLevel.Error : LogLevel.Info,
+        piiLoggingEnabled: false
+      }
+    }
+  });
+}
+
+/**
+ * Factory function to configure MsalGuard
+ */
+export function MSALGuardConfigFactory(): MsalGuardConfiguration {
+  return {
+    interactionType: InteractionType.Redirect,
+    authRequest: {
+      scopes: environment.entraConfig.scopes
+    },
+    loginFailedRoute: '/'
+  };
+}
+
+/**
+ * Factory function to configure MsalInterceptor
+ */
+export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
+  const protectedResourceMap = new Map<string, Array<string>>();
+  
+  // Add Azure Functions API to protected resources
+  protectedResourceMap.set(
+    environment.livekit.apiUrl + '/*',
+    environment.entraConfig.scopes
+  );
+  
+  return {
+    interactionType: InteractionType.Redirect,
+    protectedResourceMap
+  };
+}
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes),
+    provideHttpClient(withInterceptorsFromDi()),
+    provideAnimationsAsync(),
+    
+    // MSAL Configuration for standalone components
+    {
+      provide: MSAL_INSTANCE,
+      useFactory: MSALInstanceFactory
+    },
+    {
+      provide: MSAL_GUARD_CONFIG,
+      useFactory: MSALGuardConfigFactory
+    },
+    {
+      provide: MSAL_INTERCEPTOR_CONFIG,
+      useFactory: MSALInterceptorConfigFactory
+    },
+    
+    // MSAL Services
+    MsalService,
+    MsalGuard,
+    MsalBroadcastService,
+    
+    // HTTP Interceptor for automatic token injection
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: MsalInterceptor,
+      multi: true
+    }
+  ]
+};
+```
+
+### Step 2: Create Authentication State Service
 
 **File: `src/app/models/auth-state.ts`**
 
@@ -124,7 +251,6 @@ export interface AuthenticationState {
   readonly status: AuthStatus;
   readonly user: UserProfile | null;
   readonly error: AuthError | null;
-  readonly isLoading: boolean;
 }
 
 export interface UserProfile {
@@ -153,26 +279,27 @@ export interface AuthError {
 }
 ```
 
-### Step 2: Create Authentication Service
-
 **File: `src/app/services/auth.service.ts`**
 
 ```typescript
-import { Injectable, signal, computed, effect } from '@angular/core';
-import { PublicClientApplication, AccountInfo, AuthenticationResult } from '@azure/msal-browser';
-import { environment } from '../../environments/environment';
-import { AuthenticationState, UserProfile, AuthError } from '../models/auth-state';
+import { Injectable, signal, computed, OnDestroy } from '@angular/core';
+import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
+import { EventMessage, EventType, InteractionStatus } from '@azure/msal-browser';
+import { Subject, filter, takeUntil } from 'rxjs';
+import { AuthenticationState, UserProfile, AuthError, AuthErrorCode } from '../models/auth-state';
 
+/**
+ * Authentication service that wraps MSAL Angular and exposes reactive state via signals
+ */
 @Injectable({ providedIn: 'root' })
-export class AuthService {
-  private readonly msalInstance: PublicClientApplication;
+export class AuthService implements OnDestroy {
+  private readonly destroy$ = new Subject<void>();
   
   // Private mutable state
   private readonly _authState = signal<AuthenticationState>({
     status: 'unauthenticated',
     user: null,
-    error: null,
-    isLoading: false
+    error: null
   });
 
   // Public readonly state
@@ -181,78 +308,187 @@ export class AuthService {
   // Computed signals
   readonly isAuthenticated = computed(() => this.authState().status === 'authenticated');
   readonly currentUser = computed(() => this.authState().user);
-  readonly isLoading = computed(() => this.authState().isLoading);
+  readonly authError = computed(() => this.authState().error);
 
-  constructor() {
-    // Initialize MSAL
-    this.msalInstance = new PublicClientApplication({
-      auth: {
-        clientId: environment.entraConfig.clientId,
-        authority: environment.entraConfig.authority,
-        redirectUri: environment.entraConfig.redirectUri,
-        postLogoutRedirectUri: environment.entraConfig.postLogoutRedirectUri
-      },
-      cache: {
-        cacheLocation: 'sessionStorage',
-        storeAuthStateInCookie: false
-      },
-      system: {
-        loggerOptions: {
-          logLevel: environment.production ? 'Error' : 'Info',
-          piiLoggingEnabled: false
-        }
-      }
-    });
-
-    // Initialize on startup
+  constructor(
+    private msalService: MsalService,
+    private msalBroadcastService: MsalBroadcastService
+  ) {
     this.initialize();
   }
 
-  private async initialize(): Promise<void> {
-    await this.msalInstance.initialize();
-    await this.handleRedirectPromise();
-    this.checkExistingSession();
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  private async handleRedirectPromise(): Promise<void> {
-    try {
-      const response = await this.msalInstance.handleRedirectPromise();
-      if (response) {
-        this.handleAuthenticationResult(response);
-      }
-    } catch (error) {
-      this.handleAuthError(error);
-    }
+  private initialize(): void {
+    // Subscribe to MSAL events for auth state changes
+    this.msalBroadcastService.msalSubject$
+      .pipe(
+        filter((msg: EventMessage) => 
+          msg.eventType === EventType.LOGIN_SUCCESS ||
+          msg.eventType === EventType.LOGOUT_SUCCESS ||
+          msg.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
+          msg.eventType === EventType.LOGIN_FAILURE ||
+          msg.eventType === EventType.ACQUIRE_TOKEN_FAILURE
+        ),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((result: EventMessage) => {
+        this.handleMsalEvent(result);
+      });
+
+    // Subscribe to interaction status for loading state
+    this.msalBroadcastService.inProgress$
+      .pipe(
+        filter((status: InteractionStatus) => status === InteractionStatus.None),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.checkAuthStatus();
+      });
+
+    // Initial auth check
+    this.checkAuthStatus();
   }
 
-  private checkExistingSession(): void {
-    const accounts = this.msalInstance.getAllAccounts();
+  private checkAuthStatus(): void {
+    const accounts = this.msalService.instance.getAllAccounts();
+    
     if (accounts.length > 0) {
       const account = accounts[0];
-      this.setAuthenticatedState(this.mapAccountToProfile(account));
-    }
-  }
-
-  async signIn(): Promise<void> {
-    try {
-      this._authState.update(state => ({ ...state, status: 'authenticating', isLoading: true }));
-      
-      await this.msalInstance.loginRedirect({
-        scopes: ['openid', 'profile', 'email', 'User.Read']
+      this._authState.set({
+        status: 'authenticated',
+        user: {
+          userId: account.homeAccountId,
+          email: account.username,
+          displayName: account.name || account.username,
+          username: account.username,
+          tenantId: account.tenantId
+        },
+        error: null
       });
-    } catch (error) {
-      this.handleAuthError(error);
-    }
-  }
-
-  async signOut(): Promise<void> {
-    try {
-      const account = this.msalInstance.getAllAccounts()[0];
-      await this.msalInstance.logoutRedirect({ account });
+    } else {
       this._authState.set({
         status: 'unauthenticated',
         user: null,
-        error: null,
+        error: null
+      });
+    }
+  }
+
+  private handleMsalEvent(event: EventMessage): void {
+    switch (event.eventType) {
+      case EventType.LOGIN_SUCCESS:
+      case EventType.ACQUIRE_TOKEN_SUCCESS:
+        this.checkAuthStatus();
+        break;
+        
+      case EventType.LOGOUT_SUCCESS:
+        this._authState.set({
+          status: 'unauthenticated',
+          user: null,
+          error: null
+        });
+        break;
+        
+      case EventType.LOGIN_FAILURE:
+      case EventType.ACQUIRE_TOKEN_FAILURE:
+        this.handleAuthError(event.error);
+        break;
+    }
+  }
+
+  private handleAuthError(error: any): void {
+    const authError: AuthError = {
+      code: this.mapErrorCode(error),
+      message: error?.message || 'Authentication failed',
+      userMessage: this.getUserFriendlyMessage(error),
+      timestamp: new Date(),
+      retryable: this.isErrorRetryable(error)
+    };
+
+    this._authState.update(state => ({
+      ...state,
+      status: 'error',
+      error: authError
+    }));
+  }
+
+  private mapErrorCode(error: any): AuthErrorCode {
+    const errorCode = error?.errorCode?.toLowerCase() || '';
+    
+    if (errorCode.includes('user_cancelled')) return 'user_cancelled';
+    if (errorCode.includes('network')) return 'network_error';
+    if (errorCode.includes('token_renewal')) return 'token_refresh_failed';
+    
+    return 'unknown_error';
+  }
+
+  private getUserFriendlyMessage(error: any): string {
+    const code = this.mapErrorCode(error);
+    
+    const messages: Record<AuthErrorCode, string> = {
+      user_cancelled: 'Sign-in was cancelled. Please try again.',
+      network_error: 'Network error occurred. Please check your connection.',
+      invalid_credentials: 'Invalid credentials. Please try again.',
+      token_expired: 'Your session has expired. Please sign in again.',
+      token_refresh_failed: 'Failed to refresh authentication. Please sign in again.',
+      configuration_error: 'Authentication configuration error. Please contact support.',
+      unknown_error: 'An unexpected error occurred. Please try again.'
+    };
+    
+    return messages[code];
+  }
+
+  private isErrorRetryable(error: any): boolean {
+    const code = this.mapErrorCode(error);
+    return code === 'network_error' || code === 'token_refresh_failed';
+  }
+
+  /**
+   * Sign in user with redirect flow
+   */
+  signIn(): void {
+    this.msalService.loginRedirect();
+  }
+
+  /**
+   * Sign out current user
+   */
+  signOut(): void {
+    const account = this.msalService.instance.getAllAccounts()[0];
+    this.msalService.logoutRedirect({ account });
+  }
+
+  /**
+   * Acquire access token silently for API calls
+   * Note: MsalInterceptor handles this automatically for configured endpoints
+   */
+  async getAccessToken(): Promise<string> {
+    const account = this.msalService.instance.getAllAccounts()[0];
+    
+    if (!account) {
+      throw new Error('No authenticated account');
+    }
+
+    try {
+      const result = await this.msalService.instance.acquireTokenSilent({
+        scopes: ['openid', 'profile', 'email'],
+        account
+      });
+      return result.accessToken;
+    } catch (error) {
+      // Fall back to interactive if silent fails
+      const result = await this.msalService.instance.acquireTokenRedirect({
+        scopes: ['openid', 'profile', 'email'],
+        account
+      });
+      throw error; // Redirect will navigate away, this won't execute
+    }
+  }
+}
         isLoading: false
       });
     } catch (error) {
@@ -321,89 +557,58 @@ export class AuthService {
       error: authError,
       isLoading: false
     });
-  }
 }
 ```
 
-### Step 3: Create Route Guard
+### Step 3: Configure Routes with MsalGuard
 
-**File: `src/app/guards/auth.guard.ts`**
-
-```typescript
-import { inject } from '@angular/core';
-import { Router, CanActivateFn } from '@angular/router';
-import { AuthService } from '../services/auth.service';
-
-export const authGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
-  const router = inject(Router);
-
-  if (authService.isAuthenticated()) {
-    return true;
-  }
-
-  // Store requested URL for post-auth redirect
-  sessionStorage.setItem('auth_redirect_url', state.url);
-  
-  // Redirect to landing page
-  router.navigate(['/']);
-  return false;
-};
-```
-
-### Step 4: Create HTTP Interceptor
-
-**File: `src/app/interceptors/auth.interceptor.ts`**
+**File: `src/app/app.routes.ts`**
 
 ```typescript
-import { HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { from, switchMap } from 'rxjs';
-import { AuthService } from '../services/auth.service';
-import { environment } from '../../environments/environment';
+import { Routes } from '@angular/router';
+import { MsalGuard } from '@azure/msal-angular';
 
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
-
-  // Only add token to API requests
-  if (!req.url.startsWith(environment.livekit.apiUrl)) {
-    return next(req);
+export const routes: Routes = [
+  {
+    path: '',
+    loadComponent: () => import('./components/landing/landing.component').then(m => m.LandingComponent)
+  },
+  {
+    path: 'chat',
+    loadComponent: () => import('./components/chat/chat.component').then(m => m.ChatComponent),
+    canActivate: [MsalGuard] // Protected route
+  },
+  {
+    path: 'voice',
+    loadComponent: () => import('./components/voice/voice.component').then(m => m.VoiceComponent),
+    canActivate: [MsalGuard] // Protected route
+  },
+  {
+    path: '**',
+    redirectTo: ''
   }
-
-  // Skip if not authenticated
-  if (!authService.isAuthenticated()) {
-    return next(req);
-  }
-
-  // Add bearer token
-  return from(authService.getAccessToken()).pipe(
-    switchMap(token => {
-      const authReq = req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      return next(authReq);
-    })
-  );
-};
+];
 ```
 
-### Step 5: Create Landing Page Component
+**Note**: `MsalGuard` is configured in `app.config.ts` and automatically redirects unauthenticated users to Microsoft Entra login.
+
+### Step 4: Create Landing Page Component
 
 **File: `src/app/components/landing/landing.component.ts`**
 
 ```typescript
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MsalService } from '@azure/msal-angular';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatCardModule],
+  imports: [CommonModule, RouterLink, MatButtonModule, MatCardModule],
   template: `
     <div class="landing-container">
       <mat-card>
@@ -413,15 +618,21 @@ import { AuthService } from '../../services/auth.service';
         <mat-card-content>
           <p>Experience AI-powered voice chat with real-time transcription.</p>
           <ul>
-            <li>Natural voice conversations</li>
-            <li>Real-time transcription</li>
-            <li>Secure and private</li>
+            <li>Real-time voice conversations with AI</li>
+            <li>Live transcription</li>
+            <li>Secure authentication with Microsoft Entra</li>
           </ul>
         </mat-card-content>
         <mat-card-actions>
-          <button mat-raised-button color="primary" (click)="signIn()">
-            Sign In to Get Started
-          </button>
+          @if (isAuthenticated()) {
+            <button mat-raised-button color="primary" routerLink="/voice">
+              Go to Voice Chat
+            </button>
+          } @else {
+            <button mat-raised-button color="primary" (click)="signIn()">
+              Sign In with Microsoft
+            </button>
+          }
         </mat-card-actions>
       </mat-card>
     </div>
@@ -435,114 +646,40 @@ import { AuthService } from '../../services/auth.service';
       padding: 20px;
     }
     mat-card {
-      max-width: 500px;
+      max-width: 600px;
+      width: 100%;
     }
   `]
 })
 export class LandingComponent {
+  private msalService = inject(MsalService);
   private authService = inject(AuthService);
 
+  // Computed signal for auth state
+  isAuthenticated = this.authService.isAuthenticated;
+
   signIn(): void {
-    this.authService.signIn();
+    this.msalService.loginRedirect();
   }
 }
 ```
 
-### Step 6: Create Auth Callback Component
+### Step 5: Initialize MSAL in main.ts (Optional)
 
-**File: `src/app/components/auth-callback/auth-callback.component.ts`**
+**File: `src/main.ts`**
 
-```typescript
-import { Component, OnInit, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
-@Component({
-  selector: 'app-auth-callback',
-  standalone: true,
-  imports: [CommonModule, MatProgressSpinnerModule],
-  template: `
-    <div class="callback-container">
-      <mat-spinner></mat-spinner>
-      <p>Completing sign-in...</p>
-    </div>
-  `,
-  styles: [`
-    .callback-container {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      gap: 20px;
-    }
-  `]
-})
-export class AuthCallbackComponent implements OnInit {
-  private router = inject(Router);
-
-  ngOnInit(): void {
-    // MSAL handles redirect, then redirect to requested URL or home
-    setTimeout(() => {
-      const redirectUrl = sessionStorage.getItem('auth_redirect_url') || '/voice';
-      sessionStorage.removeItem('auth_redirect_url');
-      this.router.navigate([redirectUrl]);
-    }, 1000);
-  }
-}
-```
-
-### Step 7: Update App Routes
-
-**File: `src/app/app.routes.ts`**
+Add MSAL initialization before bootstrapping the app to handle redirect flow early:
 
 ```typescript
-import { Routes } from '@angular/router';
-import { authGuard } from './guards/auth.guard';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { appConfig } from './app/app.config';
+import { App } from './app/app';
 
-export const routes: Routes = [
-  {
-    path: '',
-    loadComponent: () => import('./components/landing/landing.component').then(m => m.LandingComponent)
-  },
-  {
-    path: 'auth/callback',
-    loadComponent: () => import('./components/auth-callback/auth-callback.component').then(m => m.AuthCallbackComponent)
-  },
-  {
-    path: 'voice',
-    canActivate: [authGuard],
-    loadComponent: () => import('./app').then(m => m.App) // Your existing voice component
-  },
-  {
-    path: '**',
-    redirectTo: ''
-  }
-];
+bootstrapApplication(App, appConfig)
+  .catch((err) => console.error(err));
 ```
 
-### Step 8: Update App Config
-
-**File: `src/app/app.config.ts`**
-
-```typescript
-import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core';
-import { provideRouter } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { routes } from './app.routes';
-import { authInterceptor } from './interceptors/auth.interceptor';
-
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideZonelessChangeDetection(),
-    provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor])),
-    provideAnimations()
-  ]
-};
-```
+**Note**: MSAL Angular automatically initializes and handles redirect flow via `MsalService`. No additional configuration needed in `main.ts`.
 
 ---
 

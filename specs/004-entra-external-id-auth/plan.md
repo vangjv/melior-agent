@@ -7,37 +7,36 @@
 
 ## Summary
 
-Implement Microsoft Entra External ID authentication for both the Angular frontend and Azure Functions API using MSAL (Microsoft Authentication Library). The frontend will use MSAL Browser for redirect-based authentication flow, while Azure Functions will use token validation middleware. A public landing page will be created at the root route with all voice chat features protected by Angular route guards. Authentication state will be managed using Angular Signals for reactive updates across the application.
+Implement Microsoft Entra External ID authentication for both the Angular frontend and Azure Functions API using MSAL Angular v4 and MSAL Node. The frontend will use **@azure/msal-angular** (official Angular wrapper) with built-in guards, interceptors, and services for redirect-based authentication. Azure Functions will use token validation middleware with @azure/msal-node. A public landing page will be created at the root route with all voice chat features protected by MsalGuard. Authentication state will be managed using Angular Signals combined with MsalBroadcastService for reactive updates across the application and multi-tab synchronization.
 
 ## Technical Context
 
 **Language/Version**: TypeScript 5.9.2, Angular 20.0.0, Node.js 18+ (Azure Functions)  
-**Primary Dependencies**: @azure/msal-browser (frontend), @azure/msal-node (backend), Angular Router Guards, HTTP Interceptors  
-**Storage**: Browser sessionStorage/localStorage for MSAL token cache (frontend), no persistent storage required (backend)  
-**Testing**: Jasmine/Karma (frontend unit tests), Jest (Azure Functions unit tests), Integration tests for auth flows  
-**Target Platform**: Modern browsers (Chrome, Firefox, Safari, Edge), Azure Functions v4 runtime
-**Project Type**: Web application (frontend + backend API)  
+**Primary Dependencies**: @azure/msal-angular v4 (frontend), @azure/msal-browser v3 (peer dependency), @azure/msal-node v2.6.0 (backend), MsalGuard, MsalInterceptor, MsalBroadcastService  
+**Storage**: Browser sessionStorage for MSAL token cache (frontend), no persistent storage required (backend)  
+**Testing**: Jasmine/Karma (frontend unit tests with MSAL service mocks), Jest (Azure Functions unit tests), Integration tests for auth flows  
+**Target Platform**: Modern browsers (Chrome, Firefox, Safari, Edge), Azure Functions v4 runtime  
 **Performance Goals**: Landing page load <2s, sign-in flow completion <15s, token validation <200ms  
-**Constraints**: HTTPS required in production, PKCE flow mandatory, WCAG 2.1 AA compliance  
-**Scale/Scope**: Support for concurrent authentication sessions, handle 10k+ authenticated users, support multiple browser tabs
+**Constraints**: HTTPS required in production, PKCE flow (automatic with MSAL Browser), WCAG 2.1 AA compliance  
+**Scale/Scope**: Support for concurrent authentication sessions, handle 10k+ authenticated users, support multiple browser tabs with cross-tab state sync via MsalBroadcastService
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 ### Initial Check (Pre-Phase 0) ✅
-- ✅ **Angular-First Architecture**: Uses standalone components for landing page, auth callback handler, and navigation. Angular Signals manage authentication state reactively. Route guards use modern Angular patterns with functional guards.
-- ✅ **Type Safety**: TypeScript strict mode enabled. All MSAL types, authentication state, user profile, and token models have explicit interfaces. Route guard types properly defined.
-- ✅ **Test-First Development**: TDD approach with unit tests for auth service, route guards, interceptors. Integration tests for sign-in/sign-out flows. Mock MSAL library for isolated testing.
-- ✅ **Performance & Scalability**: OnPush change detection for auth components. Lazy loading for protected voice feature modules. Token caching minimizes auth provider calls. HTTP interceptor efficiently adds tokens to requests.
-- ✅ **Accessibility & Standards**: WCAG 2.1 AA compliance for landing page and auth UI. Keyboard navigation for sign-in/sign-out. Screen reader announcements for auth state changes. Semantic HTML throughout.
+- ✅ **Angular-First Architecture**: Uses standalone components for landing page and navigation. Angular Signals manage authentication state reactively. MSAL Angular v4 provides official Angular-native guards, interceptors, and services designed for standalone components.
+- ✅ **Type Safety**: TypeScript strict mode enabled. All MSAL types, authentication state, user profile, and token models have explicit interfaces. MsalGuard and MsalInterceptor fully typed.
+- ✅ **Test-First Development**: TDD approach with unit tests for auth service, components. Integration tests for sign-in/sign-out flows. Mock MsalService, MsalBroadcastService, MsalGuard for isolated testing.
+- ✅ **Performance & Scalability**: OnPush change detection for auth components. Lazy loading for protected voice feature modules. Token caching via MSAL's built-in cache minimizes auth provider calls. MsalInterceptor efficiently adds tokens only to configured API URLs.
+- ✅ **Accessibility & Standards**: WCAG 2.1 AA compliance for landing page and auth UI. Keyboard navigation for sign-in/sign-out. Screen reader announcements for auth state changes. Semantic HTML with Angular Material components.
 
 ### Post-Design Check (After Phase 1) ✅
-- ✅ **Angular-First Architecture**: Design confirms standalone components (LandingComponent, AuthCallbackComponent). Auth service uses signal(), computed(), effect(). Functional guards (authGuard: CanActivateFn). HTTP functional interceptor (authInterceptor: HttpInterceptorFn).
-- ✅ **Type Safety**: All models defined with TypeScript interfaces (AuthenticationState, UserProfile, AuthError, UserIdentity, TokenValidationResult). MSAL types properly imported and used. No 'any' types in production code.
-- ✅ **Test-First Development**: Test structure defined in quickstart. Unit test examples provided for auth.service.spec.ts. Integration test scenarios documented. Mock strategy for MSAL defined.
-- ✅ **Performance & Scalability**: Design includes OnPush for landing component. Route-based lazy loading configured in app.routes.ts. Token caching via MSAL's built-in cache (sessionStorage). HTTP interceptor only runs for API URLs (performance optimized).
-- ✅ **Accessibility & Standards**: Landing page uses Material components (mat-card, mat-button) with built-in accessibility. Semantic HTML in templates. Loading states with mat-spinner provide screen reader context. Keyboard navigation supported via Material.
+- ✅ **Angular-First Architecture**: Design confirms standalone components (LandingComponent). Auth service wraps MsalService and MsalBroadcastService, exposing signals. Uses factory providers in app.config.ts (MSALInstanceFactory, MSALGuardConfigFactory, MSALInterceptorConfigFactory) for standalone architecture. No MsalModule required.
+- ✅ **Type Safety**: All models defined with TypeScript interfaces (AuthenticationState, UserProfile, AuthError, UserIdentity, TokenValidationResult). MSAL Angular types (MsalGuardConfiguration, MsalInterceptorConfiguration, IPublicClientApplication) properly imported and used. No 'any' types in production code.
+- ✅ **Test-First Development**: Test structure defined in quickstart. Unit test strategy for mocking MsalService and MsalBroadcastService documented. Integration test scenarios for redirect flow documented. MSAL Angular provides testability hooks.
+- ✅ **Performance & Scalability**: Design includes OnPush for landing component. Route-based lazy loading configured in app.routes.ts with MsalGuard. Token caching via MSAL's built-in cache (sessionStorage). MsalInterceptor configured with protectedResourceMap for selective token injection (performance optimized).
+- ✅ **Accessibility & Standards**: Landing page uses Material components (mat-card, mat-button) with built-in accessibility. Semantic HTML in templates. Loading states tracked via MsalBroadcastService.inProgress$ provide screen reader context. Keyboard navigation supported via Material and MsalGuard redirect handling.
 
 **Constitution Compliance**: ✅ PASSED - All principles satisfied in design phase
 
@@ -64,28 +63,20 @@ src/
 ├── app/
 │   ├── components/
 │   │   ├── landing/            # Public landing page component
-│   │   ├── auth-callback/      # OAuth redirect callback handler
 │   │   └── navigation/         # Navigation with auth-aware UI
-│   ├── guards/
-│   │   └── auth.guard.ts       # Route guard for protected routes
-│   ├── interceptors/
-│   │   └── auth.interceptor.ts # HTTP interceptor for bearer tokens
 │   ├── models/
-│   │   ├── auth-config.ts      # MSAL configuration interface
-│   │   ├── auth-state.ts       # Authentication state model
+│   │   ├── auth-state.ts       # Authentication state model (Signals-based)
 │   │   ├── user-profile.ts     # User identity model
 │   │   └── auth-error.ts       # Authentication error types
 │   ├── services/
-│   │   └── auth.service.ts     # Authentication service with MSAL integration
-│   └── app.routes.ts           # Route configuration with guards
-├── environments/
-│   ├── environment.ts              # Production Entra ID config
-│   └── environment.development.ts  # Development Entra ID config
+│   │   └── auth.service.ts     # Auth service wrapping MsalService/MsalBroadcastService with Signals
+│   ├── app.config.ts           # MSAL configuration with factory providers
+│   └── app.routes.ts           # Route configuration with MsalGuard
 
 api/
 ├── src/
 │   ├── middleware/
-│   │   └── auth.middleware.ts  # Token validation middleware
+│   │   └── auth.middleware.ts  # Token validation middleware with @azure/msal-node
 │   ├── models/
 │   │   ├── UserIdentity.ts     # Extracted user identity from token
 │   │   └── AuthError.ts        # Auth error responses
@@ -97,25 +88,30 @@ api/
 
 tests/
 ├── unit/
-│   ├── auth.service.spec.ts       # Auth service unit tests
-│   ├── auth.guard.spec.ts         # Route guard unit tests
-│   └── auth.interceptor.spec.ts   # Interceptor unit tests
+│   ├── auth.service.spec.ts       # Auth service unit tests (mock MsalService)
+│   └── landing.component.spec.ts  # Landing component tests
 └── integration/
-    ├── auth-flow.spec.ts          # Sign-in/sign-out flow tests
-    └── protected-routes.spec.ts   # Route protection tests
+    └── auth-flow.spec.ts          # End-to-end auth flow tests
 ```
 
-**Structure Decision**: Web application structure selected as the feature spans both Angular frontend and Azure Functions backend. Frontend authentication components are organized under `src/app/components/`, with guards, interceptors, and services in their respective folders. Backend auth middleware is added to the existing `api/` structure to validate tokens on protected Azure Functions endpoints.
+**Key Architecture Decisions**:
+- **MSAL Angular v4**: Official Angular library with MsalGuard, MsalInterceptor, MsalService, MsalBroadcastService
+- **No custom guard/interceptor**: Use built-in MsalGuard and MsalInterceptor instead of custom implementations
+- **Factory providers**: Configure MSAL via factory functions in app.config.ts for standalone component architecture
+- **No auth callback component**: MSAL Angular handles redirect flow automatically
+- **Signals + RxJS bridge**: AuthService subscribes to MsalBroadcastService observables, exposes state via Angular Signals
+
+**Structure Decision**: Web application structure selected as the feature spans both Angular frontend and Azure Functions backend. Frontend authentication components are organized under `src/app/components/`, with auth service exposing reactive state via Signals. MSAL Angular configuration is centralized in `app.config.ts` using factory providers (no MsalModule). Backend auth middleware is added to the existing `api/` structure to validate tokens on protected Azure Functions endpoints.
 
 ## Complexity Tracking
 
 > **No constitutional violations - this section is not applicable**
 
 All constitutional principles are satisfied:
-- Angular-first architecture maintained throughout
-- Full TypeScript typing with strict mode
-- TDD approach for all authentication components
-- Performance optimizations via OnPush and lazy loading
-- WCAG 2.1 AA accessibility compliance
+- Angular-first architecture maintained with MSAL Angular v4 (official library designed for Angular)
+- Full TypeScript typing with strict mode (MsalGuardConfiguration, MsalInterceptorConfiguration, IPublicClientApplication)
+- TDD approach for all authentication components (mock MsalService, MsalBroadcastService, MsalGuard)
+- Performance optimizations via OnPush, lazy loading, and MsalInterceptor's protectedResourceMap
+- WCAG 2.1 AA accessibility compliance using Angular Material components
 
 No complexity exceptions required.
