@@ -1,0 +1,14 @@
+<!-- T037: Button template with conditional text and styling -->
+<button
+  mat-raised-button
+  [color]="buttonState().variant === 'disconnect' ? 'warn' : 'primary'"
+  [disabled]="buttonState().disabled"
+  [attr.aria-label]="buttonState().ariaLabel"
+  (click)="handleClick()"
+  class="connection-button"
+>
+  @if (buttonState().loading) {
+    <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
+  }
+  <span>{{ buttonState().label }}</span>
+</button>

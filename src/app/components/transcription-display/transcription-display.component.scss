@@ -1,0 +1,226 @@
+// T084-T085: Transcription Display Component Styles
+// Mobile-first responsive design with speaker distinction
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.transcription-scroll-container {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+  background-color: var(--surface-color, #fafafa);
+
+  // Smooth scrolling behavior
+  scroll-behavior: smooth;
+
+  // Custom scrollbar styling
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--surface-color, #f1f1f1);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--primary-color, #888);
+    border-radius: 4px;
+
+    &:hover {
+      background: var(--primary-dark-color, #555);
+    }
+  }
+
+  // T105: Virtual scroll viewport height adjustments for mobile
+  &.virtual-scroll {
+    // Ensure minimum height for mobile devices
+    min-height: 300px;
+
+    // Mobile portrait (320px - 480px)
+    @media (max-width: 480px) {
+      min-height: 250px;
+      max-height: 50vh; // Don't take up more than half the viewport
+    }
+
+    // Mobile landscape (481px - 768px)
+    @media (min-width: 481px) and (max-width: 768px) {
+      min-height: 200px;
+      max-height: 60vh;
+    }
+
+    // Tablet and above (769px+)
+    @media (min-width: 769px) {
+      min-height: 400px;
+      max-height: 70vh;
+    }
+  }
+}
+
+.transcription-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 100%;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 2rem;
+  text-align: center;
+
+  .hint {
+    color: var(--text-secondary-color, #666);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+// T084: User message styling
+.transcription-message {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  max-width: 85%;
+  word-wrap: break-word;
+  animation: fadeIn 0.3s ease-in;
+
+  // Default styling (user)
+  &[data-speaker="user"] {
+    align-self: flex-end;
+    background-color: var(--user-message-bg, #e3f2fd);
+    border: 1px solid var(--user-message-border, #90caf9);
+    color: var(--user-message-text, #1565c0);
+  }
+
+  // T085: Agent message styling
+  &[data-speaker="agent"] {
+    align-self: flex-start;
+    background-color: var(--agent-message-bg, #f5f5f5);
+    border: 1px solid var(--agent-message-border, #e0e0e0);
+    color: var(--agent-message-text, #424242);
+  }
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.speaker-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timestamp {
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.message-text {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.confidence-indicator {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+// Interim/streaming message styles
+.interim-message {
+  opacity: 0.85;
+
+  &[data-speaker="user"] {
+    background-color: var(--user-interim-bg, #e8f4fd);
+    border-style: dashed;
+  }
+
+  &[data-speaker="agent"] {
+    background-color: var(--agent-interim-bg, #fafafa);
+    border-style: dashed;
+  }
+}
+
+.streaming-indicator {
+  color: var(--primary-color, #1976d2);
+  animation: pulse 1.5s ease-in-out infinite;
+  margin-left: 0.25rem;
+}
+
+.streaming-text {
+  font-style: italic;
+  opacity: 0.9;
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+// Responsive adjustments for larger screens
+@media (min-width: 768px) {
+  .transcription-scroll-container {
+    padding: 1.5rem;
+  }
+
+  .transcription-message {
+    max-width: 70%;
+  }
+
+  .message-text {
+    font-size: 1rem;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .transcription-message {
+    border-width: 2px;
+
+    &[data-speaker="user"] {
+      background-color: #fff;
+      border-color: #000;
+      color: #000;
+    }
+
+    &[data-speaker="agent"] {
+      background-color: #f0f0f0;
+      border-color: #000;
+      color: #000;
+    }
+  }
+}
