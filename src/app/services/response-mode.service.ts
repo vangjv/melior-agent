@@ -6,6 +6,7 @@ import {
   createSetResponseModeMessage,
   isResponseModeUpdatedMessage,
   isAgentChatMessage,
+  isAgentChatChunk,
   isIncomingMessage,
   isValidResponseMode,
   BaseDataChannelMessage,
@@ -93,24 +94,34 @@ export class ResponseModeService {
    * @param room - LiveKit Room instance
    */
   initialize(room: Room): void {
+    console.log('🎯 ResponseModeService.initialize() called');
     this._room = room;
     this._isDataChannelAvailable.set(true);
 
     // Set up data channel event listener
     this._dataReceivedHandler = this.handleDataReceived.bind(this);
     room.on(RoomEvent.DataReceived, this._dataReceivedHandler);
+    console.log('✅ DataReceived event listener attached');
 
     // T109: Set up transcription event listener for user messages in chat mode
     const handler = this.handleTranscriptionReceived.bind(this);
     this._transcriptionReceivedHandler = handler;
     room.on(RoomEvent.TranscriptionReceived, handler);
+    console.log('✅ TranscriptionReceived event listener attached');
 
-    console.log('ResponseModeService initialized with Room');
+    console.log('✅ ResponseModeService initialized with Room');
+    console.log('📊 Room info:', {
+      name: room.name,
+      state: room.state,
+      localParticipant: room.localParticipant?.identity,
+    });
 
     // T128: Auto-request preferred mode after brief delay to allow connection to stabilize
     setTimeout(() => {
       const preferredMode = this.loadPreferredMode();
+      console.log(`🔍 Loaded preferred mode: ${preferredMode}`);
       if (preferredMode !== DEFAULT_RESPONSE_MODE) {
+        console.log(`🔄 Requesting preferred mode: ${preferredMode}`);
         // Only request if different from default
         this.setMode(preferredMode).catch((error) => {
           console.warn('Failed to restore preferred mode:', error);
@@ -264,29 +275,55 @@ export class ResponseModeService {
     kind?: DataPacket_Kind,
     topic?: string
   ): void {
+    const timestamp = new Date().toISOString();
+    console.log(`📥 [${timestamp}] handleDataReceived called`);
+    console.log(`📊 Payload info:`, {
+      byteLength: payload.byteLength,
+      participant: participant?.identity || 'unknown',
+      kind: kind || 'unknown',
+      topic: topic || 'none',
+    });
+
     try {
       // Decode message
       const decoder = new TextDecoder('utf-8');
       const text = decoder.decode(payload);
+      console.log(`� [${timestamp}] Raw decoded text:`, text);
+      console.log(`📏 Text length: ${text.length}`);
+
       const data = JSON.parse(text);
+      console.log(`✅ [${timestamp}] Successfully parsed JSON:`, data);
 
       // Validate message structure
       if (!isIncomingMessage(data)) {
-        console.warn('Received unknown data channel message:', data);
+        console.warn(`⚠️ [${timestamp}] Unknown message type:`, data);
+        console.warn('Message type:', data?.type);
+        console.warn('Full data:', JSON.stringify(data, null, 2));
         return;
       }
+      console.log(`✓ [${timestamp}] Message validated as incoming message`);
 
       // Handle ResponseModeUpdatedMessage
       if (isResponseModeUpdatedMessage(data)) {
+        console.log(`🔄 [${timestamp}] Processing ResponseModeUpdatedMessage`);
         this.handleResponseModeUpdated(data.mode);
       }
 
-      // Handle AgentChatMessage
+      // Handle AgentChatMessage (complete message)
       if (isAgentChatMessage(data)) {
+        console.log(`💬 [${timestamp}] Processing AgentChatMessage`);
         this.handleAgentChatMessage(data.message, data.timestamp);
       }
+
+      // Handle AgentChatChunk (streaming chunk)
+      if (isAgentChatChunk(data)) {
+        console.log(`📝 [${timestamp}] Processing AgentChatChunk`);
+        this.handleAgentChatChunk(data.messageId, data.chunk, data.isComplete, data.timestamp);
+      }
     } catch (error) {
-      console.error('Failed to parse data channel message:', error);
+      console.error(`❌ [${timestamp}] Failed to parse data channel message:`, error);
+      console.error('Error details:', error instanceof Error ? error.message : String(error));
+      console.error('Stack:', error instanceof Error ? error.stack : 'No stack trace');
       // Graceful degradation - don't crash on malformed messages
     }
   }
@@ -325,10 +362,62 @@ export class ResponseModeService {
    * @private
    */
   private handleAgentChatMessage(message: string, timestamp: number): void {
-    console.log(`Received AgentChatMessage: ${message} at ${timestamp}`);
+    const now = new Date().toISOString();
+    console.log(`💬 [${now}] handleAgentChatMessage called`);
+    console.log(`📝 Message: "${message}"`);
+    console.log(`⏰ Timestamp: ${timestamp} (${new Date(timestamp).toISOString()})`);
+    console.log(`📊 Message stats:`, {
+      length: message.length,
+      isEmpty: message.length === 0,
+      trimmedLength: message.trim().length,
+    });
+
+    const beforeCount = this.chatStorageService.getHistory().length;
+    console.log(`📊 Messages before add: ${beforeCount}`);
 
     // Add agent message to chat history (T108)
     this.chatStorageService.addMessage(message, 'agent');
+
+    const afterCount = this.chatStorageService.getHistory().length;
+    console.log(`📊 Messages after add: ${afterCount}`);
+    console.log(`✅ Message ${afterCount > beforeCount ? 'SUCCESSFULLY' : 'NOT'} added`);
+    console.log(`� All messages:`, this.chatStorageService.getHistory());
+  }
+
+  /**
+   * Handle AgentChatChunk from agent
+   * Builds agent message incrementally as chunks stream in
+   *
+   * @private
+   */
+  private handleAgentChatChunk(messageId: string, chunk: string, isComplete: boolean, timestamp: number): void {
+    const now = new Date().toISOString();
+    console.log(`🔄 [${now}] handleAgentChatChunk called`);
+    console.log(`🆔 Message ID: ${messageId}`);
+    console.log(`📝 Chunk: "${chunk}"`);
+    console.log(`✅ Is Complete: ${isComplete}`);
+    console.log(`⏰ Timestamp: ${timestamp}`);
+
+    // Check if message already exists by looking for it in history
+    const existingMessage = this.chatStorageService
+      .getHistory()
+      .find((msg) => msg.id === messageId);
+
+    if (!existingMessage) {
+      // Start a new streaming message
+      console.log(`🆕 Starting new streaming message: ${messageId}`);
+      this.chatStorageService.startStreamingMessage(messageId, 'agent');
+    }
+
+    // Append the chunk to the streaming message
+    this.chatStorageService.appendChunk(messageId, chunk);
+    console.log(`➕ Appended chunk to message ${messageId}`);
+
+    // Mark message as complete if this is the final chunk
+    if (isComplete) {
+      this.chatStorageService.completeStreamingMessage(messageId);
+      console.log(`✅ Completed streaming message ${messageId}`);
+    }
   }
 
   /**

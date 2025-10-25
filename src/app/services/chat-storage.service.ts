@@ -39,6 +39,12 @@ export class ChatStorageService {
   public readonly chatMessages: Signal<ChatMessageState[]> =
     this._chatMessages.asReadonly();
 
+  /**
+   * Track currently streaming message by ID
+   * Used to append chunks to the correct in-progress message
+   */
+  private streamingMessageId: string | null = null;
+
   constructor() {}
 
   /**
@@ -59,11 +65,70 @@ export class ChatStorageService {
   }
 
   /**
+   * Start a new streaming message
+   * Creates an empty message that will be updated with chunks
+   *
+   * @param messageId - Unique identifier for the streaming message
+   * @param sender - Who is sending the message ('user' or 'agent')
+   */
+  startStreamingMessage(messageId: string, sender: MessageSender): void {
+    this.streamingMessageId = messageId;
+
+    const message = sender === 'user'
+      ? createUserMessage('')
+      : createAgentMessage('');
+
+    // Set the message ID to match the streaming ID
+    const messageWithId = { ...message, id: messageId };
+
+    this._chatMessages.update((messages) => [...messages, messageWithId]);
+  }
+
+  /**
+   * Append a chunk to the currently streaming message
+   * Updates the message content by appending the new chunk
+   *
+   * @param messageId - ID of the message to update
+   * @param chunk - Text chunk to append
+   */
+  appendChunk(messageId: string, chunk: string): void {
+    this._chatMessages.update((messages) => {
+      const index = messages.findIndex((msg) => msg.id === messageId);
+
+      if (index === -1) {
+        console.warn(`Message with ID ${messageId} not found`);
+        return messages;
+      }
+
+      const updatedMessages = [...messages];
+      updatedMessages[index] = {
+        ...updatedMessages[index],
+        content: updatedMessages[index].content + chunk,
+      };
+
+      return updatedMessages;
+    });
+  }
+
+  /**
+   * Complete a streaming message
+   * Marks the message as complete and clears the streaming state
+   *
+   * @param messageId - ID of the message to complete
+   */
+  completeStreamingMessage(messageId: string): void {
+    if (this.streamingMessageId === messageId) {
+      this.streamingMessageId = null;
+    }
+  }
+
+  /**
    * Clear all messages from history
    * Called when user disconnects or starts new session
    */
   clearHistory(): void {
     this._chatMessages.set([]);
+    this.streamingMessageId = null;
   }
 
   /**

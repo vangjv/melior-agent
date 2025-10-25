@@ -59,6 +59,18 @@ export interface AgentChatMessage extends BaseDataChannelMessage {
 }
 
 /**
+ * Streaming chat chunk from agent in chat mode
+ * Contains partial text that should be appended to the current message
+ */
+export interface AgentChatChunk extends BaseDataChannelMessage {
+  readonly type: 'chat_chunk';
+  readonly messageId: string;   // Unique ID to identify which message this chunk belongs to
+  readonly chunk: string;        // Partial text to append
+  readonly isComplete: boolean;  // True if this is the final chunk
+  readonly timestamp: number;    // Unix timestamp in milliseconds
+}
+
+/**
  * Union of all messages that can be sent to agent
  */
 export type OutgoingDataChannelMessage = SetResponseModeMessage;
@@ -66,7 +78,7 @@ export type OutgoingDataChannelMessage = SetResponseModeMessage;
 /**
  * Union of all messages that can be received from agent
  */
-export type IncomingDataChannelMessage = ResponseModeUpdatedMessage | AgentChatMessage;
+export type IncomingDataChannelMessage = ResponseModeUpdatedMessage | AgentChatMessage | AgentChatChunk;
 
 /**
  * Union of all data channel messages
@@ -90,7 +102,9 @@ export function isIncomingMessage(data: unknown): data is IncomingDataChannelMes
   if (!data || typeof data !== 'object') return false;
 
   const message = data as BaseDataChannelMessage;
-  return message.type === 'response_mode_updated' || message.type === 'chat_message';
+  return message.type === 'response_mode_updated' ||
+         message.type === 'chat_message' ||
+         message.type === 'chat_chunk';
 }
 
 /**
@@ -117,5 +131,21 @@ export function isAgentChatMessage(
     message.type === 'chat_message' &&
     typeof chatMsg.message === 'string' &&
     typeof chatMsg.timestamp === 'number'
+  );
+}
+
+/**
+ * Validates AgentChatChunk structure
+ */
+export function isAgentChatChunk(
+  message: BaseDataChannelMessage
+): message is AgentChatChunk {
+  const chunk = message as AgentChatChunk;
+  return (
+    message.type === 'chat_chunk' &&
+    typeof chunk.messageId === 'string' &&
+    typeof chunk.chunk === 'string' &&
+    typeof chunk.isComplete === 'boolean' &&
+    typeof chunk.timestamp === 'number'
   );
 }
