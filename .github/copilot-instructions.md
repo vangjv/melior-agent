@@ -13,6 +13,8 @@ Last updated: 2025-10-24
 - N/A (stateless token generation) (002-livekit-token-api)
 - TypeScript 5.9.2 with Angular 20.0.0 + Angular Material 20.0.0, LiveKit Client SDK 2.x, RxJS 7.x, Angular CDK (001-voice-chat-transcription)
 - Browser sessionStorage for temporary transcription history (no persistent backend storage) (001-voice-chat-transcription)
+- TypeScript 5.9.2, Angular 20.0.0, Node.js 18+ (Azure Functions) + @azure/msal-browser (frontend), @azure/msal-node (backend), Angular Router Guards, HTTP Interceptors (004-entra-external-id-auth)
+- Browser sessionStorage/localStorage for MSAL token cache (frontend), no persistent storage required (backend) (004-entra-external-id-auth)
 
 ## Project Structure
 
@@ -139,9 +141,9 @@ $theme: mat.define-light-theme((
 - Signals: `camelCase` (private with `_` prefix)
 
 ## Recent Changes
+- 004-entra-external-id-auth: Added TypeScript 5.9.2, Angular 20.0.0, Node.js 18+ (Azure Functions) + @azure/msal-browser (frontend), @azure/msal-node (backend), Angular Router Guards, HTTP Interceptors
 - 003-voice-chat-mode: Added TypeScript 5.9.2 with Angular 20.0.0
 - 001-voice-chat-transcription: Added TypeScript 5.9.2 with Angular 20.0.0 + Angular Material 20.0.0, LiveKit Client SDK 2.x, RxJS 7.x, Angular CDK
-- 002-livekit-token-api: Added TypeScript 5.x with Azure Functions TypeScript v4 (Node.js 18+) + LiveKit Server SDK for Node.js (@livekit/server-sdk), Azure Functions Core Tools v4
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

@@ -1,0 +1,345 @@
+openapi: 3.0.3
+info:
+  title: Microsoft Entra External ID Authentication API
+  description: |
+    API endpoints for the Melior Agent authentication system using Microsoft Entra External ID.
+    All protected endpoints require a valid JWT bearer token in the Authorization header.
+  version: 1.0.0
+  contact:
+    name: Melior Agent Team
+
+servers:
+  - url: http://localhost:7071/api
+    description: Local development
+  - url: https://{functionAppName}.azurewebsites.net/api
+    description: Azure Functions production
+    variables:
+      functionAppName:
+        default: melior-agent-api
+        description: Azure Functions app name
+
+security:
+  - BearerAuth: []
+
+paths:
+  /generateToken:
+    post:
+      summary: Generate LiveKit access token
+      description: |
+        Generates a LiveKit access token for authenticated users. Requires valid Microsoft Entra
+        bearer token. User identity from the Entra token is embedded in the LiveKit token metadata.
+      operationId: generateLiveKitToken
+      tags:
+        - LiveKit
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LiveKitTokenRequest'
+            examples:
+              basicRequest:
+                summary: Basic token request
+                value:
+                  roomName: voice-chat-room-001
+                  participantName: John Doe
+                  metadata:
+                    sessionId: sess_abc123
+      responses:
+        '200':
+          description: LiveKit token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveKitTokenResponse'
+              examples:
+                success:
+                  summary: Successful token generation
+                  value:
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    url: wss://livekit.example.com
+                    identity:
+                      userId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      displayName: John Doe
+                      email: john.doe@example.com
+                      tenantId: 03e82745-fdd7-4afd-b750-f7a4749a3775
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Microsoft Entra External ID JWT access token. Obtain from MSAL Browser after user authentication.
+        Include in Authorization header: `Authorization: Bearer <token>`
+
+  schemas:
+    LiveKitTokenRequest:
+      type: object
+      required:
+        - roomName
+        - participantName
+      properties:
+        roomName:
+          type: string
+          description: Name of the LiveKit room to join
+          example: voice-chat-room-001
+          minLength: 1
+          maxLength: 255
+        participantName:
+          type: string
+          description: Display name for the participant (from user profile)
+          example: John Doe
+          minLength: 1
+          maxLength: 255
+        metadata:
+          type: object
+          description: Optional metadata to include in LiveKit token
+          additionalProperties: true
+          example:
+            sessionId: sess_abc123
+            preferences:
+              language: en-US
+
+    LiveKitTokenResponse:
+      type: object
+      required:
+        - token
+        - url
+        - identity
+      properties:
+        token:
+          type: string
+          description: JWT token for LiveKit room access
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        url:
+          type: string
+          format: uri
+          description: WebSocket URL for LiveKit connection
+          example: wss://livekit.example.com
+        identity:
+          $ref: '#/components/schemas/UserIdentity'
+
+    UserIdentity:
+      type: object
+      required:
+        - userId
+        - displayName
+        - tenantId
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Microsoft Entra user object ID (oid claim)
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        displayName:
+          type: string
+          description: User's display name from Entra token
+          example: John Doe
+          minLength: 1
+        email:
+          type: string
+          format: email
+          description: User's email address from Entra token
+          example: john.doe@example.com
+        tenantId:
+          type: string
+          format: uuid
+          description: Microsoft Entra tenant ID
+          example: 03e82745-fdd7-4afd-b750-f7a4749a3775
+
+    AuthError:
+      type: object
+      required:
+        - error
+        - timestamp
+        - path
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+            - statusCode
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+              enum:
+                - missing_token
+                - invalid_token
+                - expired_token
+                - invalid_audience
+                - invalid_issuer
+                - insufficient_scope
+              example: invalid_token
+            message:
+              type: string
+              description: Human-readable error description
+              example: The provided authentication token is invalid or malformed
+            statusCode:
+              type: integer
+              description: HTTP status code
+              example: 401
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when error occurred
+          example: '2025-10-25T14:30:00.000Z'
+        path:
+          type: string
+          description: Request path that failed
+          example: /api/generateToken
+
+    ValidationError:
+      type: object
+      required:
+        - error
+        - timestamp
+        - path
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+            - statusCode
+            - details
+          properties:
+            code:
+              type: string
+              description: Error code
+              example: validation_failed
+            message:
+              type: string
+              description: Error message
+              example: Request validation failed
+            statusCode:
+              type: integer
+              example: 400
+            details:
+              type: array
+              description: Detailed validation errors
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    example: roomName
+                  message:
+                    type: string
+                    example: roomName is required and must be a non-empty string
+        timestamp:
+          type: string
+          format: date-time
+          example: '2025-10-25T14:30:00.000Z'
+        path:
+          type: string
+          example: /api/generateToken
+
+  responses:
+    UnauthorizedError:
+      description: Authentication failed - missing, invalid, or expired token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthError'
+          examples:
+            missingToken:
+              summary: Missing Authorization header
+              value:
+                error:
+                  code: missing_token
+                  message: No authentication token provided in Authorization header
+                  statusCode: 401
+                timestamp: '2025-10-25T14:30:00.000Z'
+                path: /api/generateToken
+            invalidToken:
+              summary: Invalid token signature
+              value:
+                error:
+                  code: invalid_token
+                  message: The provided authentication token is invalid or malformed
+                  statusCode: 401
+                timestamp: '2025-10-25T14:30:00.000Z'
+                path: /api/generateToken
+            expiredToken:
+              summary: Token expired
+              value:
+                error:
+                  code: expired_token
+                  message: The authentication token has expired
+                  statusCode: 401
+                timestamp: '2025-10-25T14:30:00.000Z'
+                path: /api/generateToken
+            invalidAudience:
+              summary: Token audience mismatch
+              value:
+                error:
+                  code: invalid_audience
+                  message: Token audience does not match expected client ID
+                  statusCode: 401
+                timestamp: '2025-10-25T14:30:00.000Z'
+                path: /api/generateToken
+
+    BadRequestError:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+          examples:
+            missingField:
+              summary: Required field missing
+              value:
+                error:
+                  code: validation_failed
+                  message: Request validation failed
+                  statusCode: 400
+                  details:
+                    - field: roomName
+                      message: roomName is required
+                timestamp: '2025-10-25T14:30:00.000Z'
+                path: /api/generateToken
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: internal_error
+                  message:
+                    type: string
+                    example: An unexpected error occurred while processing the request
+                  statusCode:
+                    type: integer
+                    example: 500
+              timestamp:
+                type: string
+                format: date-time
+              path:
+                type: string
+
+tags:
+  - name: LiveKit
+    description: LiveKit token generation endpoints
+
+externalDocs:
+  description: Microsoft Entra External ID Documentation
+  url: https://learn.microsoft.com/en-us/entra/external-id/
