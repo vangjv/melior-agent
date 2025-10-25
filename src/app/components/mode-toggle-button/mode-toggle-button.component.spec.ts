@@ -5,14 +5,22 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ModeToggleButtonComponent } from './mode-toggle-button.component';
 import { ResponseMode } from '../../models/response-mode.model';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 
 describe('ModeToggleButtonComponent', () => {
   let component: ModeToggleButtonComponent;
   let fixture: ComponentFixture<ModeToggleButtonComponent>;
+  let mockLiveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
 
   beforeEach(async () => {
+    // Create mock LiveAnnouncer
+    mockLiveAnnouncer = jasmine.createSpyObj('LiveAnnouncer', ['announce']);
+
     await TestBed.configureTestingModule({
       imports: [ModeToggleButtonComponent],
+      providers: [
+        { provide: LiveAnnouncer, useValue: mockLiveAnnouncer }
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(ModeToggleButtonComponent);
@@ -316,4 +324,128 @@ describe('ModeToggleButtonComponent', () => {
       expect(component.isButtonDisabled()).toBe(false);
     });
   });
+
+  // T061: Mode toggle button returns to normal state showing new mode after confirmation
+  describe('confirmation state transition', () => {
+    it('should return to normal state showing new mode after isPending becomes false', () => {
+      // Start in voice mode, pending
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.componentRef.setInput('isPending', true);
+      fixture.detectChanges();
+
+      let button = fixture.nativeElement.querySelector('button');
+      expect(button.textContent).toContain('Switching...');
+
+      // Simulate confirmation: mode changes and pending becomes false
+      fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.componentRef.setInput('isPending', false);
+      fixture.detectChanges();
+
+      button = fixture.nativeElement.querySelector('button');
+      expect(button.textContent).toContain('Chat Mode');
+      expect(button.textContent).not.toContain('Switching...');
+      expect(button.disabled).toBe(false);
+    });
+
+    it('should show correct icon after mode confirmation', () => {
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.componentRef.setInput('isPending', true);
+      fixture.detectChanges();
+
+      // Confirm to chat mode
+      fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.componentRef.setInput('isPending', false);
+      fixture.detectChanges();
+
+      const icon = fixture.nativeElement.querySelector('mat-icon');
+      expect(icon.textContent).toContain('chat_bubble');
+    });
+  });
+
+  // T064: Mode indicator uses distinct colors/icons for voice vs chat modes
+  describe('distinct mode styling', () => {
+    it('should use mic icon for voice mode', () => {
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.detectChanges();
+
+      const icon = fixture.nativeElement.querySelector('mat-icon');
+      expect(icon.textContent).toContain('mic');
+    });
+
+    it('should use chat_bubble icon for chat mode', () => {
+      fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.detectChanges();
+
+      const icon = fixture.nativeElement.querySelector('mat-icon');
+      expect(icon.textContent).toContain('chat_bubble');
+    });
+
+    it('should apply primary color for voice mode', () => {
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.detectChanges();
+
+      const button = fixture.nativeElement.querySelector('button');
+      // Angular Material applies color via CSS classes, not HTML attributes
+      // Check that the button has the mat-primary class
+      expect(button.classList.contains('mat-primary')).toBe(true);
+    });
+
+    it('should apply accent color for chat mode', () => {
+      fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.detectChanges();
+
+      const button = fixture.nativeElement.querySelector('button');
+      // Angular Material applies color via CSS classes, not HTML attributes
+      // Check that the button has the mat-accent class
+      expect(button.classList.contains('mat-accent')).toBe(true);
+    });
+  });
+
+  // T065: Screen reader announces mode changes using Angular CDK LiveAnnouncer
+  describe('screen reader announcements', () => {
+    it('should announce mode change to screen readers when mode changes', () => {
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.detectChanges();
+
+      // Change to chat mode
+      fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.detectChanges();
+
+      // LiveAnnouncer should have been called to announce the change
+      expect(mockLiveAnnouncer.announce).toHaveBeenCalledWith(
+        jasmine.stringContaining('Chat Mode'),
+        jasmine.any(String)
+      );
+    });
+
+    it('should announce voice mode to screen readers', () => {
+      fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.detectChanges();
+
+      mockLiveAnnouncer.announce.calls.reset();
+
+      // Change to voice mode
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.detectChanges();
+
+      expect(mockLiveAnnouncer.announce).toHaveBeenCalledWith(
+        jasmine.stringContaining('Voice Mode'),
+        jasmine.any(String)
+      );
+    });
+
+    it('should use polite announcement priority', () => {
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.detectChanges();
+
+      fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.detectChanges();
+
+      expect(mockLiveAnnouncer.announce).toHaveBeenCalledWith(
+        jasmine.any(String),
+        'polite'
+      );
+    });
+  });
 });
+

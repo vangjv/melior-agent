@@ -2,10 +2,11 @@
  * Mode Toggle Button Component
  * T040-T050: Presentational component for toggling between voice and chat response modes
  */
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, effect, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ResponseMode } from '../../models/response-mode.model';
 
 /**
@@ -20,6 +21,9 @@ import { ResponseMode } from '../../models/response-mode.model';
   styleUrl: './mode-toggle-button.component.scss',
 })
 export class ModeToggleButtonComponent {
+  // T070: Inject Angular CDK LiveAnnouncer
+  private liveAnnouncer = inject(LiveAnnouncer);
+
   // T041: Component inputs
   /**
    * Current response mode (required)
@@ -80,6 +84,17 @@ export class ModeToggleButtonComponent {
     return this.isPending() || this.isDisabled();
   });
 
+  // T071: Effect to announce mode changes to screen readers
+  constructor() {
+    effect(() => {
+      const mode = this.currentMode();
+      const label = this.buttonLabel();
+
+      // Announce mode change (polite priority so it doesn't interrupt)
+      this.liveAnnouncer.announce(`Switched to ${label}`, 'polite');
+    });
+  }
+
   // T047: Button click handler
   /**
    * Handle button click - emit onToggle event
@@ -90,3 +105,4 @@ export class ModeToggleButtonComponent {
     }
   }
 }
+

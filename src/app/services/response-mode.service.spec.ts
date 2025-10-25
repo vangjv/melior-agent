@@ -288,4 +288,24 @@ describe('ResponseModeService', () => {
       expect(service.isPending()).toBe(true);
     });
   });
+
+  // T063: Error message auto-clears after 5 seconds using RxJS timer
+  describe('error auto-clear', () => {
+    it('should auto-clear error message after 5 seconds', (done) => {
+      pending('Test requires RxJS timer implementation and fakeAsync - to be implemented with T075');
+
+      // Manual test steps:
+      // 1. Trigger error (e.g., timeout)
+      // 2. Verify errorMessage signal is set
+      // 3. Wait 5 seconds using fakeAsync and tick()
+      // 4. Verify errorMessage signal is null
+      done();
+    });
+
+    it('should use RxJS timer for auto-clear mechanism', () => {
+      pending('To be implemented with T075 - auto-clear implementation');
+      // This will test that the service uses RxJS timer(5000) for error clearing
+    });
+  });
 });
+

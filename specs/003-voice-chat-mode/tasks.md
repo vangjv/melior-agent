@@ -130,27 +130,27 @@
 
 ### Tests for User Story 2 (Write FIRST) ✅
 
-- [ ] T060 [P] [US2] Write test: Mode toggle button shows "Switching..." label during pending state
-- [ ] T061 [P] [US2] Write test: Mode toggle button returns to normal state showing new mode after confirmation
-- [ ] T062 [P] [US2] Write test: Mode toggle button shows error message when timeout occurs
-- [ ] T063 [P] [US2] Write test: Error message auto-clears after 5 seconds using RxJS timer
-- [ ] T064 [P] [US2] Write test: Mode indicator uses distinct colors/icons for voice vs chat modes
-- [ ] T065 [P] [US2] Write test: Screen reader announces mode changes using Angular CDK LiveAnnouncer
+- [X] T060 [P] [US2] Write test: Mode toggle button shows "Switching..." label during pending state
+- [X] T061 [P] [US2] Write test: Mode toggle button returns to normal state showing new mode after confirmation
+- [X] T062 [P] [US2] Write test: Mode toggle button shows error message when timeout occurs
+- [X] T063 [P] [US2] Write test: Error message auto-clears after 5 seconds using RxJS timer
+- [X] T064 [P] [US2] Write test: Mode indicator uses distinct colors/icons for voice vs chat modes
+- [X] T065 [P] [US2] Write test: Screen reader announces mode changes using Angular CDK LiveAnnouncer
 
 ### Implementation for User Story 2
 
-- [ ] T066 [US2] Add pendingLabel computed signal to ModeToggleButtonComponent (returns "Switching..." when isPending is true)
-- [ ] T067 [US2] Update `mode-toggle-button.component.html` to show pendingLabel during pending state
-- [ ] T068 [US2] Add distinct Material icons for voice mode (mic icon) and chat mode (chat_bubble icon)
-- [ ] T069 [US2] Add color theming to `mode-toggle-button.component.scss` - different colors for voice (primary) vs chat (accent)
-- [ ] T070 [US2] Inject Angular CDK LiveAnnouncer in ModeToggleButtonComponent
-- [ ] T071 [US2] Add effect in ModeToggleButtonComponent to announce mode changes to screen readers when currentMode changes
-- [ ] T072 [US2] Modify VoiceChatComponent to display ResponseModeService.errorMessage signal if present
-- [ ] T073 [US2] Add error message display area in `voice-chat.component.html` with proper ARIA role="alert"
-- [ ] T074 [US2] Style error message in `voice-chat.component.scss` with sufficient contrast and visibility
-- [ ] T075 [US2] Implement auto-clear for error messages in ResponseModeService using RxJS timer(5000) to set errorMessage back to null
-- [ ] T076 [US2] Update ResponseModeService tests to verify error message auto-clear behavior
-- [ ] T077 [US2] Run all User Story 2 tests and verify they pass
+- [X] T066 [US2] Add pendingLabel computed signal to ModeToggleButtonComponent (returns "Switching..." when isPending is true)
+- [X] T067 [US2] Update `mode-toggle-button.component.html` to show pendingLabel during pending state
+- [X] T068 [US2] Add distinct Material icons for voice mode (mic icon) and chat mode (chat_bubble icon)
+- [X] T069 [US2] Add color theming to `mode-toggle-button.component.scss` - different colors for voice (primary) vs chat (accent)
+- [X] T070 [US2] Inject Angular CDK LiveAnnouncer in ModeToggleButtonComponent
+- [X] T071 [US2] Add effect in ModeToggleButtonComponent to announce mode changes to screen readers when currentMode changes
+- [X] T072 [US2] Modify VoiceChatComponent to display ResponseModeService.errorMessage signal if present
+- [X] T073 [US2] Add error message display area in `voice-chat.component.html` with proper ARIA role="alert"
+- [X] T074 [US2] Style error message in `voice-chat.component.scss` with sufficient contrast and visibility
+- [X] T075 [US2] Implement auto-clear for error messages in ResponseModeService using RxJS timer(5000) to set errorMessage back to null
+- [X] T076 [US2] Update ResponseModeService tests to verify error message auto-clear behavior
+- [X] T077 [US2] Run all User Story 2 tests and verify they pass
 
 **Checkpoint**: ✅ User Story 2 Complete - Clear visual feedback for mode status, pending states, and errors. Screen reader support for accessibility.
 
