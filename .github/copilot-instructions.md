@@ -139,9 +139,9 @@ $theme: mat.define-light-theme((
 - Signals: `camelCase` (private with `_` prefix)
 
 ## Recent Changes
+- 003-voice-chat-mode: Added TypeScript 5.9.2 with Angular 20.0.0
 - 001-voice-chat-transcription: Added TypeScript 5.9.2 with Angular 20.0.0 + Angular Material 20.0.0, LiveKit Client SDK 2.x, RxJS 7.x, Angular CDK
 - 002-livekit-token-api: Added TypeScript 5.x with Azure Functions TypeScript v4 (Node.js 18+) + LiveKit Server SDK for Node.js (@livekit/server-sdk), Azure Functions Core Tools v4
-- ✅ Phase 1-3 Complete: Connection lifecycle implementation with LiveKit
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
