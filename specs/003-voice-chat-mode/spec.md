@@ -43,18 +43,21 @@ A user wants to know which response mode is currently active and receive confirm
 
 ### User Story 3 - Display Chat Messages (Priority: P2)
 
-A user in chat mode wants to see a clear, readable display of the conversation with distinct visual separation between their transcribed speech and the agent's text responses.
+A user in chat mode wants to see a clear, readable display of the conversation with distinct visual separation between their transcribed speech and the agent's text responses. The user also wants to see agent responses appear in real-time as they are being generated (streaming text).
 
 **Why this priority**: Complements the mode toggle (P1) by providing the UI infrastructure for displaying text responses. Without this, chat mode would have no way to present responses to users. Depends on mode toggle being functional first.
 
-**Independent Test**: Can be tested by switching to chat mode, having a conversation, and verifying messages display correctly with proper styling and scrolling. Delivers value by making text conversations readable and usable.
+**Independent Test**: Can be tested by switching to chat mode, having a conversation, and verifying messages display correctly with proper styling, scrolling, and real-time streaming updates. Delivers value by making text conversations readable and usable.
 
 **Acceptance Scenarios**:
 
 1. **Given** the user is in chat mode, **When** they speak and the agent responds, **Then** both the user's transcribed message and agent's text response appear in the chat display
-2. **Given** multiple messages are displayed, **When** viewing the chat area, **Then** user messages and agent messages are visually distinguishable (e.g., different colors, alignments, or labels)
+2. **Given** multiple messages are displayed, **When** viewing the chat area, **Then** user messages and agent messages are visually distinguishable with role labels ("You" vs "Agent"), timestamps, and distinct background colors
 3. **Given** a long conversation is occurring, **When** new messages arrive, **Then** the chat display auto-scrolls to show the most recent message
-4. **Given** messages include timestamps, **When** viewing the chat, **Then** each message shows when it was sent
+4. **Given** messages include timestamps, **When** viewing the chat, **Then** each message shows when it was sent using the Angular date pipe format
+5. **Given** the agent is generating a response, **When** text chunks are streamed via data channel, **Then** the message appears and grows in real-time as chunks are appended
+6. **Given** a streaming message is being received, **When** new chunks arrive, **Then** the chat display auto-scrolls to keep the growing message visible
+7. **Given** the chat display styling, **When** comparing to the transcription display, **Then** both displays use consistent visual design with matching role labels, timestamps, and message layout
 
 ---
 
@@ -101,6 +104,11 @@ A user primarily accessing the app on their phone wants the mode toggle to be ea
 - What occurs if the data channel becomes unavailable but the voice connection remains active?
 - How does the UI behave if multiple chat messages arrive in rapid succession?
 - What happens when the user toggles modes during transcription of their own speech?
+- How does the system handle receiving chat_chunk messages out of order?
+- What occurs if a chat_chunk message arrives for a messageId that doesn't exist?
+- How does the system handle incomplete streaming messages (final chunk never arrives)?
+- What happens if the user disconnects while a message is actively streaming?
+- How does auto-scroll behave when the user manually scrolls up while chunks are being appended?
 
 ## Constitutional Compliance *(mandatory)*
 
@@ -128,6 +136,9 @@ A user primarily accessing the app on their phone wants the mode toggle to be ea
 - Debounce rapid mode toggle clicks (300ms) to prevent message flooding
 - Use `computed()` signals for derived state (e.g., current mode status, button labels)
 - Efficient message rendering: track messages by unique ID in templates
+- Ensure smooth auto-scrolling during streaming text updates without performance degradation
+- Use Angular Signal effects for auto-scroll to minimize change detection cycles
+- Optimize chunk appending to avoid unnecessary DOM updates (update signal once per chunk)
 
 **Accessibility Standards**: 
 - WCAG 2.1 Level AA compliance
@@ -150,7 +161,7 @@ A user primarily accessing the app on their phone wants the mode toggle to be ea
 - **FR-006**: System MUST show a loading/pending state on the mode toggle button while waiting for agent confirmation
 - **FR-007**: System MUST implement a timeout (5 seconds) for mode change confirmations and handle timeout with user feedback
 - **FR-008**: System MUST display chat messages in a dedicated UI area with visual distinction between user (transcribed) and agent (text response) messages
-- **FR-009**: System MUST auto-scroll the chat display to the newest message when new content arrives
+- **FR-009**: System MUST auto-scroll the chat display to the newest message when new content arrives, including during streaming text updates
 - **FR-010**: System MUST prevent multiple concurrent mode change requests (disable toggle during pending state)
 - **FR-011**: System MUST encode data channel messages as UTF-8 JSON with reliable delivery
 - **FR-012**: System MUST decode incoming data channel messages and handle parsing errors gracefully
@@ -162,6 +173,11 @@ A user primarily accessing the app on their phone wants the mode toggle to be ea
 - **FR-018**: System MUST persist user's preferred mode to browser storage (localStorage) for future sessions
 - **FR-019**: System MUST debounce rapid toggle clicks to prevent message flooding
 - **FR-020**: System MUST include timestamps on all chat messages (both user and agent)
+- **FR-021**: System MUST support streaming chat messages from the agent via `chat_chunk` data channel messages
+- **FR-022**: System MUST handle `chat_chunk` messages by appending chunks to in-progress messages in real-time
+- **FR-023**: System MUST display chat messages with consistent styling matching the transcription display (role labels, timestamps, message layout)
+- **FR-024**: System MUST auto-scroll chat display as streaming text chunks are appended to messages
+- **FR-025**: System MUST automatically request saved preferred mode after connection initialization (with brief delay for connection stabilization)
 
 ### Key Entities *(include if feature involves data)*
 
@@ -170,8 +186,10 @@ A user primarily accessing the app on their phone wants the mode toggle to be ea
 - **SetResponseModeMessage**: Message sent from frontend to agent requesting a mode change, containing `type: 'set_response_mode'` and `mode: ResponseMode`
 - **ResponseModeUpdatedMessage**: Confirmation message sent from agent to frontend, containing `type: 'response_mode_updated'` and the confirmed `mode: ResponseMode`
 - **ChatMessage**: Text response message sent from agent to frontend in chat mode, containing `type: 'chat_message'`, `message: string`, and `timestamp: number`
+- **AgentChatChunk**: Streaming text chunk sent from agent to frontend in chat mode, containing `type: 'chat_chunk'`, `messageId: string` (to identify which message), `chunk: string` (partial text to append), `isComplete: boolean` (true if final chunk), and `timestamp: number`
 - **ChatMessageState**: UI state representation of a chat message for display, containing `id`, `content`, `timestamp`, and `sender` ('user' | 'agent')
 - **ModeToggleState**: UI state tracking mode change status, containing `currentMode`, `isConfirmed`, and optional `pendingMode`
+- **ChatStorageService**: Service managing chat message history with support for streaming messages (startStreamingMessage, appendChunk, completeStreamingMessage methods)
 
 ## Success Criteria *(mandatory)*
 
@@ -187,6 +205,10 @@ A user primarily accessing the app on their phone wants the mode toggle to be ea
 - **SC-008**: Users can complete a full conversation in chat mode and switch back to voice mode without any errors in 95% of test sessions
 - **SC-009**: Mode preference persistence works correctly across browser sessions in 100% of test cases
 - **SC-010**: Mobile users can successfully use the mode toggle on screens as small as 320px width with touch targets meeting minimum size requirements
+- **SC-011**: Streaming chat messages display chunks in real-time with smooth auto-scrolling and no visible lag
+- **SC-012**: Chat message styling matches transcription display styling with 100% consistency (role labels, timestamps, layout)
+- **SC-013**: System handles streaming message edge cases (missing chunks, out-of-order chunks, incomplete streams) gracefully without UI errors
+- **SC-014**: Preferred mode is automatically restored within 1 second of reconnection in 100% of test cases
 
 ## Assumptions *(optional)*
 
@@ -239,6 +261,7 @@ A user primarily accessing the app on their phone wants the mode toggle to be ea
 - Implementing message search or filtering capabilities
 - Creating admin controls for managing response modes
 - Adding analytics or logging of mode usage patterns
+- Implementing manual user control over auto-scroll behavior (always auto-scrolls to latest)
 
 ### Future Considerations
 - Enhanced chat features (typing indicators, read receipts)
@@ -247,6 +270,8 @@ A user primarily accessing the app on their phone wants the mode toggle to be ea
 - Voice and chat mode simultaneously (hybrid mode)
 - User-initiated text input in addition to voice input
 - Conversation history persistence and retrieval
+- User preference to disable auto-scroll during streaming
+- Message chunking optimization for very long responses
 
 ## Related Features *(optional)*
 
