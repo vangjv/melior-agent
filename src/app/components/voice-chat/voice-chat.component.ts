@@ -1,5 +1,6 @@
 import { Component, computed, inject, OnDestroy } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
 import { ConnectionButtonComponent } from '../connection-button/connection-button.component';
 import { TranscriptionDisplayComponent } from '../transcription-display/transcription-display.component';
 import { ModeToggleButtonComponent } from '../mode-toggle-button/mode-toggle-button.component';
@@ -25,6 +26,7 @@ import { environment } from '../../../environments/environment';
     ModeToggleButtonComponent,
     ChatMessageDisplayComponent,
     MatProgressSpinnerModule,
+    MatIconModule,
   ],
   templateUrl: './voice-chat.component.html',
   styleUrl: './voice-chat.component.scss',
@@ -45,6 +47,7 @@ export class VoiceChatComponent implements OnDestroy {
   // T042: Connection state computed signal from service
   readonly connectionState = this.connectionService.connectionState;
   readonly connectionQuality = this.connectionService.connectionQuality;
+  readonly agentConnected = this.connectionService.agentConnected;
 
   // T092: Transcriptions signal from transcription service
   readonly transcriptions = this.transcriptionService.transcriptions;

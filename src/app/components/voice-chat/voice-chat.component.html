@@ -10,6 +10,18 @@
     "
     aria-live="polite"
   >
+    <!-- Agent connection indicator -->
+    @if (isConnected()) {
+      <div class="agent-indicator" [class.agent-connected]="agentConnected()">
+        <mat-icon [class.connected]="agentConnected()">
+          {{ agentConnected() ? 'check_circle' : 'pending' }}
+        </mat-icon>
+        <span class="agent-status-text">
+          {{ agentConnected() ? 'Agent Connected' : 'Waiting for Agent' }}
+        </span>
+      </div>
+    }
+
     <!-- T117-T118: Reconnection status display -->
     @if (connectionState().status === 'reconnecting') {
       @let reconnectState = connectionState();
