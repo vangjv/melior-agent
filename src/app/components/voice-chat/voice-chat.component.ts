@@ -31,6 +31,9 @@ export class VoiceChatComponent {
   // T092: Transcriptions signal from transcription service
   readonly transcriptions = this.transcriptionService.transcriptions;
 
+  // Interim transcription signal for streaming display
+  readonly interimTranscription = this.transcriptionService.interimTranscription;
+
   // Computed properties for UI
   readonly isConnected = computed(() => this.connectionState().status === 'connected');
 

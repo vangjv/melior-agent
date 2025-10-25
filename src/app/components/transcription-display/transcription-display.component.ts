@@ -1,7 +1,7 @@
 import { Component, input, ViewChild, ElementRef, effect, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ScrollingModule, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
-import { TranscriptionMessage } from '../../models/transcription-message.model';
+import { TranscriptionMessage, InterimTranscription } from '../../models/transcription-message.model';
 
 /**
  * T079-T087, T102-T105: Transcription Display Component
@@ -21,6 +21,9 @@ export class TranscriptionDisplayComponent {
   // T080: Input signal for transcriptions
   transcriptions = input.required<readonly TranscriptionMessage[]>();
 
+  // Input signal for interim transcription
+  interimTranscription = input<InterimTranscription | null>(null);
+
   // T104: Computed signal for conditional virtual scrolling
   readonly useVirtualScroll = computed(() => this.transcriptions().length > 100);
 
@@ -37,7 +40,8 @@ export class TranscriptionDisplayComponent {
     // T087: Auto-scroll effect when transcriptions change
     effect(() => {
       const messages = this.transcriptions();
-      if (messages.length > 0) {
+      const interim = this.interimTranscription();
+      if (messages.length > 0 || interim) {
         this.scrollToBottom();
       }
     });

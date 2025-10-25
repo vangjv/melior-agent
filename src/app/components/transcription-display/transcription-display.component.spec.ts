@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranscriptionDisplayComponent } from './transcription-display.component';
-import { TranscriptionMessage } from '../../models/transcription-message.model';
+import { TranscriptionMessage, InterimTranscription } from '../../models/transcription-message.model';
 
 describe('TranscriptionDisplayComponent', () => {
   let component: TranscriptionDisplayComponent;
@@ -216,6 +216,75 @@ describe('TranscriptionDisplayComponent', () => {
       expect(container).toBeTruthy();
       expect(container.getAttribute('aria-live')).toBe('polite');
       expect(container.hasAttribute('aria-label')).toBe(true);
+    });
+  });
+
+  describe('interim transcription display', () => {
+    it('should display interim transcription as streaming message', () => {
+      const interimMessage: InterimTranscription = {
+        speaker: 'agent',
+        text: 'This is streaming...',
+        timestamp: new Date(),
+      };
+
+      fixture.componentRef.setInput('transcriptions', []);
+      fixture.componentRef.setInput('interimTranscription', interimMessage);
+      fixture.detectChanges();
+
+      const interimElement = fixture.nativeElement.querySelector('.interim-message');
+      expect(interimElement).toBeTruthy();
+      expect(interimElement.textContent).toContain('This is streaming...');
+    });
+
+    it('should show streaming indicator for interim messages', () => {
+      const interimMessage: InterimTranscription = {
+        speaker: 'user',
+        text: 'Speaking...',
+        timestamp: new Date(),
+      };
+
+      fixture.componentRef.setInput('transcriptions', []);
+      fixture.componentRef.setInput('interimTranscription', interimMessage);
+      fixture.detectChanges();
+
+      const streamingIndicator = fixture.nativeElement.querySelector('.streaming-indicator');
+      expect(streamingIndicator).toBeTruthy();
+    });
+
+    it('should display both final and interim messages together', () => {
+      const finalMessages: TranscriptionMessage[] = [
+        {
+          id: '1',
+          speaker: 'user',
+          text: 'Final message',
+          timestamp: new Date(),
+          isFinal: true,
+        },
+      ];
+      const interimMessage: InterimTranscription = {
+        speaker: 'agent',
+        text: 'Interim message...',
+        timestamp: new Date(),
+      };
+
+      fixture.componentRef.setInput('transcriptions', finalMessages);
+      fixture.componentRef.setInput('interimTranscription', interimMessage);
+      fixture.detectChanges();
+
+      const allMessages = fixture.nativeElement.querySelectorAll('.transcription-message');
+      expect(allMessages.length).toBe(2);
+
+      const interimElement = fixture.nativeElement.querySelector('.interim-message');
+      expect(interimElement).toBeTruthy();
+    });
+
+    it('should not display interim message when null', () => {
+      fixture.componentRef.setInput('transcriptions', []);
+      fixture.componentRef.setInput('interimTranscription', null);
+      fixture.detectChanges();
+
+      const interimElement = fixture.nativeElement.querySelector('.interim-message');
+      expect(interimElement).toBeFalsy();
     });
   });
 });

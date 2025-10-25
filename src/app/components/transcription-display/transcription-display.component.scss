@@ -144,6 +144,32 @@
   font-style: italic;
 }
 
+// Interim/streaming message styles
+.interim-message {
+  opacity: 0.85;
+
+  &[data-speaker="user"] {
+    background-color: var(--user-interim-bg, #e8f4fd);
+    border-style: dashed;
+  }
+
+  &[data-speaker="agent"] {
+    background-color: var(--agent-interim-bg, #fafafa);
+    border-style: dashed;
+  }
+}
+
+.streaming-indicator {
+  color: var(--primary-color, #1976d2);
+  animation: pulse 1.5s ease-in-out infinite;
+  margin-left: 0.25rem;
+}
+
+.streaming-text {
+  font-style: italic;
+  opacity: 0.9;
+}
+
 // Animations
 @keyframes fadeIn {
   from {
@@ -153,6 +179,15 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
   }
 }
 

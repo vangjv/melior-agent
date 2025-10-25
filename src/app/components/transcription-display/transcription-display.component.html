@@ -11,7 +11,7 @@
     aria-label="Voice chat transcription messages"
   >
     <div class="transcription-list">
-      @if (transcriptions().length === 0) {
+      @if (transcriptions().length === 0 && !interimTranscription()) {
         <!-- Empty state when no transcriptions -->
         <div class="empty-state">
           <p class="hint">Transcription messages will appear here during your conversation.</p>
@@ -41,6 +41,27 @@
             }
           </div>
         }
+
+        <!-- Interim (streaming) transcription -->
+        @if (interimTranscription(); as interim) {
+          <div
+            class="transcription-message interim-message"
+            [attr.data-speaker]="interim.speaker"
+          >
+            <div class="message-header">
+              <span class="speaker-label">
+                {{ interim.speaker === 'user' ? 'You' : 'Agent' }}
+              </span>
+              <span class="timestamp">
+                {{ interim.timestamp | date: 'short' }}
+              </span>
+              <span class="streaming-indicator">●</span>
+            </div>
+            <div class="message-text streaming-text">
+              {{ interim.text }}
+            </div>
+          </div>
+        }
       }
     </div>
   </cdk-virtual-scroll-viewport>
@@ -54,7 +75,7 @@
       aria-live="polite"
       aria-label="Voice chat transcription messages"
     >
-      @if (transcriptions().length === 0) {
+      @if (transcriptions().length === 0 && !interimTranscription()) {
         <!-- Empty state when no transcriptions -->
         <div class="empty-state">
           <p class="hint">Transcription messages will appear here during your conversation.</p>
@@ -83,6 +104,27 @@
                 <span class="confidence-label">Low confidence</span>
               </div>
             }
+          </div>
+        }
+
+        <!-- Interim (streaming) transcription -->
+        @if (interimTranscription(); as interim) {
+          <div
+            class="transcription-message interim-message"
+            [attr.data-speaker]="interim.speaker"
+          >
+            <div class="message-header">
+              <span class="speaker-label">
+                {{ interim.speaker === 'user' ? 'You' : 'Agent' }}
+              </span>
+              <span class="timestamp">
+                {{ interim.timestamp | date: 'short' }}
+              </span>
+              <span class="streaming-indicator">●</span>
+            </div>
+            <div class="message-text streaming-text">
+              {{ interim.text }}
+            </div>
           </div>
         }
       }
