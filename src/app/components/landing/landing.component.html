@@ -50,8 +50,12 @@
 
     <mat-card-actions align="end">
       @if (isLoading()) {
-        <button mat-raised-button disabled>
-          <mat-icon>hourglass_empty</mat-icon>
+        <button
+          mat-raised-button
+          disabled
+          aria-label="Authentication in progress"
+          aria-live="polite">
+          <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
           Authenticating...
         </button>
       } @else {
@@ -59,8 +63,8 @@
           mat-raised-button
           color="primary"
           (click)="onPrimaryButtonClick()"
-          [attr.aria-label]="primaryButtonText()">
-          <mat-icon>{{ isAuthenticated() ? 'chat' : 'login' }}</mat-icon>
+          [attr.aria-label]="primaryButtonText() + (isAuthenticated() ? ' - Opens voice chat' : ' - Sign in with Microsoft account')">
+          <mat-icon aria-hidden="true">{{ isAuthenticated() ? 'chat' : 'login' }}</mat-icon>
           {{ primaryButtonText() }}
         </button>
       }

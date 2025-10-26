@@ -6,11 +6,12 @@ Voice chat transcription application built with Angular 20, LiveKit, and Azure F
 
 - 🎤 **Voice Chat**: Connect to LiveKit voice agent for real-time conversation
 - 📝 **Live Transcription**: Real-time transcription of both user and agent speech
-- � **Chat Mode Toggle**: Switch between voice and text-based chat responses
-- �🔄 **Auto-Reconnection**: Automatic reconnection with exponential backoff on network interruptions
+- 💬 **Chat Mode Toggle**: Switch between voice and text-based chat responses
+- 🔄 **Auto-Reconnection**: Automatic reconnection with exponential backoff on network interruptions
 - 📱 **Mobile-First**: Responsive design optimized for mobile devices
 - ♿ **Accessible**: WCAG 2.1 AA compliant with screen reader support
-- 🔒 **Secure**: Token-based authentication via Azure Functions backend
+- � **Secure Authentication**: Microsoft Entra External ID authentication for frontend and backend
+- 🔒 **Token-Based API Security**: Azure Functions protected with JWT token validation
 
 ## Quick Start
 
@@ -20,6 +21,7 @@ Voice chat transcription application built with Angular 20, LiveKit, and Azure F
 - **npm**: v10.x or later
 - **Angular CLI**: v20.x (`npm install -g @angular/cli`)
 - **LiveKit Account**: Sign up at https://cloud.livekit.io
+- **Microsoft Entra External ID**: Tenant with application registration (see Authentication Setup below)
 
 ### Installation
 
@@ -41,10 +43,19 @@ Voice chat transcription application built with Angular 20, LiveKit, and Azure F
    ```bash
    # Create development environment file
    cp src/environments/environment.development.local.ts.example src/environments/environment.development.local.ts
-   # Edit with your LiveKit URL
+   # Edit with your LiveKit URL and Entra configuration
    ```
 
-4. **Start the backend API**:
+4. **Configure authentication** (see [Authentication Setup](#authentication-setup) below)
+
+5. **Start the backend API**:
+   ```bash
+   cd api
+   npm start
+   # Backend runs at http://localhost:7071
+   ```
+
+6. **Start the development server** (in a new terminal):
    ```bash
    cd api
    npm start
@@ -144,6 +155,83 @@ tests/
 
 ## Configuration
 
+### Authentication Setup
+
+The application uses **Microsoft Entra External ID** for authentication. Follow these steps to configure:
+
+#### 1. Create Microsoft Entra Application Registration
+
+1. Go to [Azure Portal](https://portal.azure.com) → **Microsoft Entra ID** → **App registrations**
+2. Click **New registration**:
+   - Name: `Melior Agent` (or your preferred name)
+   - Supported account types: **Accounts in this organizational directory only** (single tenant)
+   - Redirect URI (SPA): `http://localhost:4200` (add production URL later)
+3. Click **Register**
+4. Note the **Application (client) ID** and **Directory (tenant) ID**
+
+#### 2. Configure Authentication
+
+In your app registration:
+1. Go to **Authentication** → **Single-page application**
+2. Add redirect URIs:
+   - Development: `http://localhost:4200`
+   - Production: Your deployed app URL
+3. Under **Implicit grant and hybrid flows**, ensure **PKCE** is enabled (should be default)
+4. Set **Logout URL**: `http://localhost:4200` (or your app URL)
+
+#### 3. Configure Frontend Environment
+
+Edit `src/environments/environment.development.ts`:
+
+```typescript
+export const environment = {
+  production: false,
+  tokenApiUrl: 'http://localhost:7071/api/generateToken',
+  liveKitUrl: 'wss://your-livekit-server.livekit.cloud',
+  auth: {
+    clientId: 'YOUR_CLIENT_ID',  // From step 1
+    tenantId: 'YOUR_TENANT_ID',  // From step 1
+    authority: 'https://login.microsoftonline.com/YOUR_TENANT_ID',
+    redirectUri: 'http://localhost:4200',
+    scopes: ['openid', 'profile', 'email']
+  }
+};
+```
+
+For production (`src/environments/environment.ts`), update with production URLs.
+
+#### 4. Configure Backend API
+
+Edit `api/local.settings.json`:
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "",
+    "LIVEKIT_URL": "https://your-livekit-server.livekit.cloud",
+    "LIVEKIT_API_KEY": "your-api-key",
+    "LIVEKIT_API_SECRET": "your-api-secret",
+    "ENTRA_TENANT_ID": "YOUR_TENANT_ID",
+    "ENTRA_CLIENT_ID": "YOUR_CLIENT_ID",
+    "ENTRA_AUTHORITY": "https://login.microsoftonline.com/YOUR_TENANT_ID"
+  },
+  "Host": {
+    "CORS": "http://localhost:4200"
+  }
+}
+```
+
+#### 5. Test Authentication Flow
+
+1. Start both backend and frontend
+2. Navigate to `http://localhost:4200`
+3. Click "Sign In" on the landing page
+4. Sign in with a Microsoft account from your tenant
+5. You'll be redirected back to the app as an authenticated user
+6. Voice chat features will now be accessible
+
 ### Environment Variables
 
 **Frontend** (`src/environments/environment.ts`):
@@ -203,6 +291,46 @@ func azure functionapp publish <your-function-app-name>
 
 ## Troubleshooting
 
+### Authentication Issues
+
+**Issue**: "Sign in failed" or "Configuration error"
+- **Solution**: Verify your Microsoft Entra app registration configuration:
+  1. Check that **Client ID** and **Tenant ID** match in both frontend and backend configs
+  2. Verify redirect URI is registered in Azure Portal (must be exact match including protocol and port)
+  3. Ensure app registration has "Single-page application" platform configured
+  4. Check browser console for specific MSAL error codes
+
+**Issue**: "401 Unauthorized" when calling Azure Functions API
+- **Solution**: Token validation failing on backend:
+  1. Verify backend `ENTRA_CLIENT_ID` matches frontend configuration
+  2. Check `ENTRA_AUTHORITY` includes correct tenant ID
+  3. Ensure CORS is configured correctly in `api/local.settings.json`
+  4. Check Azure Functions logs for token validation errors
+
+**Issue**: Authentication redirect loop
+- **Solution**:
+  1. Clear browser cache and cookies
+  2. Verify `postLogoutRedirectUri` in `app.config.ts` is correct
+  3. Check that no MsalGuard is applied to the landing page route (should be public)
+
+**Issue**: "Interaction in progress" - Cannot sign in or sign out
+- **Solution**:
+  1. Wait for current authentication flow to complete
+  2. If stuck, clear browser local storage and session storage
+  3. Restart the application
+
+**Issue**: User signed in but name not displayed
+- **Solution**: Token may be missing `name` claim:
+  1. Check token claims in browser DevTools → Application → Session Storage → msal.*
+  2. Update app registration to include `name` claim in token configuration
+  3. User's profile may not have displayName set in Microsoft Entra
+
+**Issue**: Multi-tab authentication not syncing
+- **Solution**: MSAL uses BroadcastChannel for cross-tab sync:
+  1. Ensure browser supports BroadcastChannel (modern browsers)
+  2. Check browser console for MSAL broadcast service errors
+  3. Try signing out and back in
+
 ### Common Issues
 
 **Issue**: "Microphone permission denied"
@@ -228,7 +356,8 @@ Enable console logging by opening browser DevTools (F12). The app logs:
 
 - [Voice Chat Transcription](specs/001-voice-chat-transcription/spec.md)
 - [LiveKit Token API](specs/002-livekit-token-api/spec.md)
-- [Voice/Chat Mode Toggle](specs/003-voice-chat-mode/spec.md) **NEW**
+- [Voice/Chat Mode Toggle](specs/003-voice-chat-mode/spec.md)
+- [Microsoft Entra External ID Authentication](specs/004-entra-external-id-auth/spec.md) **NEW**
 - [Implementation Plan](specs/001-voice-chat-transcription/plan.md)
 - [Angular Best Practices](.github/copilot-instructions.md)
 

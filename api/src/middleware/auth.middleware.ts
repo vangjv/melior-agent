@@ -35,9 +35,35 @@ function getMsalClient(): ConfidentialClientApplication {
 /**
  * Validate bearer token from Authorization header
  *
- * @param request - HTTP request object
- * @param context - Invocation context for logging
- * @returns TokenValidationResult with validation status and user identity or error
+ * @param request - HTTP request object containing headers
+ * @param context - Azure Functions invocation context for logging
+ * @returns TokenValidationResult with validation status, user identity (if valid), or error details
+ *
+ * @remarks
+ * This function performs the following validations:
+ * 1. Checks Authorization header is present and properly formatted (Bearer <token>)
+ * 2. Decodes JWT token payload
+ * 3. Validates token expiration with 5-minute clock skew tolerance
+ * 4. Validates audience claim matches expected client ID
+ * 5. Validates issuer claim matches expected authority
+ * 6. Extracts user identity from token claims
+ *
+ * Clock skew tolerance: 5 minutes to account for time synchronization issues
+ *
+ * @example
+ * ```typescript
+ * const result = await validateToken(request, context);
+ * if (!result.isValid) {
+ *   return {
+ *     status: 401,
+ *     jsonBody: result.error
+ *   };
+ * }
+ * // Use result.userIdentity for authenticated request
+ * ```
+ *
+ * @public
+ * @since 004-entra-external-id-auth
  */
 export async function validateToken(
   request: HttpRequest,
@@ -159,7 +185,26 @@ export async function validateToken(
 }
 
 /**
- * Validate token audience claim
+ * Validate token audience claim against expected client ID
+ *
+ * @param decodedToken - Decoded JWT token payload
+ * @param expectedAudience - Expected client ID from environment configuration
+ * @returns true if audience is valid, false otherwise
+ *
+ * @remarks
+ * Handles both single audience (string) and multiple audiences (array) in token.
+ * For array audiences, returns true if expected audience is present in the array.
+ *
+ * @example
+ * ```typescript
+ * const isValid = validateAudience(token, process.env.ENTRA_CLIENT_ID);
+ * if (!isValid) {
+ *   // Handle invalid audience
+ * }
+ * ```
+ *
+ * @public
+ * @since 004-entra-external-id-auth
  */
 export function validateAudience(decodedToken: any, expectedAudience: string | undefined): boolean {
   if (!expectedAudience) {
@@ -176,7 +221,24 @@ export function validateAudience(decodedToken: any, expectedAudience: string | u
 }
 
 /**
- * Validate token issuer claim
+ * Validate token issuer claim against expected authority
+ *
+ * @param decodedToken - Decoded JWT token payload
+ * @param expectedIssuer - Expected issuer URL from environment configuration
+ * @returns true if issuer is valid, false otherwise
+ *
+ * @remarks
+ * Allows flexibility in /v2.0 suffix matching. Accepts tokens with or without the suffix
+ * to handle different Microsoft Entra token versions.
+ *
+ * @example
+ * ```typescript
+ * const authority = `${process.env.ENTRA_AUTHORITY}/v2.0`;
+ * const isValid = validateIssuer(token, authority);
+ * ```
+ *
+ * @public
+ * @since 004-entra-external-id-auth
  */
 export function validateIssuer(decodedToken: any, expectedIssuer: string | undefined): boolean {
   if (!expectedIssuer) {
@@ -190,7 +252,29 @@ export function validateIssuer(decodedToken: any, expectedIssuer: string | undef
 }
 
 /**
- * Extract user identity from validated token claims
+ * Extract user identity information from validated token claims
+ *
+ * @param decodedToken - Decoded and validated JWT token payload
+ * @returns UserIdentity object with user information extracted from token claims
+ *
+ * @remarks
+ * Claim mapping:
+ * - userId: oid (object ID) or sub (subject) claim
+ * - email: email or preferred_username claim
+ * - displayName: name claim, falls back to email or preferred_username, defaults to 'Unknown User'
+ * - tenantId: tid (tenant ID) claim
+ * - roles: roles claim array (optional, for future RBAC)
+ *
+ * All fields have safe fallbacks to prevent undefined values.
+ *
+ * @example
+ * ```typescript
+ * const userIdentity = extractUserIdentity(validatedToken);
+ * console.log(`User ${userIdentity.displayName} (${userIdentity.userId})`);
+ * ```
+ *
+ * @public
+ * @since 004-entra-external-id-auth
  */
 export function extractUserIdentity(decodedToken: any): UserIdentity {
   return {
@@ -204,6 +288,36 @@ export function extractUserIdentity(decodedToken: any): UserIdentity {
 
 /**
  * Create structured authentication error response
+ *
+ * @param code - Error code identifier (e.g., 'missing_token', 'expired_token', 'invalid_audience')
+ * @param message - Technical error message for logging
+ * @param statusCode - HTTP status code (typically 401 for auth errors)
+ * @param path - Request path where the error occurred
+ * @returns AuthErrorResponse object with standardized error structure
+ *
+ * @remarks
+ * Creates consistent error responses for authentication failures.
+ * Includes ISO timestamp for error tracking and debugging.
+ *
+ * Error codes:
+ * - missing_token: No Authorization header present
+ * - invalid_token: Token is malformed or has invalid signature
+ * - expired_token: Token has expired beyond clock skew tolerance
+ * - invalid_audience: Token audience doesn't match expected client ID
+ * - invalid_issuer: Token issuer doesn't match expected authority
+ *
+ * @example
+ * ```typescript
+ * const error = createAuthErrorResponse(
+ *   'expired_token',
+ *   'Token has expired',
+ *   401,
+ *   '/api/generateToken'
+ * );
+ * ```
+ *
+ * @public
+ * @since 004-entra-external-id-auth
  */
 export function createAuthErrorResponse(
   code: string,

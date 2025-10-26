@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, OnDestroy } from '@angular/core';
+import { Injectable, signal, computed, OnDestroy, effect } from '@angular/core';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { EventMessage, EventType, InteractionStatus, AuthenticationResult, AuthError as MsalAuthError } from '@azure/msal-browser';
 import { Subject, filter, takeUntil } from 'rxjs';
@@ -6,17 +6,19 @@ import { AuthenticationState, UserProfile, AuthError, AuthErrorCode, AuthStatus 
 
 /**
  * Authentication service that wraps MSAL Angular and exposes reactive state via signals
- * Feature: 004-entra-external-id-auth
+ * Feature: 004-entra-external-id-auth (T093: Added screen reader announcements)
  *
  * This service:
  * - Bridges MSAL's RxJS observables to Angular Signals for reactive state management
  * - Provides sign-in/sign-out methods
  * - Handles authentication events and errors
  * - Exposes computed signals for derived auth state
+ * - Announces auth state changes to screen readers via ARIA live regions
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService implements OnDestroy {
   private readonly destroy$ = new Subject<void>();
+  private liveRegion: HTMLDivElement | null = null;
 
   // Private mutable state signal
   private readonly _authState = signal<AuthenticationState>({
@@ -39,6 +41,73 @@ export class AuthService implements OnDestroy {
     private msalBroadcastService: MsalBroadcastService
   ) {
     this.initialize();
+    this.initializeLiveRegion();
+    this.setupScreenReaderAnnouncements();
+  }
+
+  /**
+   * Initialize ARIA live region for screen reader announcements
+   * T093: Add screen reader announcements for auth state changes
+   */
+  private initializeLiveRegion(): void {
+    if (typeof document === 'undefined') return; // Skip in SSR
+
+    this.liveRegion = document.createElement('div');
+    this.liveRegion.setAttribute('aria-live', 'polite');
+    this.liveRegion.setAttribute('aria-atomic', 'true');
+    this.liveRegion.setAttribute('class', 'sr-only');
+    this.liveRegion.style.position = 'absolute';
+    this.liveRegion.style.left = '-10000px';
+    this.liveRegion.style.width = '1px';
+    this.liveRegion.style.height = '1px';
+    this.liveRegion.style.overflow = 'hidden';
+    document.body.appendChild(this.liveRegion);
+  }
+
+  /**
+   * Setup effect to announce auth state changes to screen readers
+   * T093: Add screen reader announcements for auth state changes
+   */
+  private setupScreenReaderAnnouncements(): void {
+    effect(() => {
+      const state = this._authState();
+      this.announceAuthState(state);
+    });
+  }
+
+  /**
+   * Announce authentication state changes to screen readers
+   * T093: Add screen reader announcements for auth state changes
+   */
+  private announceAuthState(state: AuthenticationState): void {
+    if (!this.liveRegion) return;
+
+    let message = '';
+
+    switch (state.status) {
+      case 'authenticating':
+        message = 'Signing in, please wait';
+        break;
+      case 'authenticated':
+        message = `Successfully signed in as ${state.user?.displayName || 'user'}`;
+        break;
+      case 'unauthenticated':
+        message = 'Signed out successfully';
+        break;
+      case 'error':
+        message = `Authentication error: ${state.error?.userMessage || 'Unknown error occurred'}`;
+        break;
+    }
+
+    if (message) {
+      // Clear and set message (forces screen reader announcement)
+      this.liveRegion.textContent = '';
+      setTimeout(() => {
+        if (this.liveRegion) {
+          this.liveRegion.textContent = message;
+        }
+      }, 100);
+    }
   }
 
   /**
@@ -84,6 +153,12 @@ export class AuthService implements OnDestroy {
 
   /**
    * Check current authentication status by examining MSAL accounts
+   *
+   * @remarks
+   * This method queries MSAL for all cached accounts and updates the auth state signal.
+   * Called during initialization and after MSAL interactions complete.
+   *
+   * @public
    */
   checkAuthStatus(): void {
     const accounts = this.msalService.instance.getAllAccounts();
@@ -255,7 +330,20 @@ export class AuthService implements OnDestroy {
   }
 
   /**
-   * Sign in using redirect flow
+   * Sign in using Microsoft Entra redirect flow
+   *
+   * @remarks
+   * Initiates the MSAL loginRedirect flow. User will be redirected to Microsoft's
+   * authentication page and then back to the application. Auth state is automatically
+   * updated when the redirect completes.
+   *
+   * Sets auth status to 'authenticating' during the redirect process.
+   *
+   * @public
+   * @example
+   * ```typescript
+   * authService.signIn();
+   * ```
    */
   signIn(): void {
     this._authState.set({
@@ -268,17 +356,34 @@ export class AuthService implements OnDestroy {
   }
 
   /**
-   * Sign out using redirect flow
+   * Sign out using Microsoft Entra redirect flow
+   *
+   * @remarks
+   * Initiates the MSAL logoutRedirect flow. Clears local authentication state and
+   * redirects to Microsoft's sign-out endpoint, then back to the application's
+   * postLogoutRedirectUri (configured in app.config.ts).
+   *
+   * @public
+   * @example
+   * ```typescript
+   * authService.signOut();
+   * ```
    */
   signOut(): void {
     this.msalService.logoutRedirect();
   }
 
   /**
-   * Clean up subscriptions on destroy
+   * Clean up subscriptions and live region on destroy
    */
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+
+    // Remove ARIA live region
+    if (this.liveRegion && this.liveRegion.parentNode) {
+      this.liveRegion.parentNode.removeChild(this.liveRegion);
+      this.liveRegion = null;
+    }
   }
 }

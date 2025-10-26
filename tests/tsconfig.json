@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2020",
+    "outDir": "../api/dist",
+    "rootDir": "..",
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "baseUrl": "../api",
+    "types": ["jest", "node"],
+    "typeRoots": [
+      "../api/node_modules/@types",
+      "../node_modules/@types"
+    ],
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": [
+    "../tests/**/*.ts",
+    "../api/src/**/*.ts"
+  ]
+}

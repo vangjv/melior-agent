@@ -185,13 +185,13 @@
 
 ### Tests for User Story 5
 
-- [ ] T081 [P] [US5] Create unit test for auth middleware in api/src/middleware/auth.middleware.test.ts
-- [ ] T082 [P] [US5] Test validateToken() with valid token returns isValid: true in api/src/middleware/auth.middleware.test.ts
-- [ ] T083 [P] [US5] Test validateToken() with missing token returns missing_token error in api/src/middleware/auth.middleware.test.ts
-- [ ] T084 [P] [US5] Test validateToken() with invalid signature returns invalid_token error in api/src/middleware/auth.middleware.test.ts
-- [ ] T085 [P] [US5] Test validateToken() with expired token returns expired_token error in api/src/middleware/auth.middleware.test.ts
-- [ ] T086 [P] [US5] Test validateToken() with wrong audience returns invalid_audience error in api/src/middleware/auth.middleware.test.ts
-- [ ] T087 [P] [US5] Test extractUserIdentity() correctly maps token claims to UserIdentity in api/src/middleware/auth.middleware.test.ts
+- [X] T081 [P] [US5] Create unit test for auth middleware in api/src/middleware/auth.middleware.test.ts
+- [X] T082 [P] [US5] Test validateToken() with valid token returns isValid: true in api/src/middleware/auth.middleware.test.ts
+- [X] T083 [P] [US5] Test validateToken() with missing token returns missing_token error in api/src/middleware/auth.middleware.test.ts
+- [X] T084 [P] [US5] Test validateToken() with invalid signature returns invalid_token error in api/src/middleware/auth.middleware.test.ts
+- [X] T085 [P] [US5] Test validateToken() with expired token returns expired_token error in api/src/middleware/auth.middleware.test.ts
+- [X] T086 [P] [US5] Test validateToken() with wrong audience returns invalid_audience error in api/src/middleware/auth.middleware.test.ts
+- [X] T087 [P] [US5] Test extractUserIdentity() correctly maps token claims to UserIdentity in api/src/middleware/auth.middleware.test.ts
 - [ ] T088 [US5] Create integration test for generateToken endpoint in tests/integration/auth.test.ts with real token validation
 - [ ] T089 [US5] Test generateToken returns 401 for missing Authorization header in tests/integration/auth.test.ts
 - [ ] T090 [US5] Test generateToken returns 401 for invalid token in tests/integration/auth.test.ts
@@ -205,16 +205,16 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T092 [P] Add ARIA labels to landing page buttons in src/app/components/landing/landing.component.html for accessibility
-- [ ] T093 [P] Add screen reader announcements for auth state changes in src/app/services/auth.service.ts using live region
+- [X] T092 [P] Add ARIA labels to landing page buttons in src/app/components/landing/landing.component.html for accessibility
+- [X] T093 [P] Add screen reader announcements for auth state changes in src/app/services/auth.service.ts using live region
 - [ ] T094 [P] Test keyboard navigation for sign-in and sign-out flows in tests/integration/accessibility.spec.ts
 - [ ] T095 [P] Add loading spinner during authentication redirect using MsalBroadcastService.inProgress$ signal
 - [ ] T096 [P] Add error display component for authentication errors using Angular Material snackbar
 - [ ] T097 [P] Test WCAG 2.1 AA compliance for landing page using axe-core in tests/e2e/accessibility.spec.ts
-- [ ] T098 [P] Add API documentation comments to auth middleware in api/src/middleware/auth.middleware.ts
-- [ ] T099 [P] Add JSDoc comments to AuthService public methods in src/app/services/auth.service.ts
-- [ ] T100 [P] Update README.md with authentication setup instructions and Entra configuration steps
-- [ ] T101 [P] Add authentication troubleshooting section to README.md
+- [X] T098 [P] Add API documentation comments to auth middleware in api/src/middleware/auth.middleware.ts
+- [X] T099 [P] Add JSDoc comments to AuthService public methods in src/app/services/auth.service.ts
+- [X] T100 [P] Update README.md with authentication setup instructions and Entra configuration steps
+- [X] T101 [P] Add authentication troubleshooting section to README.md
 - [ ] T102 Validate all acceptance scenarios from spec.md by running quickstart.md steps
 - [ ] T103 Test multi-tab authentication synchronization using MsalBroadcastService cross-tab events
 - [ ] T104 Test deep link to protected route redirects back after authentication
