@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+
+.navigation-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.toolbar-content {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 500;
+  text-transform: none;
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-display-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+// Responsive design
+@media (max-width: 600px) {
+  .user-display-name {
+    display: none;
+  }
+
+  .app-title span {
+    display: none;
+  }
+}

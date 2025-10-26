@@ -1,0 +1,32 @@
+<mat-toolbar color="primary" class="navigation-toolbar">
+  <div class="toolbar-content">
+    <!-- App title/logo -->
+    <button mat-button (click)="navigateToHome()" class="app-title">
+      <mat-icon>mic</mat-icon>
+      <span>Melior Agent</span>
+    </button>
+
+    <span class="spacer"></span>
+
+    <!-- Authenticated user menu -->
+    @if (isAuthenticated()) {
+      <div class="user-menu">
+        <span class="user-display-name">{{ displayName() }}</span>
+        <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="User menu">
+          <mat-icon>account_circle</mat-icon>
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <button mat-menu-item (click)="navigateToVoiceChat()">
+            <mat-icon>mic</mat-icon>
+            <span>Voice Chat</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="onSignOut()">
+            <mat-icon>logout</mat-icon>
+            <span>Sign Out</span>
+          </button>
+        </mat-menu>
+      </div>
+    }
+  </div>
+</mat-toolbar>

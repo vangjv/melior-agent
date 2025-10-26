@@ -98,13 +98,13 @@
 
 ### Tests for User Story 2
 
-- [ ] T042 [P] [US2] Create unit test for AuthService in src/app/services/auth.service.spec.ts with MsalService and MsalBroadcastService mocks
-- [ ] T043 [P] [US2] Test signIn() method calls msalService.loginRedirect() in src/app/services/auth.service.spec.ts
-- [ ] T044 [P] [US2] Test signOut() method calls msalService.logoutRedirect() in src/app/services/auth.service.spec.ts
-- [ ] T045 [P] [US2] Test authState signal updates on LOGIN_SUCCESS event in src/app/services/auth.service.spec.ts
-- [ ] T046 [P] [US2] Test authState signal updates on LOGOUT_SUCCESS event in src/app/services/auth.service.spec.ts
-- [ ] T047 [P] [US2] Test error handling on LOGIN_FAILURE event in src/app/services/auth.service.spec.ts
-- [ ] T048 [US2] Create integration test for sign-in redirect flow in tests/integration/auth-flow.spec.ts
+- [X] T042 [P] [US2] Create unit test for AuthService in src/app/services/auth.service.spec.ts with MsalService and MsalBroadcastService mocks
+- [X] T043 [P] [US2] Test signIn() method calls msalService.loginRedirect() in src/app/services/auth.service.spec.ts
+- [X] T044 [P] [US2] Test signOut() method calls msalService.logoutRedirect() in src/app/services/auth.service.spec.ts
+- [X] T045 [P] [US2] Test authState signal updates on LOGIN_SUCCESS event in src/app/services/auth.service.spec.ts
+- [X] T046 [P] [US2] Test authState signal updates on LOGOUT_SUCCESS event in src/app/services/auth.service.spec.ts
+- [X] T047 [P] [US2] Test error handling on LOGIN_FAILURE event in src/app/services/auth.service.spec.ts
+- [X] T048 [US2] Create integration test for sign-in redirect flow in tests/integration/auth-flow.spec.ts
 
 **Checkpoint**: User Story 2 complete - users can sign in and sign out via redirect flow
 
@@ -118,24 +118,24 @@
 
 ### Implementation for User Story 3
 
-- [ ] T049 [P] [US3] Add MsalGuard to voice chat routes in src/app/app.routes.ts using canActivate: [MsalGuard]
-- [ ] T050 [P] [US3] Update navigation component in src/app/components/navigation/navigation.component.ts to inject AuthService
-- [ ] T051 [US3] Add computed signals for user display name and auth status in src/app/components/navigation/navigation.component.ts
-- [ ] T052 [US3] Update navigation template to show user name and sign-out button when authenticated in src/app/components/navigation/navigation.component.html
-- [ ] T053 [US3] Add sign-out button handler in src/app/components/navigation/navigation.component.ts calling authService.signOut()
-- [ ] T054 [US3] Verify protectedResourceMap in src/app/app.config.ts includes Azure Functions API URL for automatic token injection
-- [ ] T055 [US3] Test that HTTP requests to Azure Functions include Authorization header via MsalInterceptor
+- [X] T049 [P] [US3] Add MsalGuard to voice chat routes in src/app/app.routes.ts using canActivate: [MsalGuard]
+- [X] T050 [P] [US3] Update navigation component in src/app/components/navigation/navigation.component.ts to inject AuthService
+- [X] T051 [US3] Add computed signals for user display name and auth status in src/app/components/navigation/navigation.component.ts
+- [X] T052 [US3] Update navigation template to show user name and sign-out button when authenticated in src/app/components/navigation/navigation.component.html
+- [X] T053 [US3] Add sign-out button handler in src/app/components/navigation/navigation.component.ts calling authService.signOut()
+- [X] T054 [US3] Verify protectedResourceMap in src/app/app.config.ts includes Azure Functions API URL for automatic token injection
+- [X] T055 [US3] Test that HTTP requests to Azure Functions include Authorization header via MsalInterceptor
 
 ### Tests for User Story 3
 
-- [ ] T056 [P] [US3] Create unit test for route guard behavior in tests/unit/route-guard.spec.ts with MsalGuard mock
-- [ ] T057 [P] [US3] Test authenticated users can access protected routes in tests/unit/route-guard.spec.ts
-- [ ] T058 [P] [US3] Test unauthenticated users redirected to sign-in from protected routes in tests/unit/route-guard.spec.ts
-- [ ] T059 [P] [US3] Create unit test for NavigationComponent in src/app/components/navigation/navigation.component.spec.ts
-- [ ] T060 [P] [US3] Test navigation shows user display name when authenticated in src/app/components/navigation/navigation.component.spec.ts
-- [ ] T061 [P] [US3] Test sign-out button calls authService.signOut() in src/app/components/navigation/navigation.component.spec.ts
-- [ ] T062 [US3] Create integration test for protected route access in tests/integration/auth-flow.spec.ts
-- [ ] T063 [US3] Create integration test for MsalInterceptor token injection in tests/integration/auth-flow.spec.ts
+- [X] T056 [P] [US3] Create unit test for route guard behavior in tests/unit/route-guard.spec.ts with MsalGuard mock
+- [X] T057 [P] [US3] Test authenticated users can access protected routes in tests/unit/route-guard.spec.ts
+- [X] T058 [P] [US3] Test unauthenticated users redirected to sign-in from protected routes in tests/unit/route-guard.spec.ts
+- [X] T059 [P] [US3] Create unit test for NavigationComponent in src/app/components/navigation/navigation.component.spec.ts
+- [X] T060 [P] [US3] Test navigation shows user display name when authenticated in src/app/components/navigation/navigation.component.spec.ts
+- [X] T061 [P] [US3] Test sign-out button calls authService.signOut() in src/app/components/navigation/navigation.component.spec.ts
+- [X] T062 [US3] Create integration test for protected route access in tests/integration/auth-flow.spec.ts
+- [X] T063 [US3] Create integration test for MsalInterceptor token injection in tests/integration/auth-flow.spec.ts
 
 **Checkpoint**: User Story 3 complete - voice features protected and accessible to authenticated users
 
@@ -149,15 +149,15 @@
 
 ### Implementation for User Story 4
 
-- [ ] T064 [US4] Verify signOut() method in src/app/services/auth.service.ts properly clears MSAL account cache
-- [ ] T065 [US4] Add postLogoutRedirectUri configuration in src/app/app.config.ts MSALInstanceFactory to redirect to landing page
-- [ ] T066 [US4] Test that sign-out clears authState signal and sets status to 'unauthenticated' in src/app/services/auth.service.ts
+- [X] T064 [US4] Verify signOut() method in src/app/services/auth.service.ts properly clears MSAL account cache
+- [X] T065 [US4] Add postLogoutRedirectUri configuration in src/app/app.config.ts MSALInstanceFactory to redirect to landing page
+- [X] T066 [US4] Test that sign-out clears authState signal and sets status to 'unauthenticated' in src/app/services/auth.service.ts
 
 ### Tests for User Story 4
 
-- [ ] T067 [P] [US4] Test sign-out clears user profile from authState signal in src/app/services/auth.service.spec.ts
-- [ ] T068 [P] [US4] Test sign-out redirects to postLogoutRedirectUri in integration test tests/integration/auth-flow.spec.ts
-- [ ] T069 [US4] Test that accessing protected routes after sign-out triggers re-authentication in tests/integration/auth-flow.spec.ts
+- [X] T067 [P] [US4] Test sign-out clears user profile from authState signal in src/app/services/auth.service.spec.ts
+- [X] T068 [P] [US4] Test sign-out redirects to postLogoutRedirectUri in integration test tests/integration/auth-flow.spec.ts
+- [X] T069 [US4] Test that accessing protected routes after sign-out triggers re-authentication in tests/integration/auth-flow.spec.ts
 
 **Checkpoint**: User Story 4 complete - sign-out functionality working correctly
 

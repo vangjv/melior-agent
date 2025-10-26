@@ -2,6 +2,7 @@ import { Component, signal, OnInit, inject, OnDestroy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 import { Subject, takeUntil } from 'rxjs';
+import { NavigationComponent } from './components/navigation/navigation.component';
 
 /**
  * Root application component
@@ -9,7 +10,7 @@ import { Subject, takeUntil } from 'rxjs';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, NavigationComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
