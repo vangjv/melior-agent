@@ -21,14 +21,14 @@ describe('NavigationComponent', () => {
   let routerMock: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    // Create mock signals
+    // Create mock signals (keep as writable for test manipulation)
     const isAuthenticatedSignal = signal(false);
     const currentUserSignal = signal(null);
 
     // Create service mocks
     authServiceMock = jasmine.createSpyObj('AuthService', ['signOut'], {
-      isAuthenticated: isAuthenticatedSignal.asReadonly(),
-      currentUser: currentUserSignal.asReadonly()
+      isAuthenticated: isAuthenticatedSignal,
+      currentUser: currentUserSignal
     });
 
     routerMock = jasmine.createSpyObj('Router', ['navigate']);

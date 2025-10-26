@@ -29,6 +29,7 @@ describe('LandingComponent', () => {
       isAuthenticated: signal(false),
       currentUser: signal(null),
       isLoading: signal(false),
+      authError: signal(null),
       authState: signal(createMockAuthState(false))
     });
 
@@ -75,20 +76,14 @@ describe('LandingComponent', () => {
   });
 
   it('should show "Go to Voice Chat" button when authenticated', () => {
-    // Update mock to authenticated state
-    Object.defineProperty(mockAuthService, 'isAuthenticated', {
-      value: signal(true),
-      writable: false
-    });
-    Object.defineProperty(mockAuthService, 'currentUser', {
-      value: signal({
-        userId: 'test-user-id',
-        email: 'test@example.com',
-        displayName: 'Test User',
-        username: 'test@example.com',
-        tenantId: 'test-tenant-id'
-      }),
-      writable: false
+    // Update mock signals to authenticated state
+    (mockAuthService.isAuthenticated as any).set(true);
+    (mockAuthService.currentUser as any).set({
+      userId: 'test-user-id',
+      email: 'test@example.com',
+      displayName: 'Test User',
+      username: 'test@example.com',
+      tenantId: 'test-tenant-id'
     });
 
     fixture.detectChanges();
@@ -99,11 +94,8 @@ describe('LandingComponent', () => {
   });
 
   it('should navigate to voice chat when authenticated and button clicked', () => {
-    // Update mock to authenticated state
-    Object.defineProperty(mockAuthService, 'isAuthenticated', {
-      value: signal(true),
-      writable: false
-    });
+    // Update mock signals to authenticated state
+    (mockAuthService.isAuthenticated as any).set(true);
 
     fixture.detectChanges();
 
@@ -121,10 +113,7 @@ describe('LandingComponent', () => {
   });
 
   it('should show loading state during authentication', () => {
-    Object.defineProperty(mockAuthService, 'isLoading', {
-      value: signal(true),
-      writable: false
-    });
+    (mockAuthService.isLoading as any).set(true);
 
     fixture.detectChanges();
 

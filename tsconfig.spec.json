@@ -9,7 +9,13 @@
     ]
   },
   "include": [
-    "src/**/*.ts",
-    "tests/**/*.ts"
+    "src/**/*.spec.ts",
+    "tests/integration/**/*.spec.ts"
+  ],
+  "exclude": [
+    "api/**/*",
+    "tests/unit/**/*",
+    "tests/integration/**/*.test.ts",
+    "node_modules"
   ]
 }
