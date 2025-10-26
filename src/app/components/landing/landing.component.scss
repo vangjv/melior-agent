@@ -1,0 +1,171 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+}
+
+.landing-container {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.landing-card {
+  margin-top: 4rem;
+
+  mat-card-header {
+    margin-bottom: 1.5rem;
+  }
+
+  mat-card-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  mat-card-subtitle {
+    font-size: 1.25rem;
+    opacity: 0.8;
+  }
+}
+
+.features-section {
+  margin-bottom: 2rem;
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #667eea;
+  }
+}
+
+.features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    mat-icon {
+      color: #667eea;
+      flex-shrink: 0;
+    }
+
+    span {
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+  }
+}
+
+.info-section {
+  margin-bottom: 2rem;
+
+  p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+.welcome-message {
+  background-color: #e8f5e9;
+  border-left: 4px solid #4caf50;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+
+  p {
+    margin: 0.5rem 0;
+
+    &:first-child {
+      margin-top: 0;
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  strong {
+    color: #2e7d32;
+  }
+}
+
+.info-message {
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+
+  p {
+    margin: 0;
+    color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+mat-card-actions {
+  padding: 1rem 1.5rem;
+
+  button {
+    min-width: 200px;
+    height: 48px;
+    font-size: 1rem;
+
+    mat-icon {
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+.footer {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+
+  p {
+    margin: 0;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  :host {
+    padding: 1rem;
+  }
+
+  .landing-card {
+    margin-top: 2rem;
+
+    mat-card-title {
+      font-size: 1.5rem;
+    }
+
+    mat-card-subtitle {
+      font-size: 1rem;
+    }
+  }
+
+  .features-list li span {
+    font-size: 0.9rem;
+  }
+
+  mat-card-actions button {
+    min-width: 160px;
+    height: 44px;
+    font-size: 0.9rem;
+  }
+}

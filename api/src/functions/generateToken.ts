@@ -1,6 +1,7 @@
 /**
  * generateToken.ts
  * Azure HTTP trigger function for generating LiveKit access tokens.
+ * Feature: 004-entra-external-id-auth - Token validation integrated
  */
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
@@ -9,16 +10,40 @@ import { LiveKitTokenService, LiveKitTokenGenerator } from '../services/LiveKitT
 import { validateTokenRequest, formatValidationError } from '../utils/validation';
 import { createMissingCredentialsError } from '../utils/config';
 import { ErrorResponse, ErrorCode } from '../models/ErrorResponse';
+import { validateToken } from '../middleware/auth.middleware';
+import { LiveKitTokenMetadata } from '../models/LiveKitTokenMetadata';
 
 /**
  * HTTP POST handler for /api/token endpoint.
  * Generates LiveKit access tokens for voice chat sessions.
+ * Requires valid Microsoft Entra authentication token (004-entra-external-id-auth).
  */
 async function generateToken(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   context.log('Processing token generation request', {
     invocationId: context.invocationId,
     method: request.method,
     url: request.url
+  });
+
+  // Feature: 004-entra-external-id-auth - Validate authentication token
+  const authResult = await validateToken(request, context);
+
+  if (!authResult.isValid) {
+    context.warn('Token validation failed', { error: authResult.error });
+
+    return {
+      status: authResult.error?.error.statusCode || 401,
+      jsonBody: authResult.error,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+  }
+
+  const userIdentity = authResult.userIdentity!;
+  context.log('User authenticated', {
+    userId: userIdentity.userId,
+    displayName: userIdentity.displayName
   });
 
   try {
@@ -52,18 +77,28 @@ async function generateToken(request: HttpRequest, context: InvocationContext): 
       const generator = new LiveKitTokenGenerator();
       const service = new LiveKitTokenService(generator);
 
-      // Generate token
+      // Feature: 004-entra-external-id-auth - Prepare user identity metadata
+      const tokenMetadata: LiveKitTokenMetadata = {
+        userId: userIdentity.userId,
+        displayName: userIdentity.displayName,
+        email: userIdentity.email,
+        tenantId: userIdentity.tenantId
+      };
+
+      // Generate token with user identity metadata
       const response = await service.generateToken(
         validatedRequest.roomName,
         validatedRequest.participantIdentity,
         validatedRequest.expirationSeconds,
-        validatedRequest.participantName
+        validatedRequest.participantName || userIdentity.displayName,
+        tokenMetadata
       );
 
       context.log('Token generated successfully', {
         roomName: response.roomName,
         participantIdentity: response.participantIdentity,
-        expiresAt: response.expiresAt
+        expiresAt: response.expiresAt,
+        userId: userIdentity.userId
       });
 
       return {

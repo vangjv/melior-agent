@@ -16,12 +16,12 @@
 
 **Purpose**: Project initialization and MSAL dependency installation
 
-- [ ] T001 Install @azure/msal-angular@^4.0.0 and @azure/msal-browser@^3.7.0 in Angular project root using npm install --save
-- [ ] T002 Install @azure/msal-node@^2.6.0 in api/ directory using npm install --save
-- [ ] T003 [P] Create environment configuration in src/environments/environment.development.ts with Entra config (clientId, tenantId, authority, redirectUri, scopes)
-- [ ] T004 [P] Create production environment configuration in src/environments/environment.ts with Entra config
-- [ ] T005 [P] Add Entra environment variables to api/local.settings.json (ENTRA_TENANT_ID, ENTRA_CLIENT_ID, ENTRA_AUTHORITY)
-- [ ] T006 [P] Update api/local.settings.json with CORS configuration for http://localhost:4200
+- [X] T001 Install @azure/msal-angular@^4.0.0 and @azure/msal-browser@^3.7.0 in Angular project root using npm install --save
+- [X] T002 Install @azure/msal-node@^2.6.0 in api/ directory using npm install --save
+- [X] T003 [P] Create environment configuration in src/environments/environment.development.ts with Entra config (clientId, tenantId, authority, redirectUri, scopes)
+- [X] T004 [P] Create production environment configuration in src/environments/environment.ts with Entra config
+- [X] T005 [P] Add Entra environment variables to api/local.settings.json (ENTRA_TENANT_ID, ENTRA_CLIENT_ID, ENTRA_AUTHORITY)
+- [X] T006 [P] Update api/local.settings.json with CORS configuration for http://localhost:4200
 
 ---
 
@@ -31,22 +31,22 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T007 Create AuthenticationState interface in src/app/models/auth-state.ts with status, user, error properties
-- [ ] T008 [P] Create UserProfile interface in src/app/models/auth-state.ts with userId, email, displayName, username, tenantId fields
-- [ ] T009 [P] Create AuthError interface in src/app/models/auth-state.ts with code, message, userMessage, timestamp, retryable fields
-- [ ] T010 Configure MSAL factory providers in src/app/app.config.ts (MSALInstanceFactory, MSALGuardConfigFactory, MSALInterceptorConfigFactory)
-- [ ] T011 Add MSAL providers to src/app/app.config.ts (MSAL_INSTANCE, MSAL_GUARD_CONFIG, MSAL_INTERCEPTOR_CONFIG, MsalService, MsalGuard, MsalBroadcastService, MsalInterceptor)
-- [ ] T012 Create AuthService in src/app/services/auth.service.ts with signal-based state management wrapping MsalService and MsalBroadcastService
-- [ ] T013 Implement checkAuthStatus() method in src/app/services/auth.service.ts to check MSAL accounts and update signal state
-- [ ] T014 [P] Implement handleMsalEvent() method in src/app/services/auth.service.ts to react to LOGIN_SUCCESS, LOGOUT_SUCCESS, ACQUIRE_TOKEN events
-- [ ] T015 [P] Implement error mapping methods in src/app/services/auth.service.ts (mapErrorCode, getUserFriendlyMessage, isErrorRetryable)
-- [ ] T016 Create UserIdentity interface in api/src/models/UserIdentity.ts with userId, email, displayName, tenantId, roles fields
-- [ ] T017 [P] Create TokenValidationResult interface in api/src/models/TokenValidationResult.ts with isValid, userIdentity, error fields
-- [ ] T018 [P] Create AuthErrorResponse interface in api/src/models/AuthError.ts with error code, message, statusCode, timestamp, path fields
-- [ ] T019 Create auth middleware in api/src/middleware/auth.middleware.ts using @azure/msal-node for JWT token validation
-- [ ] T020 Implement validateToken() function in api/src/middleware/auth.middleware.ts to validate bearer tokens against Microsoft Entra
-- [ ] T021 [P] Implement extractUserIdentity() function in api/src/middleware/auth.middleware.ts to extract user claims from validated token
-- [ ] T022 [P] Implement createAuthErrorResponse() function in api/src/middleware/auth.middleware.ts for structured 401 responses
+- [X] T007 Create AuthenticationState interface in src/app/models/auth-state.ts with status, user, error properties
+- [X] T008 [P] Create UserProfile interface in src/app/models/auth-state.ts with userId, email, displayName, username, tenantId fields
+- [X] T009 [P] Create AuthError interface in src/app/models/auth-state.ts with code, message, userMessage, timestamp, retryable fields
+- [X] T010 Configure MSAL factory providers in src/app/app.config.ts (MSALInstanceFactory, MSALGuardConfigFactory, MSALInterceptorConfigFactory)
+- [X] T011 Add MSAL providers to src/app/app.config.ts (MSAL_INSTANCE, MSAL_GUARD_CONFIG, MSAL_INTERCEPTOR_CONFIG, MsalService, MsalGuard, MsalBroadcastService, MsalInterceptor)
+- [X] T012 Create AuthService in src/app/services/auth.service.ts with signal-based state management wrapping MsalService and MsalBroadcastService
+- [X] T013 Implement checkAuthStatus() method in src/app/services/auth.service.ts to check MSAL accounts and update signal state
+- [X] T014 [P] Implement handleMsalEvent() method in src/app/services/auth.service.ts to react to LOGIN_SUCCESS, LOGOUT_SUCCESS, ACQUIRE_TOKEN events
+- [X] T015 [P] Implement error mapping methods in src/app/services/auth.service.ts (mapErrorCode, getUserFriendlyMessage, isErrorRetryable)
+- [X] T016 Create UserIdentity interface in api/src/models/UserIdentity.ts with userId, email, displayName, tenantId, roles fields
+- [X] T017 [P] Create TokenValidationResult interface in api/src/models/TokenValidationResult.ts with isValid, userIdentity, error fields
+- [X] T018 [P] Create AuthErrorResponse interface in api/src/models/AuthError.ts with error code, message, statusCode, timestamp, path fields
+- [X] T019 Create auth middleware in api/src/middleware/auth.middleware.ts using @azure/msal-node for JWT token validation
+- [X] T020 Implement validateToken() function in api/src/middleware/auth.middleware.ts to validate bearer tokens against Microsoft Entra
+- [X] T021 [P] Implement extractUserIdentity() function in api/src/middleware/auth.middleware.ts to extract user claims from validated token
+- [X] T022 [P] Implement createAuthErrorResponse() function in api/src/middleware/auth.middleware.ts for structured 401 responses
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -60,19 +60,19 @@
 
 ### Implementation for User Story 1
 
-- [ ] T023 [P] [US1] Create LandingComponent in src/app/components/landing/landing.component.ts with standalone configuration and OnPush change detection
-- [ ] T024 [P] [US1] Create landing component template in src/app/components/landing/landing.component.html with Material card, app description, and sign-in button
-- [ ] T025 [P] [US1] Create landing component styles in src/app/components/landing/landing.component.scss with responsive layout
-- [ ] T026 [US1] Add public route for landing page in src/app/app.routes.ts at path '' without MsalGuard
-- [ ] T027 [US1] Inject AuthService in src/app/components/landing/landing.component.ts and bind sign-in button to authService.signIn()
-- [ ] T028 [US1] Add computed signal for authentication status in src/app/components/landing/landing.component.ts using authService.isAuthenticated
-- [ ] T029 [US1] Update landing template to conditionally show "Sign In" or "Go to Voice Chat" button based on auth status
+- [X] T023 [P] [US1] Create LandingComponent in src/app/components/landing/landing.component.ts with standalone configuration and OnPush change detection
+- [X] T024 [P] [US1] Create landing component template in src/app/components/landing/landing.component.html with Material card, app description, and sign-in button
+- [X] T025 [P] [US1] Create landing component styles in src/app/components/landing/landing.component.scss with responsive layout
+- [X] T026 [US1] Add public route for landing page in src/app/app.routes.ts at path '' without MsalGuard
+- [X] T027 [US1] Inject AuthService in src/app/components/landing/landing.component.ts and bind sign-in button to authService.signIn()
+- [X] T028 [US1] Add computed signal for authentication status in src/app/components/landing/landing.component.ts using authService.isAuthenticated
+- [X] T029 [US1] Update landing template to conditionally show "Sign In" or "Go to Voice Chat" button based on auth status
 
 ### Tests for User Story 1
 
-- [ ] T030 [P] [US1] Create unit test for LandingComponent in src/app/components/landing/landing.component.spec.ts with MSAL service mocks
-- [ ] T031 [P] [US1] Test that landing page renders without authentication in src/app/components/landing/landing.component.spec.ts
-- [ ] T032 [P] [US1] Test sign-in button calls authService.signIn() in src/app/components/landing/landing.component.spec.ts
+- [X] T030 [P] [US1] Create unit test for LandingComponent in src/app/components/landing/landing.component.spec.ts with MSAL service mocks
+- [X] T031 [P] [US1] Test that landing page renders without authentication in src/app/components/landing/landing.component.spec.ts
+- [X] T032 [P] [US1] Test sign-in button calls authService.signIn() in src/app/components/landing/landing.component.spec.ts
 - [ ] T033 [US1] Create integration test for landing page access in tests/integration/auth-flow.spec.ts verifying unauthenticated access
 
 **Checkpoint**: User Story 1 complete - public landing page accessible and tested independently
@@ -87,14 +87,14 @@
 
 ### Implementation for User Story 2
 
-- [ ] T034 [P] [US2] Implement signIn() method in src/app/services/auth.service.ts calling msalService.loginRedirect()
-- [ ] T035 [P] [US2] Implement signOut() method in src/app/services/auth.service.ts calling msalService.logoutRedirect()
-- [ ] T036 [US2] Handle redirect flow in src/app/app.ts ngOnInit() using msalService.handleRedirectObservable()
-- [ ] T037 [US2] Subscribe to MsalBroadcastService.msalSubject$ in src/app/services/auth.service.ts initialize() method filtering for auth events
-- [ ] T038 [US2] Subscribe to MsalBroadcastService.inProgress$ in src/app/services/auth.service.ts initialize() method to track interaction status
-- [ ] T039 [US2] Update authState signal in src/app/services/auth.service.ts when LOGIN_SUCCESS event received
-- [ ] T040 [US2] Update authState signal in src/app/services/auth.service.ts when LOGOUT_SUCCESS event received
-- [ ] T041 [US2] Handle LOGIN_FAILURE events in src/app/services/auth.service.ts by calling handleAuthError() to set error state
+- [X] T034 [P] [US2] Implement signIn() method in src/app/services/auth.service.ts calling msalService.loginRedirect()
+- [X] T035 [P] [US2] Implement signOut() method in src/app/services/auth.service.ts calling msalService.logoutRedirect()
+- [X] T036 [US2] Handle redirect flow in src/app/app.ts ngOnInit() using msalService.handleRedirectObservable()
+- [X] T037 [US2] Subscribe to MsalBroadcastService.msalSubject$ in src/app/services/auth.service.ts initialize() method filtering for auth events
+- [X] T038 [US2] Subscribe to MsalBroadcastService.inProgress$ in src/app/services/auth.service.ts initialize() method to track interaction status
+- [X] T039 [US2] Update authState signal in src/app/services/auth.service.ts when LOGIN_SUCCESS event received
+- [X] T040 [US2] Update authState signal in src/app/services/auth.service.ts when LOGOUT_SUCCESS event received
+- [X] T041 [US2] Handle LOGIN_FAILURE events in src/app/services/auth.service.ts by calling handleAuthError() to set error state
 
 ### Tests for User Story 2
 
@@ -171,17 +171,17 @@
 
 ### Implementation for User Story 5
 
-- [ ] T070 [P] [US5] Create utility function in api/src/utils/config.ts to load Entra configuration from environment variables
-- [ ] T071 [P] [US5] Create validateAudience() helper in api/src/middleware/auth.middleware.ts to check token aud claim matches client ID
-- [ ] T072 [P] [US5] Create validateIssuer() helper in api/src/middleware/auth.middleware.ts to check token iss claim matches authority
-- [ ] T073 [US5] Initialize MSAL ConfidentialClientApplication in api/src/middleware/auth.middleware.ts for token validation
-- [ ] T074 [US5] Implement token signature verification in api/src/middleware/auth.middleware.ts using MSAL Node
-- [ ] T075 [US5] Implement token expiration check in api/src/middleware/auth.middleware.ts with clock skew tolerance (5 minutes)
-- [ ] T076 [US5] Extract claims (oid, email, name, tid) in api/src/middleware/auth.middleware.ts extractUserIdentity() function
-- [ ] T077 [US5] Return structured AuthErrorResponse in api/src/middleware/auth.middleware.ts for validation failures
-- [ ] T078 [US5] Add auth middleware to generateToken function in api/src/functions/generateToken.ts
-- [ ] T079 [US5] Update generateToken function in api/src/functions/generateToken.ts to include userIdentity in LiveKit token metadata
-- [ ] T080 [US5] Create LiveKitTokenMetadata interface in api/src/models/LiveKitTokenMetadata.ts with userId, displayName, email, tenantId fields
+- [X] T070 [P] [US5] Create utility function in api/src/utils/config.ts to load Entra configuration from environment variables
+- [X] T071 [P] [US5] Create validateAudience() helper in api/src/middleware/auth.middleware.ts to check token aud claim matches client ID
+- [X] T072 [P] [US5] Create validateIssuer() helper in api/src/middleware/auth.middleware.ts to check token iss claim matches authority
+- [X] T073 [US5] Initialize MSAL ConfidentialClientApplication in api/src/middleware/auth.middleware.ts for token validation
+- [X] T074 [US5] Implement token signature verification in api/src/middleware/auth.middleware.ts using MSAL Node
+- [X] T075 [US5] Implement token expiration check in api/src/middleware/auth.middleware.ts with clock skew tolerance (5 minutes)
+- [X] T076 [US5] Extract claims (oid, email, name, tid) in api/src/middleware/auth.middleware.ts extractUserIdentity() function
+- [X] T077 [US5] Return structured AuthErrorResponse in api/src/middleware/auth.middleware.ts for validation failures
+- [X] T078 [US5] Add auth middleware to generateToken function in api/src/functions/generateToken.ts
+- [X] T079 [US5] Update generateToken function in api/src/functions/generateToken.ts to include userIdentity in LiveKit token metadata
+- [X] T080 [US5] Create LiveKitTokenMetadata interface in api/src/models/LiveKitTokenMetadata.ts with userId, displayName, email, tenantId fields
 
 ### Tests for User Story 5
 

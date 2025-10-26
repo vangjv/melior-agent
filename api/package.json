@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@azure/functions": "^4.0.0",
+    "@azure/msal-node": "^2.16.3",
     "livekit-server-sdk": "^2.14.0",
     "zod": "^4.1.12"
   },
