@@ -98,3 +98,27 @@ body {
   }
 }
 
+// Authentication error snackbar styles (T096)
+.auth-error,
+.auth-error-retryable {
+  .mat-mdc-snack-bar-container {
+    --mdc-snackbar-container-color: #f44336;
+    --mdc-snackbar-supporting-text-color: #ffffff;
+    --mat-snack-bar-button-color: #ffffff;
+
+    .mdc-snackbar__label {
+      font-weight: 500;
+    }
+  }
+}
+
+.auth-error-retryable {
+  .mat-mdc-snack-bar-container {
+    --mdc-snackbar-container-color: #ff9800;
+
+    .mat-mdc-button {
+      font-weight: 600;
+    }
+  }
+}
+

@@ -140,14 +140,15 @@ export class AuthService implements OnDestroy {
         if (status === InteractionStatus.None) {
           // Interaction complete, check auth status
           this.checkAuthStatus();
-        } else if (this._authState().status !== 'authenticating') {
-          // Interaction in progress, set loading state
+        } else if (status === InteractionStatus.Login || status === InteractionStatus.Logout) {
+          // User-initiated authentication in progress, set loading state
           this._authState.set({
             status: 'authenticating',
             user: null,
             error: null
           });
         }
+        // For other statuses like Startup, HandleRedirect, etc., don't change state
       });
   }
 
