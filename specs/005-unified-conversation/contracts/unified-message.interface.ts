@@ -1,7 +1,7 @@
 /**
  * Unified Conversation Message Interface
  * Feature: 005-unified-conversation
- * 
+ *
  * Defines the unified message type that combines transcription and chat messages
  * Uses discriminated union pattern for type-safe message handling
  */
@@ -50,8 +50,8 @@ export interface ChatConversationMessage extends BaseConversationMessage {
  * Unified message type using discriminated union pattern
  * Allows type-safe handling of both transcription and chat messages
  */
-export type UnifiedConversationMessage = 
-  | TranscriptionConversationMessage 
+export type UnifiedConversationMessage =
+  | TranscriptionConversationMessage
   | ChatConversationMessage;
 
 /**

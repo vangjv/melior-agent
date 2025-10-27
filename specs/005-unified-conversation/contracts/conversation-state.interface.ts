@@ -1,7 +1,7 @@
 /**
  * Conversation State Interface
  * Feature: 005-unified-conversation
- * 
+ *
  * Defines the state structure for the unified conversation feed
  */
 
@@ -81,7 +81,7 @@ export function serializeConversationFeed(
     lastMessageAt: state.lastMessageAt?.toISOString() || null,
     messageCount: state.messageCount
   };
-  
+
   return JSON.stringify(serialized);
 }
 
@@ -94,19 +94,19 @@ export function deserializeConversationFeed(
 ): ConversationFeedState | null {
   try {
     const data: SerializedConversationFeedState = JSON.parse(json);
-    
+
     // Validate version
     if (data.version !== '1.0.0') {
       console.warn('Unknown conversation feed version:', data.version);
       return null;
     }
-    
+
     // Convert date strings to Date objects
     const messages: UnifiedConversationMessage[] = data.messages.map((msg: any) => ({
       ...msg,
       timestamp: new Date(msg.timestamp)
     }));
-    
+
     return {
       messages,
       currentMode: data.currentMode,
@@ -130,15 +130,15 @@ export function validateConversationFeed(
   if (!state.sessionId) {
     throw new Error('Session ID is required');
   }
-  
+
   if (state.messageCount !== state.messages.length) {
     throw new Error('Message count mismatch');
   }
-  
+
   if (!['voice', 'chat'].includes(state.currentMode)) {
     throw new Error(`Invalid response mode: ${state.currentMode}`);
   }
-  
+
   // Validate messages are sorted by timestamp
   for (let i = 1; i < state.messages.length; i++) {
     const prev = state.messages[i - 1];

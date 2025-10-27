@@ -1,14 +1,14 @@
 /**
  * Message Metadata Interface
  * Feature: 005-unified-conversation
- * 
+ *
  * Defines optional extended metadata for debugging and analytics
  */
 
 /**
  * Message source type - where the message originated
  */
-export type MessageSource = 
+export type MessageSource =
   | 'livekit-transcription'   // From LiveKit transcription track
   | 'livekit-data-channel'    // From LiveKit data channel
   | 'local-echo'              // Local user input echo
