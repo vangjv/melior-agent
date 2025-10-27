@@ -331,4 +331,134 @@ describe('ConversationMessageComponent', () => {
       expect(contentElement?.textContent?.length).toBeGreaterThan(500);
     });
   });
+
+  // T046 [US3]: Test user vs agent styling
+  describe('User Story 3: Visual Message Distinction', () => {
+    it('should apply distinct styling for user messages', () => {
+      const userMessage: UnifiedConversationMessage = {
+        messageType: 'chat',
+        id: 'user-msg',
+        content: 'User message',
+        timestamp: new Date(),
+        sender: 'user',
+        deliveryMethod: 'data-channel'
+      };
+
+      fixture.componentRef.setInput('message', userMessage);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const messageElement = compiled.querySelector('article');
+
+      expect(messageElement?.classList.contains('message--user')).toBe(true);
+      expect(messageElement?.classList.contains('message--agent')).toBe(false);
+    });
+
+    it('should apply distinct styling for agent messages', () => {
+      const agentMessage: UnifiedConversationMessage = {
+        messageType: 'chat',
+        id: 'agent-msg',
+        content: 'Agent message',
+        timestamp: new Date(),
+        sender: 'agent',
+        deliveryMethod: 'data-channel'
+      };
+
+      fixture.componentRef.setInput('message', agentMessage);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const messageElement = compiled.querySelector('article');
+
+      expect(messageElement?.classList.contains('message--agent')).toBe(true);
+      expect(messageElement?.classList.contains('message--user')).toBe(false);
+    });
+
+    // T047 [US3]: Test delivery method badges
+    it('should display delivery method badge for voice messages', () => {
+      const voiceMessage: UnifiedConversationMessage = {
+        messageType: 'transcription',
+        id: 'voice-msg',
+        content: 'Voice message',
+        timestamp: new Date(),
+        sender: 'user',
+        isFinal: true
+      };
+
+      fixture.componentRef.setInput('message', voiceMessage);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const badge = compiled.querySelector('.message__delivery-badge');
+
+      expect(badge).toBeTruthy();
+      expect(badge?.textContent).toContain('mic');
+    });
+
+    it('should display delivery method badge for chat messages', () => {
+      const chatMessage: UnifiedConversationMessage = {
+        messageType: 'chat',
+        id: 'chat-msg',
+        content: 'Chat message',
+        timestamp: new Date(),
+        sender: 'agent',
+        deliveryMethod: 'data-channel'
+      };
+
+      fixture.componentRef.setInput('message', chatMessage);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const badge = compiled.querySelector('.message__delivery-badge');
+
+      expect(badge).toBeTruthy();
+      expect(badge?.textContent).toContain('chat');
+    });
+
+    it('should display sender label for accessibility', () => {
+      const message: UnifiedConversationMessage = {
+        messageType: 'chat',
+        id: 'acc-msg',
+        content: 'Test message',
+        timestamp: new Date(),
+        sender: 'user',
+        deliveryMethod: 'data-channel'
+      };
+
+      fixture.componentRef.setInput('message', message);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const messageElement = compiled.querySelector('article');
+      const ariaLabel = messageElement?.getAttribute('aria-label');
+
+      expect(ariaLabel).toBeTruthy();
+      // ARIA label contains "You" instead of "user"
+      expect(ariaLabel).toContain('You');
+      expect(ariaLabel).toContain('Test message');
+    });
+
+    it('should include timestamp in accessibility label', () => {
+      const timestamp = new Date('2025-10-26T10:30:00Z');
+      const message: UnifiedConversationMessage = {
+        messageType: 'chat',
+        id: 'time-msg',
+        content: 'Timed message',
+        timestamp,
+        sender: 'agent',
+        deliveryMethod: 'data-channel'
+      };
+
+      fixture.componentRef.setInput('message', message);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const messageElement = compiled.querySelector('article');
+      const ariaLabel = messageElement?.getAttribute('aria-label');
+
+      expect(ariaLabel).toBeTruthy();
+      // Should contain some form of timestamp/time information
+      expect(ariaLabel).toMatch(/\d{1,2}:\d{2}|ago|at/);
+    });
+  });
 });

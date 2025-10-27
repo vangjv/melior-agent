@@ -9,7 +9,11 @@
 import { TestBed } from '@angular/core/testing';
 import { ConversationStorageService } from '../../src/app/services/conversation-storage.service';
 import { LiveKitConnectionService } from '../../src/app/services/livekit-connection.service';
-import { UnifiedConversationMessage } from '../../src/app/models/unified-conversation-message.model';
+import {
+  UnifiedConversationMessage,
+  createChatMessage,
+  createTranscriptionMessage
+} from '../../src/app/models/unified-conversation-message.model';
 
 describe('Unified Conversation Flow Integration', () => {
   let storageService: ConversationStorageService;
@@ -225,7 +229,13 @@ describe('Unified Conversation Flow Integration', () => {
 
     let messages = storageService.messages();
     expect(messages.length).toBe(1);
-    expect(messages[0].isFinal).toBe(false);
+
+    // Type guard to check isFinal property
+    const firstMessage = messages[0];
+    expect(firstMessage.messageType).toBe('transcription');
+    if (firstMessage.messageType === 'transcription') {
+      expect(firstMessage.isFinal).toBe(false);
+    }
 
     // Replace with final transcription
     const finalMessage: UnifiedConversationMessage = {
@@ -318,15 +328,23 @@ describe('Unified Conversation Flow Integration', () => {
 
     // Simulate rapid message additions
     for (let i = 0; i < 20; i++) {
-      const message: UnifiedConversationMessage = {
-        messageType: i % 2 === 0 ? 'transcription' : 'chat',
-        id: crypto.randomUUID(),
-        content: `Message ${i}`,
-        timestamp: new Date(Date.now() + i * 1000),
-        sender: i % 2 === 0 ? 'user' : 'agent',
-        isFinal: true,
-        ...(i % 2 === 1 && { deliveryMethod: 'data-channel' as const })
-      };
+      const message: UnifiedConversationMessage = i % 2 === 0
+        ? {
+            messageType: 'transcription',
+            id: crypto.randomUUID(),
+            content: `Message ${i}`,
+            timestamp: new Date(Date.now() + i * 1000),
+            sender: 'user',
+            isFinal: true
+          }
+        : {
+            messageType: 'chat',
+            id: crypto.randomUUID(),
+            content: `Message ${i}`,
+            timestamp: new Date(Date.now() + i * 1000),
+            sender: 'agent',
+            deliveryMethod: 'data-channel' as const
+          };
 
       messages.push(message);
       storageService.addMessage(message);
@@ -342,5 +360,113 @@ describe('Unified Conversation Flow Integration', () => {
         storedMessages[i + 1].timestamp.getTime()
       );
     }
+  });
+
+  // T058 [US4]: Test conversation persistence across disconnect/reconnect
+  describe('User Story 4: Conversation Persistence', () => {
+    it('should persist conversation across disconnect/reconnect cycles', (done) => {
+      // Create conversation
+      const msg1 = createChatMessage('user', 'Hello');
+      const msg2 = createChatMessage('agent', 'Hi there!');
+      const msg3 = createChatMessage('user', 'How are you?');
+
+      storageService.addMessage(msg1);
+      storageService.addMessage(msg2);
+      storageService.addMessage(msg3);
+
+      const sessionId = storageService.sessionId();
+
+      // Wait for debounced save
+      setTimeout(() => {
+        // Verify storage
+        const key = `melior-conversation-${sessionId}`;
+        const stored = sessionStorage.getItem(key);
+
+        expect(stored).toBeTruthy();
+
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          expect(parsed.messageCount).toBe(3);
+          expect(parsed.messages.length).toBe(3);
+
+          // Simulate reconnect by creating new service
+          // Note: In production, sessionId would be managed externally
+          const restoredMessages = parsed.messages;
+          expect(restoredMessages[0].content).toBe('Hello');
+          expect(restoredMessages[1].content).toBe('Hi there!');
+          expect(restoredMessages[2].content).toBe('How are you?');
+        }
+
+        done();
+      }, 600);
+    });
+
+    it('should handle multiple disconnect/reconnect cycles', (done) => {
+      // First session
+      storageService.addMessage(createChatMessage('user', 'Message 1'));
+      storageService.addMessage(createChatMessage('agent', 'Response 1'));
+
+      setTimeout(() => {
+        const firstSessionId = storageService.sessionId();
+        const key = `melior-conversation-${firstSessionId}`;
+        const firstStored = sessionStorage.getItem(key);
+
+        expect(firstStored).toBeTruthy();
+
+        if (firstStored) {
+          const firstParsed = JSON.parse(firstStored);
+          expect(firstParsed.messageCount).toBe(2);
+
+          // Simulate adding more messages after reconnect
+          storageService.addMessage(createChatMessage('user', 'Message 2'));
+
+          setTimeout(() => {
+            const secondStored = sessionStorage.getItem(key);
+            expect(secondStored).toBeTruthy();
+
+            if (secondStored) {
+              const secondParsed = JSON.parse(secondStored);
+              expect(secondParsed.messageCount).toBe(3);
+            }
+
+            done();
+          }, 600);
+        } else {
+          done();
+        }
+      }, 600);
+    });
+
+    it('should preserve message order across persistence', (done) => {
+      const baseTime = new Date('2025-10-26T10:00:00Z').getTime();
+      const messages = [
+        createChatMessage('user', 'First', new Date(baseTime)),
+        createChatMessage('agent', 'Second', new Date(baseTime + 1000)),
+        createChatMessage('user', 'Third', new Date(baseTime + 2000)),
+        createChatMessage('agent', 'Fourth', new Date(baseTime + 3000))
+      ];
+
+      messages.forEach(msg => storageService.addMessage(msg));
+
+      setTimeout(() => {
+        const sessionId = storageService.sessionId();
+        const key = `melior-conversation-${sessionId}`;
+        const stored = sessionStorage.getItem(key);
+
+        expect(stored).toBeTruthy();
+
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const restoredMessages = parsed.messages;
+
+          expect(restoredMessages[0].content).toBe('First');
+          expect(restoredMessages[1].content).toBe('Second');
+          expect(restoredMessages[2].content).toBe('Third');
+          expect(restoredMessages[3].content).toBe('Fourth');
+        }
+
+        done();
+      }, 600);
+    });
   });
 });

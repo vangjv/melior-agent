@@ -83,7 +83,7 @@ describe('Integration: Mode Toggle Mid-Conversation', () => {
 
     // Wait for debounced save
     setTimeout(() => {
-      const key = `unified-conversation-${service.sessionId()}`;
+      const key = `melior-conversation-${service.sessionId()}`;
       const stored = sessionStorage.getItem(key);
 
       expect(stored).toBeTruthy();
@@ -110,7 +110,7 @@ describe('Integration: Mode Toggle Mid-Conversation', () => {
       // Simulate reload by creating new service instance
       // Note: In real scenario, sessionId would need to be preserved
       // For this test, we'll manually restore using the same key
-      const key = `unified-conversation-${initialSessionId}`;
+      const key = `melior-conversation-${initialSessionId}`;
       const stored = sessionStorage.getItem(key);
 
       expect(stored).toBeTruthy();

@@ -12,6 +12,7 @@ import {
   BaseDataChannelMessage,
 } from '../models/response-mode.model';
 import { ChatStorageService } from './chat-storage.service';
+import { ConversationStorageService } from './conversation-storage.service';
 
 /**
  * Service for managing voice/chat response mode state and data channel communication
@@ -22,6 +23,7 @@ import { ChatStorageService } from './chat-storage.service';
  * - Manage response mode state with timeout handling
  * - Provide reactive state via Angular Signals
  * - Coordinate with ChatStorageService to store agent chat messages
+ * - Coordinate with ConversationStorageService to sync mode changes (Feature 005)
  * - Coordinate with transcription events to store user messages in chat mode (T109)
  * - Persist mode preference to localStorage (T123-T124)
  */
@@ -34,6 +36,9 @@ export class ResponseModeService {
 
   // Inject ChatStorageService for handling agent chat messages
   private readonly chatStorageService = inject(ChatStorageService);
+
+  // Feature 005: Inject ConversationStorageService to sync mode changes
+  private readonly conversationStorageService = inject(ConversationStorageService);
 
   // Private mutable state
   private _currentMode = signal<ResponseMode>(DEFAULT_RESPONSE_MODE);
@@ -82,6 +87,15 @@ export class ResponseModeService {
       if (this._isConfirmed()) {
         // Only save confirmed mode changes
         localStorage.setItem(ResponseModeService.STORAGE_KEY_MODE_PREFERENCE, mode);
+      }
+    });
+
+    // T040 [US2]: Sync mode changes with ConversationStorageService (Feature 005)
+    effect(() => {
+      const mode = this._currentMode();
+      if (this._isConfirmed()) {
+        // Sync confirmed mode changes to conversation storage
+        this.conversationStorageService.setMode(mode);
       }
     });
   }

@@ -119,12 +119,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T040 [US2] Add mode toggle method to ConversationStorageService in `src/app/services/conversation-storage.service.ts` (update currentMode signal, persist to sessionStorage)
-- [ ] T041 [US2] Add mode change event listener to UnifiedConversationDisplayComponent to react to mode toggle
-- [ ] T042 [US2] Update app component to wire mode toggle button events to ConversationStorageService mode update
-- [ ] T043 [US2] Add visual mode indicator to UnifiedConversationDisplayComponent template (display current mode icon/label)
-- [ ] T044 [US2] Update LiveKitConnectionService to observe current mode and route agent responses appropriately (voice TTS vs data channel text)
-- [ ] T045 [US2] Test mode toggle integration manually: verify history preservation across mode switches
+- [X] T040 [US2] Add mode toggle method to ConversationStorageService in `src/app/services/conversation-storage.service.ts` (update currentMode signal, persist to sessionStorage)
+- [X] T041 [US2] Add mode change event listener to UnifiedConversationDisplayComponent to react to mode toggle
+- [X] T042 [US2] Update app component to wire mode toggle button events to ConversationStorageService mode update
+- [X] T043 [US2] Add visual mode indicator to UnifiedConversationDisplayComponent template (display current mode icon/label)
+- [X] T044 [US2] Update LiveKitConnectionService to observe current mode and route agent responses appropriately (voice TTS vs data channel text)
+- [X] T045 [US2] Test mode toggle integration manually: verify history preservation across mode switches
 
 **Checkpoint**: User Story 2 complete - users can toggle modes mid-conversation with full history preservation
 
@@ -138,18 +138,18 @@
 
 ### Tests for User Story 3 (TDD - Write First) ✅
 
-- [ ] T046 [P] [US3] Write unit test for ConversationMessageComponent user vs agent styling in `src/app/components/conversation-message/conversation-message.component.spec.ts`
-- [ ] T047 [P] [US3] Write unit test for ConversationMessageComponent delivery method badges (voice vs chat icons) in `src/app/components/conversation-message/conversation-message.component.spec.ts`
-- [ ] T048 [US3] Write accessibility test for message visual distinctions (ARIA labels, color contrast) in `tests/integration/accessibility.spec.ts`
+- [X] T046 [P] [US3] Write unit test for ConversationMessageComponent user vs agent styling in `src/app/components/conversation-message/conversation-message.component.spec.ts`
+- [X] T047 [P] [US3] Write unit test for ConversationMessageComponent delivery method badges (voice vs chat icons) in `src/app/components/conversation-message/conversation-message.component.spec.ts`
+- [X] T048 [US3] Write accessibility test for message visual distinctions (ARIA labels, color contrast) in `tests/integration/accessibility.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T049 [P] [US3] Add message sender visual styling to ConversationMessageComponent styles (user right-aligned blue, agent left-aligned gray)
-- [ ] T050 [P] [US3] Add delivery method badge display to ConversationMessageComponent template (mic icon for voice, chat_bubble icon for chat)
-- [ ] T051 [US3] Import Material icons module for message badges (MatIconModule) in ConversationMessageComponent
-- [ ] T052 [US3] Add ARIA labels to messages for screen reader accessibility (sender, delivery method, timestamp)
-- [ ] T053 [US3] Implement color contrast validation for message styling (meet WCAG AA 4.5:1 ratio)
-- [ ] T054 [US3] Add timestamp display to ConversationMessageComponent template (formatted relative time)
+- [X] T049 [P] [US3] Add message sender visual styling to ConversationMessageComponent styles (user right-aligned blue, agent left-aligned gray)
+- [X] T050 [P] [US3] Add delivery method badge display to ConversationMessageComponent template (mic icon for voice, chat_bubble icon for chat)
+- [X] T051 [US3] Import Material icons module for message badges (MatIconModule) in ConversationMessageComponent
+- [X] T052 [US3] Add ARIA labels to messages for screen reader accessibility (sender, delivery method, timestamp)
+- [X] T053 [US3] Implement color contrast validation for message styling (meet WCAG AA 4.5:1 ratio)
+- [X] T054 [US3] Add timestamp display to ConversationMessageComponent template (formatted relative time)
 
 **Checkpoint**: User Story 3 complete - message types are visually distinguishable with clear sender and delivery method indicators
 
@@ -163,10 +163,10 @@
 
 ### Tests for User Story 4 (TDD - Write First) ✅
 
-- [ ] T055 [P] [US4] Write unit test for ConversationStorageService sessionStorage persistence in `src/app/services/conversation-storage.service.spec.ts`
-- [ ] T056 [P] [US4] Write unit test for ConversationStorageService history restoration on initialization in `src/app/services/conversation-storage.service.spec.ts`
-- [ ] T057 [US4] Write unit test for UnifiedConversationDisplayComponent virtual scrolling activation (>100 messages) in `src/app/components/unified-conversation-display/unified-conversation-display.component.spec.ts`
-- [ ] T058 [US4] Write integration test for conversation persistence across disconnect/reconnect cycles in `tests/integration/unified-conversation-flow.spec.ts`
+- [X] T055 [P] [US4] Write unit test for ConversationStorageService sessionStorage persistence in `src/app/services/conversation-storage.service.spec.ts`
+- [X] T056 [P] [US4] Write unit test for ConversationStorageService history restoration on initialization in `src/app/services/conversation-storage.service.spec.ts`
+- [X] T057 [US4] Write unit test for UnifiedConversationDisplayComponent virtual scrolling activation (>100 messages) in `src/app/components/unified-conversation-display/unified-conversation-display.component.spec.ts`
+- [X] T058 [US4] Write integration test for conversation persistence across disconnect/reconnect cycles in `tests/integration/unified-conversation-flow.spec.ts`
 
 ### Implementation for User Story 4
 

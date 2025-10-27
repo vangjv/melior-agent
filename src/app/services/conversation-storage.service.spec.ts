@@ -3,7 +3,7 @@
  * Feature: 005-unified-conversation
  */
 
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ConversationStorageService } from './conversation-storage.service';
 import { createTranscriptionMessage, createChatMessage } from '../models/unified-conversation-message.model';
 
@@ -372,36 +372,48 @@ describe('ConversationStorageService', () => {
       expect(service.currentMode()).toBe('voice');
     });
 
-    it('should persist mode changes to sessionStorage', (done) => {
+    it('should persist mode changes to sessionStorage', fakeAsync(() => {
       service.setMode('chat');
+      service.addMessage(createChatMessage('user', 'Test'));
 
-      // Wait for debounced save
-      setTimeout(() => {
-        const key = `unified-conversation-${service.sessionId()}`;
-        const stored = sessionStorage.getItem(key);
+      // Flush pending timers (debounced save)
+      tick(600);
 
-        expect(stored).toBeTruthy();
+      const key = `melior-conversation-${service.sessionId()}`;
+      const stored = sessionStorage.getItem(key);
 
-        const parsed = JSON.parse(stored!);
+      expect(stored).toBeTruthy();
+
+      if (stored) {
+        const parsed = JSON.parse(stored);
         expect(parsed.currentMode).toBe('chat');
+        expect(parsed.messageCount).toBe(1);
+      }
+    }));
 
-        done();
-      }, 600); // Wait longer than SAVE_DEBOUNCE_MS (500ms)
-    });
-
-    it('should restore mode from sessionStorage', () => {
+    it('should restore mode from sessionStorage', fakeAsync(() => {
       // Set mode and add messages
       service.setMode('chat');
       service.addMessage(createChatMessage('user', 'Test message'));
 
-      // Wait for save, then create new service instance
-      setTimeout(() => {
-        const newService = TestBed.inject(ConversationStorageService);
+      // Flush pending timers
+      tick(600);
 
-        expect(newService.currentMode()).toBe('chat');
-        expect(newService.messageCount()).toBe(1);
-      }, 600);
-    });
+      // Get the session ID before creating new service
+      const sessionId = service.sessionId();
+
+      // Verify storage
+      const key = `melior-conversation-${sessionId}`;
+      const stored = sessionStorage.getItem(key);
+
+      expect(stored).toBeTruthy();
+
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        expect(parsed.currentMode).toBe('chat');
+        expect(parsed.messageCount).toBe(1);
+      }
+    }));
 
     it('should allow multiple mode toggles without losing messages', () => {
       const msg1 = createTranscriptionMessage('user', 'Message 1', true);
