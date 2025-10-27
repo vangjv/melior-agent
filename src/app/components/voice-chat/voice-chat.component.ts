@@ -2,29 +2,27 @@ import { Component, computed, inject, OnDestroy } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { ConnectionButtonComponent } from '../connection-button/connection-button.component';
-import { TranscriptionDisplayComponent } from '../transcription-display/transcription-display.component';
+import { UnifiedConversationDisplayComponent } from '../unified-conversation-display/unified-conversation-display.component';
 import { ModeToggleButtonComponent } from '../mode-toggle-button/mode-toggle-button.component';
-import { ChatMessageDisplayComponent } from '../chat-message-display/chat-message-display.component';
 import { LiveKitConnectionService } from '../../services/livekit-connection.service';
 import { TranscriptionService } from '../../services/transcription.service';
 import { ResponseModeService } from '../../services/response-mode.service';
-import { ChatStorageService } from '../../services/chat-storage.service';
+import { ConversationStorageService } from '../../services/conversation-storage.service';
 import { environment } from '../../../environments/environment';
 
 /**
  * T039-T046, T088-T092: Voice Chat Component
  * Smart component that manages voice chat connection, transcription, and state
  * T051-T059: Integrated with ResponseModeService for mode toggle functionality
- * T107-T114: Integrated with ChatMessageDisplayComponent for chat mode
+ * Feature: 005-unified-conversation - Now uses UnifiedConversationDisplayComponent
  */
 @Component({
   selector: 'app-voice-chat',
   standalone: true,
   imports: [
     ConnectionButtonComponent,
-    TranscriptionDisplayComponent,
+    UnifiedConversationDisplayComponent,
     ModeToggleButtonComponent,
-    ChatMessageDisplayComponent,
     MatProgressSpinnerModule,
     MatIconModule,
   ],
@@ -41,33 +39,24 @@ export class VoiceChatComponent implements OnDestroy {
   // T051: Inject ResponseModeService
   private readonly responseModeService = inject(ResponseModeService);
 
-  // T107: Inject ChatStorageService
-  private readonly chatStorageService = inject(ChatStorageService);
+  // Feature: 005-unified-conversation - Use ConversationStorageService
+  private readonly conversationStorage = inject(ConversationStorageService);
 
   // T042: Connection state computed signal from service
   readonly connectionState = this.connectionService.connectionState;
   readonly connectionQuality = this.connectionService.connectionQuality;
   readonly agentConnected = this.connectionService.agentConnected;
 
-  // T092: Transcriptions signal from transcription service
-  readonly transcriptions = this.transcriptionService.transcriptions;
-
-  // Interim transcription signal for streaming display
-  readonly interimTranscription = this.transcriptionService.interimTranscription;
-
   // T055: Response mode signals from ResponseModeService
   readonly currentMode = this.responseModeService.currentMode;
   readonly isPending = this.responseModeService.isPending;
   readonly modeErrorMessage = this.responseModeService.errorMessage;
 
-  // T111: Chat messages signal from ChatStorageService
-  readonly chatMessages = this.chatStorageService.chatMessages;
+  // Feature: 005-unified-conversation - Unified messages for display
+  readonly messages = this.conversationStorage.messages;
 
   // Computed properties for UI
   readonly isConnected = computed(() => this.connectionState().status === 'connected');
-
-  // T112: Computed signal to show chat display only in chat mode
-  readonly showChatDisplay = computed(() => this.currentMode() === 'chat');
 
   // T082: User-friendly error messages including token acquisition failures
   readonly errorMessage = computed(() => {

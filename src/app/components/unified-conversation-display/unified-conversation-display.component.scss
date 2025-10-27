@@ -1,0 +1,216 @@
+/**
+ * UnifiedConversationDisplayComponent Styles
+ * Feature: 005-unified-conversation
+ *
+ * Provides:
+ * - Scrollable container with max height
+ * - Empty state styling
+ * - Scroll-to-bottom button
+ * - Responsive layout
+ */
+
+:host {
+  display: block;
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.conversation-display {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+
+  &__scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+    max-height: 600px; // Default max height
+    min-height: 200px;
+    background-color: var(--mat-sys-surface);
+
+    // Custom scrollbar styling (WebKit browsers)
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: var(--mat-sys-surface-container-low);
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--mat-sys-outline);
+      border-radius: 4px;
+
+      &:hover {
+        background: var(--mat-sys-outline-variant);
+      }
+    }
+
+    // Firefox scrollbar styling
+    scrollbar-width: thin;
+    scrollbar-color: var(--mat-sys-outline) var(--mat-sys-surface-container-low);
+
+    // Smooth scrolling
+    scroll-behavior: smooth;
+  }
+
+  &__empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 300px;
+    color: var(--mat-sys-on-surface-variant);
+    text-align: center;
+    padding: 32px 16px;
+
+    mat-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    p {
+      margin: 8px 0;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+  }
+
+  &__empty-hint {
+    font-size: 0.875rem !important;
+    opacity: 0.7;
+    font-weight: 400 !important;
+  }
+
+  &__message-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0; // Gap handled by message component margin
+    padding-bottom: 8px; // Extra space at bottom
+  }
+
+  &__scroll-button {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.3s ease-out;
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 959px) {
+  .conversation-display {
+    &__scroll-container {
+      max-height: 500px;
+      padding: 12px;
+    }
+
+    &__scroll-button {
+      bottom: 16px;
+      right: 16px;
+    }
+  }
+}
+
+@media (max-width: 599px) {
+  .conversation-display {
+    &__scroll-container {
+      max-height: calc(100vh - 200px); // Adjust based on layout
+      padding: 8px;
+    }
+
+    &__empty-state {
+      min-height: 200px;
+      padding: 24px 16px;
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+      }
+
+      p {
+        font-size: 0.9375rem;
+      }
+    }
+
+    &__scroll-button {
+      bottom: 12px;
+      right: 12px;
+
+      // Smaller FAB on mobile
+      .mat-mdc-fab {
+        width: 48px;
+        height: 48px;
+      }
+    }
+  }
+}
+
+// Accessibility: High contrast mode
+@media (prefers-contrast: high) {
+  .conversation-display {
+    &__scroll-container {
+      border: 2px solid var(--mat-sys-outline);
+    }
+
+    &__empty-state {
+      border: 1px dashed var(--mat-sys-outline);
+    }
+  }
+}
+
+// Accessibility: Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .conversation-display {
+    &__scroll-container {
+      scroll-behavior: auto;
+    }
+
+    &__scroll-button {
+      animation: none;
+    }
+  }
+}
+
+// Print styles
+@media print {
+  .conversation-display {
+    &__scroll-container {
+      max-height: none;
+      overflow: visible;
+    }
+
+    &__scroll-button {
+      display: none;
+    }
+  }
+}

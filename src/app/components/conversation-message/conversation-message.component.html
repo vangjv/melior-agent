@@ -1,0 +1,65 @@
+<!-- Conversation Message Component Template -->
+<article
+  [class]="messageClasses()"
+  [attr.data-sender]="message().sender"
+  [attr.data-message-id]="message().id"
+  [attr.data-delivery]="deliveryMethod()"
+  [attr.aria-label]="ariaLabel()"
+  role="article"
+>
+  <div class="message__container">
+    <!-- Sender Avatar/Indicator -->
+    <div class="message__avatar" [attr.aria-hidden]="true">
+      @if (isUser()) {
+        <mat-icon>person</mat-icon>
+      } @else {
+        <mat-icon>smart_toy</mat-icon>
+      }
+    </div>
+
+    <!-- Message Content Area -->
+    <div class="message__content-wrapper">
+      <!-- Message Header (Sender & Timestamp) -->
+      <div class="message__header">
+        <span class="message__sender">
+          {{ isUser() ? 'You' : 'Agent' }}
+        </span>
+
+        <!-- Delivery Method Badge -->
+        <span
+          class="message__delivery-badge"
+          [attr.data-delivery]="deliveryMethod()"
+          [attr.aria-label]="'Delivered via ' + deliveryMethod()"
+        >
+          <mat-icon [inline]="true">{{ getDeliveryIcon(deliveryMethod()) }}</mat-icon>
+        </span>
+
+        <!-- Timestamp -->
+        <span class="message__timestamp">
+          {{ formatTimestamp(message().timestamp) }}
+        </span>
+      </div>
+
+      <!-- Message Content -->
+      <div class="message__content">
+        {{ message().content }}
+      </div>
+
+      <!-- Interim Indicator -->
+      @if (isInterim()) {
+        <div class="message__interim-indicator" aria-live="polite">
+          <mat-icon [inline]="true">pending</mat-icon>
+          <span>Transcribing...</span>
+        </div>
+      }
+
+      <!-- Confidence Indicator (for transcriptions with low confidence) -->
+      @if (isTranscription() && message().confidence !== undefined && message().confidence < 0.8) {
+        <div class="message__confidence-warning" role="status">
+          <mat-icon [inline]="true">warning</mat-icon>
+          <span>Low confidence transcription</span>
+        </div>
+      }
+    </div>
+  </div>
+</article>

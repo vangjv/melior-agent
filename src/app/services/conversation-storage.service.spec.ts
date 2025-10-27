@@ -330,4 +330,96 @@ describe('ConversationStorageService', () => {
       expect(service.currentMode()).toBe('voice');
     });
   });
+
+  // T037 [US2] Mode toggle preserving message history
+  describe('User Story 2: Mode Toggle', () => {
+    it('should preserve message history when toggling mode', () => {
+      // Add messages in voice mode
+      const voiceMsg1 = createTranscriptionMessage('user', 'Hello in voice mode', true);
+      const voiceMsg2 = createTranscriptionMessage('agent', 'Response in voice mode', true);
+
+      service.addMessage(voiceMsg1);
+      service.addMessage(voiceMsg2);
+
+      expect(service.messageCount()).toBe(2);
+      expect(service.currentMode()).toBe('voice');
+
+      // Toggle to chat mode
+      service.setMode('chat');
+
+      // Verify history is preserved
+      expect(service.messageCount()).toBe(2);
+      expect(service.messages()[0]).toBe(voiceMsg1);
+      expect(service.messages()[1]).toBe(voiceMsg2);
+      expect(service.currentMode()).toBe('chat');
+
+      // Add messages in chat mode
+      const chatMsg1 = createChatMessage('user', 'Hello in chat mode');
+      const chatMsg2 = createChatMessage('agent', 'Response in chat mode');
+
+      service.addMessage(chatMsg1);
+      service.addMessage(chatMsg2);
+
+      // Verify all messages are preserved
+      expect(service.messageCount()).toBe(4);
+      expect(service.currentMode()).toBe('chat');
+
+      // Toggle back to voice mode
+      service.setMode('voice');
+
+      // Verify complete history is still preserved
+      expect(service.messageCount()).toBe(4);
+      expect(service.currentMode()).toBe('voice');
+    });
+
+    it('should persist mode changes to sessionStorage', (done) => {
+      service.setMode('chat');
+
+      // Wait for debounced save
+      setTimeout(() => {
+        const key = `unified-conversation-${service.sessionId()}`;
+        const stored = sessionStorage.getItem(key);
+
+        expect(stored).toBeTruthy();
+
+        const parsed = JSON.parse(stored!);
+        expect(parsed.currentMode).toBe('chat');
+
+        done();
+      }, 600); // Wait longer than SAVE_DEBOUNCE_MS (500ms)
+    });
+
+    it('should restore mode from sessionStorage', () => {
+      // Set mode and add messages
+      service.setMode('chat');
+      service.addMessage(createChatMessage('user', 'Test message'));
+
+      // Wait for save, then create new service instance
+      setTimeout(() => {
+        const newService = TestBed.inject(ConversationStorageService);
+
+        expect(newService.currentMode()).toBe('chat');
+        expect(newService.messageCount()).toBe(1);
+      }, 600);
+    });
+
+    it('should allow multiple mode toggles without losing messages', () => {
+      const msg1 = createTranscriptionMessage('user', 'Message 1', true);
+      const msg2 = createChatMessage('user', 'Message 2');
+      const msg3 = createTranscriptionMessage('user', 'Message 3', true);
+
+      service.addMessage(msg1);
+      service.setMode('chat');
+      service.addMessage(msg2);
+      service.setMode('voice');
+      service.addMessage(msg3);
+      service.setMode('chat');
+      service.setMode('voice');
+
+      expect(service.messageCount()).toBe(3);
+      expect(service.messages()).toContain(msg1);
+      expect(service.messages()).toContain(msg2);
+      expect(service.messages()).toContain(msg3);
+    });
+  });
 });

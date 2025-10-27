@@ -1,0 +1,53 @@
+<!-- Unified Conversation Display Component Template -->
+<div class="conversation-display">
+  <!-- Scroll Container -->
+  <div
+    #scrollContainer
+    class="conversation-display__scroll-container"
+    (scroll)="onScroll()"
+    role="log"
+    aria-live="polite"
+    aria-label="Conversation history"
+  >
+    <!-- Empty State -->
+    @if (!hasMessages()) {
+      <div class="conversation-display__empty-state">
+        <mat-icon aria-hidden="true">chat_bubble_outline</mat-icon>
+        <p>No messages yet</p>
+        <p class="conversation-display__empty-hint">
+          Start a conversation to see messages here
+        </p>
+      </div>
+    }
+
+    <!-- Message List -->
+    @if (hasMessages()) {
+      <div
+        class="conversation-display__message-list"
+        role="list"
+        aria-label="Messages"
+      >
+        @for (message of sortedMessages(); track trackByMessageId($index, message)) {
+          <app-conversation-message
+            [message]="message"
+            role="listitem"
+            [attr.data-message-id]="message.id"
+          />
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Scroll to Bottom Button (appears when user scrolls up) -->
+  @if (hasMessages() && userHasScrolledUp()) {
+    <button
+      class="conversation-display__scroll-button"
+      (click)="scrollToLatest()"
+      aria-label="Scroll to latest message"
+      mat-fab
+      color="primary"
+    >
+      <mat-icon>arrow_downward</mat-icon>
+    </button>
+  }
+</div>

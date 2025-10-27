@@ -86,22 +86,11 @@
     />
   </div>
 
-  <!-- T091-T092: Transcription display during active connection -->
+  <!-- Feature: 005-unified-conversation - Unified conversation display -->
   @if (isConnected()) {
-    <div class="transcription-container">
-      <h2 class="transcription-title">Conversation</h2>
-      <app-transcription-display
-        [transcriptions]="transcriptions()"
-        [interimTranscription]="interimTranscription()"
-      />
-    </div>
-  }
-
-  <!-- T110-T112: Chat message display when in chat mode -->
-  @if (isConnected() && showChatDisplay()) {
-    <div class="chat-display-container">
-      <h2 class="chat-title">Chat Messages</h2>
-      <app-chat-message-display [messages]="chatMessages()" />
+    <div class="conversation-container">
+      <h2 class="conversation-title">Conversation</h2>
+      <app-unified-conversation-display />
     </div>
   }
 </div>

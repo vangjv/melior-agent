@@ -80,26 +80,26 @@
 
 ### Tests for User Story 1 (TDD - Write First) ✅
 
-- [ ] T020 [P] [US1] Write unit test for ConversationMessageComponent rendering user transcription messages in `src/app/components/conversation-message/conversation-message.component.spec.ts`
-- [ ] T021 [P] [US1] Write unit test for ConversationMessageComponent rendering agent transcription messages in `src/app/components/conversation-message/conversation-message.component.spec.ts`
-- [ ] T022 [P] [US1] Write unit test for ConversationMessageComponent rendering chat messages in `src/app/components/conversation-message/conversation-message.component.spec.ts`
-- [ ] T023 [US1] Write unit test for UnifiedConversationDisplayComponent message ordering in `src/app/components/unified-conversation-display/unified-conversation-display.component.spec.ts`
-- [ ] T024 [US1] Write unit test for UnifiedConversationDisplayComponent auto-scroll behavior in `src/app/components/unified-conversation-display/unified-conversation-display.component.spec.ts`
-- [ ] T025 [P] [US1] Write integration test for unified conversation flow (user speaks → agent responds → both appear in feed) in `tests/integration/unified-conversation-flow.spec.ts`
+- [X] T020 [P] [US1] Write unit test for ConversationMessageComponent rendering user transcription messages in `src/app/components/conversation-message/conversation-message.component.spec.ts`
+- [X] T021 [P] [US1] Write unit test for ConversationMessageComponent rendering agent transcription messages in `src/app/components/conversation-message/conversation-message.component.spec.ts`
+- [X] T022 [P] [US1] Write unit test for ConversationMessageComponent rendering chat messages in `src/app/components/conversation-message/conversation-message.component.spec.ts`
+- [X] T023 [US1] Write unit test for UnifiedConversationDisplayComponent message ordering in `src/app/components/unified-conversation-display/unified-conversation-display.component.spec.ts`
+- [X] T024 [US1] Write unit test for UnifiedConversationDisplayComponent auto-scroll behavior in `src/app/components/unified-conversation-display/unified-conversation-display.component.spec.ts`
+- [X] T025 [P] [US1] Write integration test for unified conversation flow (user speaks → agent responds → both appear in feed) in `tests/integration/unified-conversation-flow.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T026 [P] [US1] Create ConversationMessageComponent (presentational) in `src/app/components/conversation-message/conversation-message.component.ts` with input signals for message, template using @if for message type discrimination
-- [ ] T027 [P] [US1] Create ConversationMessageComponent template in `src/app/components/conversation-message/conversation-message.component.html` with semantic HTML (article tags), sender styling
-- [ ] T028 [P] [US1] Create ConversationMessageComponent styles in `src/app/components/conversation-message/conversation-message.component.scss` with user/agent visual distinction, responsive layout
-- [ ] T029 [US1] Create UnifiedConversationDisplayComponent (smart) in `src/app/components/unified-conversation-display/unified-conversation-display.component.ts` with ConversationStorageService injection, sorted messages computed signal, scroll container reference
-- [ ] T030 [US1] Create UnifiedConversationDisplayComponent template in `src/app/components/unified-conversation-display/unified-conversation-display.component.html` with scrollable container, ngFor with trackBy, auto-scroll logic
-- [ ] T031 [US1] Create UnifiedConversationDisplayComponent styles in `src/app/components/unified-conversation-display/unified-conversation-display.component.scss` with scroll container styling, message spacing
-- [ ] T032 [US1] Implement chronological message ordering using computed signal in UnifiedConversationDisplayComponent
-- [ ] T033 [US1] Implement auto-scroll to latest message with ViewChild and AfterViewChecked lifecycle hook in UnifiedConversationDisplayComponent
-- [ ] T034 [US1] Modify LiveKitConnectionService in `src/app/services/livekit-connection.service.ts` to emit UnifiedConversationMessage instances for transcription events
-- [ ] T035 [US1] Update LiveKitConnectionService tests in `src/app/services/livekit-connection.service.spec.ts` to verify unified message emission
-- [ ] T036 [US1] Integrate UnifiedConversationDisplayComponent into main app component/template (replace transcription-display and chat-message-display references)
+- [X] T026 [P] [US1] Create ConversationMessageComponent (presentational) in `src/app/components/conversation-message/conversation-message.component.ts` with input signals for message, template using @if for message type discrimination
+- [X] T027 [P] [US1] Create ConversationMessageComponent template in `src/app/components/conversation-message/conversation-message.component.html` with semantic HTML (article tags), sender styling
+- [X] T028 [P] [US1] Create ConversationMessageComponent styles in `src/app/components/conversation-message/conversation-message.component.scss` with user/agent visual distinction, responsive layout
+- [X] T029 [US1] Create UnifiedConversationDisplayComponent (smart) in `src/app/components/unified-conversation-display/unified-conversation-display.component.ts` with ConversationStorageService injection, sorted messages computed signal, scroll container reference
+- [X] T030 [US1] Create UnifiedConversationDisplayComponent template in `src/app/components/unified-conversation-display/unified-conversation-display.component.html` with scrollable container, ngFor with trackBy, auto-scroll logic
+- [X] T031 [US1] Create UnifiedConversationDisplayComponent styles in `src/app/components/unified-conversation-display/unified-conversation-display.component.scss` with scroll container styling, message spacing
+- [X] T032 [US1] Implement chronological message ordering using computed signal in UnifiedConversationDisplayComponent
+- [X] T033 [US1] Implement auto-scroll to latest message with ViewChild and AfterViewChecked lifecycle hook in UnifiedConversationDisplayComponent
+- [X] T034 [US1] Modify LiveKitConnectionService in `src/app/services/livekit-connection.service.ts` to emit UnifiedConversationMessage instances for transcription events
+- [X] T035 [US1] Update LiveKitConnectionService tests in `src/app/services/livekit-connection.service.spec.ts` to verify unified message emission
+- [X] T036 [US1] Integrate UnifiedConversationDisplayComponent into main app component/template (replace transcription-display and chat-message-display references)
 
 **Checkpoint**: User Story 1 complete - users can view unified conversation feed with all messages chronologically ordered and auto-scrolling
 
@@ -113,9 +113,9 @@
 
 ### Tests for User Story 2 (TDD - Write First) ✅
 
-- [ ] T037 [P] [US2] Write unit test for ConversationStorageService mode toggle preserving message history in `src/app/services/conversation-storage.service.spec.ts`
-- [ ] T038 [P] [US2] Write unit test for UnifiedConversationDisplayComponent reflecting mode changes in `src/app/components/unified-conversation-display/unified-conversation-display.component.spec.ts`
-- [ ] T039 [US2] Write integration test for mode toggle mid-conversation (voice → chat → verify history preserved) in `tests/integration/mode-toggle-integration.spec.ts`
+- [X] T037 [P] [US2] Write unit test for ConversationStorageService mode toggle preserving message history in `src/app/services/conversation-storage.service.spec.ts`
+- [X] T038 [P] [US2] Write unit test for UnifiedConversationDisplayComponent reflecting mode changes in `src/app/components/unified-conversation-display/unified-conversation-display.component.spec.ts`
+- [X] T039 [US2] Write integration test for mode toggle mid-conversation (voice → chat → verify history preserved) in `tests/integration/mode-toggle-integration.spec.ts`
 
 ### Implementation for User Story 2
 

@@ -1,0 +1,283 @@
+/**
+ * ConversationMessageComponent Styles
+ * Feature: 005-unified-conversation
+ *
+ * Provides visual distinction between:
+ * - User vs Agent messages
+ * - Voice vs Chat delivery methods
+ * - Final vs Interim transcriptions
+ *
+ * Follows Material Design 3 principles
+ * WCAG 2.1 AA compliant (4.5:1 contrast ratio)
+ */
+
+:host {
+  display: block;
+  margin-bottom: 16px;
+
+  // Smooth transitions for state changes
+  transition: opacity 0.2s ease-in-out;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  animation: messageSlideIn 0.3s ease-out;
+
+  &__container {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  &__avatar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--mat-sys-surface-container);
+    color: var(--mat-sys-on-surface-variant);
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  &__content-wrapper {
+    flex: 1;
+    min-width: 0; // Allow flex item to shrink below content size
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__sender {
+    font-weight: 500;
+  }
+
+  &__delivery-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    border-radius: 12px;
+    background-color: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+    font-size: 0.75rem;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      margin-right: 2px;
+    }
+  }
+
+  &__timestamp {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-left: auto; // Push to right
+  }
+
+  &__content {
+    padding: 12px 16px;
+    border-radius: 16px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.5;
+
+    // Default styling (will be overridden by modifiers)
+    background-color: var(--mat-sys-surface-container-low);
+    color: var(--mat-sys-on-surface);
+  }
+
+  &__interim-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--mat-sys-tertiary);
+    font-style: italic;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+  }
+
+  &__confidence-warning {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--mat-sys-error);
+    padding: 4px 8px;
+    background-color: var(--mat-sys-error-container);
+    border-radius: 8px;
+    width: fit-content;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  // User message styling (right-aligned, blue)
+  &--user {
+    .message__container {
+      flex-direction: row-reverse;
+    }
+
+    .message__content-wrapper {
+      align-items: flex-end;
+    }
+
+    .message__header {
+      flex-direction: row-reverse;
+    }
+
+    .message__avatar {
+      background-color: var(--mat-sys-primary-container);
+      color: var(--mat-sys-on-primary-container);
+    }
+
+    .message__content {
+      background-color: var(--mat-sys-primary);
+      color: var(--mat-sys-on-primary);
+      border-bottom-right-radius: 4px; // Tail effect
+    }
+  }
+
+  // Agent message styling (left-aligned, gray)
+  &--agent {
+    .message__avatar {
+      background-color: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+    }
+
+    .message__content {
+      background-color: var(--mat-sys-surface-container);
+      color: var(--mat-sys-on-surface);
+      border-bottom-left-radius: 4px; // Tail effect
+    }
+  }
+
+  // Voice transcription specific styling
+  &--transcription {
+    .message__delivery-badge[data-delivery="voice"] {
+      background-color: var(--mat-sys-tertiary-container);
+      color: var(--mat-sys-on-tertiary-container);
+    }
+  }
+
+  // Chat message specific styling
+  &--chat {
+    .message__delivery-badge[data-delivery="chat"] {
+      background-color: var(--mat-sys-primary-container);
+      color: var(--mat-sys-on-primary-container);
+    }
+  }
+
+  // Interim transcription styling (dimmed, italic)
+  &--interim {
+    opacity: 0.7;
+
+    .message__content {
+      font-style: italic;
+      border: 1px dashed var(--mat-sys-outline);
+      background-color: transparent;
+    }
+  }
+}
+
+// Animations
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 599px) {
+  .message {
+    &__avatar {
+      width: 32px;
+      height: 32px;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    &__content {
+      padding: 10px 14px;
+      font-size: 0.9375rem;
+    }
+
+    &__header {
+      font-size: 0.8125rem;
+    }
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .message {
+    &__content {
+      border: 2px solid currentColor;
+    }
+
+    &--user .message__content {
+      border-color: var(--mat-sys-primary);
+    }
+
+    &--agent .message__content {
+      border-color: var(--mat-sys-outline);
+    }
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  .message {
+    animation: none;
+  }
+
+  .message__interim-indicator mat-icon {
+    animation: none;
+  }
+}

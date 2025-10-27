@@ -1,10 +1,12 @@
-import { Injectable, Signal, signal, computed } from '@angular/core';
+import { Injectable, Signal, signal, computed, inject } from '@angular/core';
 import { Room, RoomEvent, TranscriptionSegment, Participant, TrackPublication } from 'livekit-client';
 import {
   TranscriptionMessage,
   InterimTranscription,
   Speaker,
 } from '../models/transcription-message.model';
+import { ConversationStorageService } from './conversation-storage.service';
+import { createTranscriptionMessage } from '../models/unified-conversation-message.model';
 
 /**
  * Service interface for transcription management
@@ -58,13 +60,30 @@ export interface ITranscriptionService {
 /**
  * Transcription Service
  * Manages real-time transcription from LiveKit
+ * Feature: 005-unified-conversation - Now integrates with ConversationStorageService
  */
 @Injectable({
   providedIn: 'root',
 })
 export class TranscriptionService implements ITranscriptionService {
-  // T070: Private state - transcriptions signal
-  private _transcriptions = signal<readonly TranscriptionMessage[]>([]);
+  // Inject ConversationStorageService for unified message storage
+  private conversationStorage = inject(ConversationStorageService);
+
+  // T070: Private state - transcriptions signal (now computed from storage)
+  private _transcriptions = computed(() => {
+    // Filter transcription messages from unified storage
+    const allMessages = this.conversationStorage.messages();
+    return allMessages
+      .filter(msg => msg.messageType === 'transcription')
+      .map(msg => ({
+        id: msg.id,
+        speaker: msg.sender as Speaker,
+        text: msg.content,
+        timestamp: msg.timestamp,
+        isFinal: msg.isFinal,
+        language: msg.language
+      } as TranscriptionMessage));
+  });
 
   // T071: Private state - interim transcription signal
   private _interimTranscription = signal<InterimTranscription | null>(null);
@@ -80,7 +99,7 @@ export class TranscriptionService implements ITranscriptionService {
   ) => void) | null = null;
 
   // T070: Public readonly signals
-  readonly transcriptions = this._transcriptions.asReadonly();
+  readonly transcriptions = this._transcriptions;
   readonly interimTranscription = this._interimTranscription.asReadonly();
 
   // T072: Computed signal for message count
@@ -139,7 +158,7 @@ export class TranscriptionService implements ITranscriptionService {
    * T078: Clear all transcriptions and reset state
    */
   clearTranscriptions(): void {
-    this._transcriptions.set([]);
+    this.conversationStorage.clearMessages();
     this._interimTranscription.set(null);
   }
 
@@ -166,6 +185,7 @@ export class TranscriptionService implements ITranscriptionService {
   /**
    * T074-T076: Handle incoming transcription segments from LiveKit
    * T123: Add performance marks for transcription latency tracking
+   * Feature: 005-unified-conversation - Now creates UnifiedConversationMessage instances
    */
   private handleTranscriptionSegment(segment: TranscriptionSegment, participant?: Participant): void {
     // T123: Mark start of transcription processing
@@ -179,17 +199,26 @@ export class TranscriptionService implements ITranscriptionService {
       participantIdentity: participant?.identity,
     });
 
-    // T074: Map LiveKit segment to our TranscriptionMessage model
-    const message = this.mapLiveKitSegmentToMessage(segment, participant);
+    // Determine speaker
+    const speaker = this.determineSpeaker(participant);
 
     if (segment.final) {
-      // T075: Update transcriptions signal for final transcription
-      this._transcriptions.update((messages: readonly TranscriptionMessage[]) => [...messages, message]);
+      // T075: Create unified message for final transcription
+      const unifiedMessage = createTranscriptionMessage(
+        speaker,
+        segment.text,
+        true, // isFinal
+        undefined, // confidence (not provided by LiveKit segment)
+        segment.language
+      );
+
+      // Add to conversation storage
+      this.conversationStorage.addMessage(unifiedMessage);
 
       // Clear interim transcription when final is received
       this._interimTranscription.set(null);
 
-      console.log('✅ Final transcription added:', message.text);
+      console.log('✅ Final transcription added:', segment.text);
 
       // T123: Measure transcription latency
       performance.mark(`${perfMark}-end`);
@@ -202,35 +231,20 @@ export class TranscriptionService implements ITranscriptionService {
     } else {
       // T076: Update interim transcription signal for non-final transcription
       const interim: InterimTranscription = {
-        speaker: message.speaker,
-        text: message.text,
-        timestamp: message.timestamp,
+        speaker: speaker,
+        text: segment.text,
+        timestamp: new Date(),
       };
       this._interimTranscription.set(interim);
 
-      console.log('🔄 Interim transcription updated:', message.text);
+      console.log('🔄 Interim transcription updated:', segment.text);
     }
-  }
-
-  /**
-   * T074: Map LiveKit transcription segment to our message model
-   */
-  private mapLiveKitSegmentToMessage(segment: TranscriptionSegment, participant?: Participant): TranscriptionMessage {
-    const message: TranscriptionMessage = {
-      id: segment.id,
-      speaker: this.determineSpeaker(participant),
-      text: segment.text,
-      timestamp: new Date(),
-      isFinal: segment.final,
-      language: segment.language,
-    };
-    return message;
   }
 
   /**
    * Determine if speaker is user or agent based on LiveKit participant
    */
-  private determineSpeaker(participant?: Participant): Speaker {
+  private determineSpeaker(participant?: Participant): 'user' | 'agent' {
     // If no participant or participant is local, it's the user
     // Otherwise it's the agent
     if (!participant) {
