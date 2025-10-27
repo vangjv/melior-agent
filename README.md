@@ -7,10 +7,11 @@ Voice chat transcription application built with Angular 20, LiveKit, and Azure F
 - 🎤 **Voice Chat**: Connect to LiveKit voice agent for real-time conversation
 - 📝 **Live Transcription**: Real-time transcription of both user and agent speech
 - 💬 **Chat Mode Toggle**: Switch between voice and text-based chat responses
-- �️ **Unified Conversation View**: Single timeline showing all messages (voice and chat) in chronological order
+- 🗂️ **Unified Conversation View**: Single timeline showing all messages (voice and chat) in chronological order
 - 💾 **Conversation Persistence**: History saved to sessionStorage and restored on reconnect
 - ⚡ **Virtual Scrolling**: Efficient rendering for conversations with 100+ messages
-- �🔄 **Auto-Reconnection**: Automatic reconnection with exponential backoff on network interruptions
+- ⏱️ **Idle Timeout Protection**: Automatic disconnection after 2 minutes of inactivity with 30-second warning
+- 🔄 **Auto-Reconnection**: Automatic reconnection with exponential backoff on network interruptions
 - 📱 **Mobile-First**: Responsive design optimized for mobile devices
 - ♿ **Accessible**: WCAG 2.1 AA compliant with screen reader support
 - 🔐 **Secure Authentication**: Microsoft Entra External ID authentication for frontend and backend
@@ -107,6 +108,42 @@ The mode toggle button allows you to choose how the agent responds:
 - Switch to Chat Mode in quiet environments or to review agent responses
 - Chat history is preserved during the session but cleared on disconnect
 - The button shows "Switching..." while waiting for agent confirmation
+
+### Idle Timeout Protection
+
+The application automatically disconnects idle sessions to conserve resources:
+
+**Features:**
+- **Automatic Disconnection**: Sessions disconnect after 2 minutes of inactivity
+- **Visual Warning**: Warning banner appears 30 seconds before timeout
+- **Countdown Timer**: Real-time countdown displayed in MM:SS format
+- **Dismiss Action**: Clicking the dismiss button counts as activity and resets the timer
+- **Activity Detection**: Any chat message or transcription resets the idle timer
+- **Configurable Duration**: Timeout can be configured from 30 seconds to 60 minutes
+- **Session Persistence**: Custom timeout preferences persist across browser sessions
+
+**How It Works:**
+1. Timer starts automatically when you connect to a voice session
+2. Timer resets whenever you speak (transcription received) or send a chat message
+3. Warning appears when 30 seconds remain before auto-disconnect
+4. Clicking "Dismiss" on the warning resets the timer
+5. Session disconnects automatically if timer reaches zero
+
+**Accessibility:**
+- Warning uses `role="alert"` and `aria-live="assertive"` for screen readers
+- WCAG 2.1 AA compliant color contrast (7.46:1 ratio)
+- Keyboard accessible dismiss button
+
+**Configuration:**
+The timeout duration can be customized via `IdleTimeoutService.updateConfig()`:
+```typescript
+// Example: Set 5-minute timeout with 60-second warning
+idleTimeoutService.updateConfig({
+  durationSeconds: 300,
+  warningThresholdSeconds: 60,
+  enabled: true
+});
+```
 
 ### Unified Conversation View
 

@@ -4,10 +4,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { ConnectionButtonComponent } from '../connection-button/connection-button.component';
 import { UnifiedConversationDisplayComponent } from '../unified-conversation-display/unified-conversation-display.component';
 import { ModeToggleButtonComponent } from '../mode-toggle-button/mode-toggle-button.component';
+import { IdleWarningComponent } from '../idle-warning/idle-warning.component';
 import { LiveKitConnectionService } from '../../services/livekit-connection.service';
 import { TranscriptionService } from '../../services/transcription.service';
 import { ResponseModeService } from '../../services/response-mode.service';
 import { ConversationStorageService } from '../../services/conversation-storage.service';
+import { IdleTimeoutService } from '../../services/idle-timeout.service';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -15,6 +17,7 @@ import { environment } from '../../../environments/environment';
  * Smart component that manages voice chat connection, transcription, and state
  * T051-T059: Integrated with ResponseModeService for mode toggle functionality
  * Feature: 005-unified-conversation - Now uses UnifiedConversationDisplayComponent
+ * Feature: 006-auto-disconnect-idle - Integrated with IdleTimeoutService
  */
 @Component({
   selector: 'app-voice-chat',
@@ -23,6 +26,7 @@ import { environment } from '../../../environments/environment';
     ConnectionButtonComponent,
     UnifiedConversationDisplayComponent,
     ModeToggleButtonComponent,
+    IdleWarningComponent,
     MatProgressSpinnerModule,
     MatIconModule,
   ],
@@ -41,6 +45,10 @@ export class VoiceChatComponent implements OnDestroy {
 
   // Feature: 005-unified-conversation - Use ConversationStorageService
   private readonly conversationStorage = inject(ConversationStorageService);
+
+  // Feature: 006-auto-disconnect-idle - Inject IdleTimeoutService (T031)
+  // Public to allow template binding (T056)
+  readonly idleTimeoutService = inject(IdleTimeoutService);
 
   // T042: Connection state computed signal from service
   readonly connectionState = this.connectionService.connectionState;
@@ -106,6 +114,9 @@ export class VoiceChatComponent implements OnDestroy {
 
         // T052: Initialize ResponseModeService after connection established
         this.responseModeService.initialize(room);
+
+        // T032: Start idle timeout timer when connection established
+        this.idleTimeoutService.startTimer();
       } else {
         console.warn('Connection succeeded but Room instance not available');
       }
@@ -124,6 +135,9 @@ export class VoiceChatComponent implements OnDestroy {
       // T053: Cleanup ResponseModeService when disconnecting
       this.responseModeService.cleanup();
 
+      // T033: Stop idle timeout timer when user manually disconnects
+      this.idleTimeoutService.stopTimer();
+
       await this.connectionService.disconnect();
     } catch (error) {
       console.error('Disconnect failed:', error);
@@ -138,6 +152,12 @@ export class VoiceChatComponent implements OnDestroy {
       console.error('Mode toggle failed:', error);
       // Error is already handled by ResponseModeService and displayed via modeErrorMessage signal
     }
+  }
+
+  // T057: Handle idle warning dismiss (User Story 2)
+  handleIdleWarningDismiss(): void {
+    // Dismissing the warning counts as activity
+    this.idleTimeoutService.resetTimer();
   }
 
   // T130: Cleanup on component destroy

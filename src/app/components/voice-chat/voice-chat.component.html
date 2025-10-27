@@ -1,5 +1,13 @@
 <!-- T043: Voice chat component template -->
 <div class="voice-chat-container">
+  <!-- Feature: 006-auto-disconnect-idle - Idle timeout warning (T055) -->
+  @if (isConnected()) {
+    <app-idle-warning
+      [timeRemaining]="idleTimeoutService.timerState().timeRemaining"
+      (onDismiss)="handleIdleWarningDismiss()"
+    />
+  }
+
   <!-- T045 & T059: ARIA labels for connection state and disconnection announcements -->
   <div
     class="connection-status"

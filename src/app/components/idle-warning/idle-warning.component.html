@@ -1,0 +1,28 @@
+<!-- Idle Warning Banner Template -->
+@if (shouldShow()) {
+  <div
+    class="idle-warning"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+  >
+    <div class="warning-content">
+      <mat-icon class="warning-icon">warning</mat-icon>
+
+      <div class="warning-text">
+        <p class="warning-message">
+          Your session will disconnect in <span class="countdown-time">{{ formattedTime() }}</span> due to inactivity.
+        </p>
+      </div>
+
+      <button
+        mat-icon-button
+        class="dismiss-button"
+        aria-label="Dismiss warning and stay connected"
+        (click)="handleDismiss()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+}
