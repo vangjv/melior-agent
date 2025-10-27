@@ -13,6 +13,12 @@
  * - Signal-based inputs using input()
  * - No business logic - pure presentation
  * - Accessibility: semantic HTML, ARIA attributes, color contrast
+ *
+ * @deprecated This component is deprecated as of feature 005-unified-conversation.
+ * Use UnifiedConversationDisplayComponent instead, which combines transcription
+ * and chat message display into a single unified interface.
+ * This component will be removed in a future release.
+ * Migration guide: See specs/005-unified-conversation/MIGRATION.md
  */
 
 import {

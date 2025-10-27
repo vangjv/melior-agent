@@ -1,33 +1,94 @@
 <!-- Unified Conversation Display Component Template -->
 <div class="conversation-display">
-  <!-- Scroll Container -->
-  <div
-    #scrollContainer
-    class="conversation-display__scroll-container"
-    (scroll)="onScroll()"
-    role="log"
-    aria-live="polite"
-    aria-label="Conversation history"
-  >
-    <!-- Empty State -->
-    @if (!hasMessages()) {
-      <div class="conversation-display__empty-state">
-        <mat-icon aria-hidden="true">chat_bubble_outline</mat-icon>
-        <p>No messages yet</p>
-        <p class="conversation-display__empty-hint">
-          Start a conversation to see messages here
-        </p>
-      </div>
-    }
+  <!-- Header with Clear Button -->
+  @if (hasMessages()) {
+    <div class="conversation-display__header">
+      <button
+        mat-icon-button
+        (click)="clearConversation()"
+        aria-label="Clear conversation history"
+        class="conversation-display__clear-button"
+      >
+        <mat-icon>delete_outline</mat-icon>
+      </button>
+    </div>
+  }
 
-    <!-- Message List -->
-    @if (hasMessages()) {
+  <!-- Scroll Container (Regular - for messages < 100) -->
+  @if (!useVirtualScrolling()) {
+    <div
+      #scrollContainer
+      class="conversation-display__scroll-container"
+      (scroll)="onScroll()"
+      role="log"
+      aria-live="polite"
+      aria-label="Conversation history"
+    >
+      <!-- Empty State -->
+      @if (!hasMessages()) {
+        <div class="conversation-display__empty-state">
+          <mat-icon aria-hidden="true">chat_bubble_outline</mat-icon>
+          <p>No messages yet</p>
+          <p class="conversation-display__empty-hint">
+            Start a conversation to see messages here
+          </p>
+        </div>
+      }
+
+      <!-- Message List -->
+      @if (hasMessages()) {
+        <div
+          class="conversation-display__message-list"
+          role="list"
+          aria-label="Messages"
+        >
+          @for (message of sortedMessages(); track trackByMessageId($index, message)) {
+            <!-- Session Boundary Separator -->
+            @if (firstNewMessageId() === message.id) {
+              <div class="conversation-display__session-separator" role="separator">
+                <span class="conversation-display__session-separator-line"></span>
+                <span class="conversation-display__session-separator-text">New Session</span>
+                <span class="conversation-display__session-separator-line"></span>
+              </div>
+            }
+
+            <app-conversation-message
+              [message]="message"
+              role="listitem"
+              [attr.data-message-id]="message.id"
+            />
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Virtual Scroll Container (for messages >= 100) -->
+  @if (useVirtualScrolling()) {
+    <cdk-virtual-scroll-viewport
+      class="conversation-display__scroll-container conversation-display__virtual-scroll"
+      [itemSize]="ITEM_SIZE"
+      (scrolledIndexChange)="onScroll()"
+      role="log"
+      aria-live="polite"
+      aria-label="Conversation history"
+    >
+      <!-- Message List with Virtual Scrolling -->
       <div
         class="conversation-display__message-list"
         role="list"
         aria-label="Messages"
       >
         @for (message of sortedMessages(); track trackByMessageId($index, message)) {
+          <!-- Session Boundary Separator -->
+          @if (firstNewMessageId() === message.id) {
+            <div class="conversation-display__session-separator" role="separator">
+              <span class="conversation-display__session-separator-line"></span>
+              <span class="conversation-display__session-separator-text">New Session</span>
+              <span class="conversation-display__session-separator-line"></span>
+            </div>
+          }
+
           <app-conversation-message
             [message]="message"
             role="listitem"
@@ -35,8 +96,8 @@
           />
         }
       </div>
-    }
-  </div>
+    </cdk-virtual-scroll-viewport>
+  }
 
   <!-- Scroll to Bottom Button (appears when user scrolls up) -->
   @if (hasMessages() && userHasScrolledUp()) {

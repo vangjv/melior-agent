@@ -75,6 +75,14 @@ export class ConversationMessageComponent {
   });
 
   /**
+   * Computed: Should show low confidence warning?
+   */
+  showLowConfidenceWarning = computed(() => {
+    const msg = this.message();
+    return isTranscriptionMessage(msg) && msg.confidence !== undefined && msg.confidence < 0.8;
+  });
+
+  /**
    * Computed: CSS classes for message styling
    */
   messageClasses = computed(() => {

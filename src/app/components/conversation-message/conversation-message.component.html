@@ -54,7 +54,7 @@
       }
 
       <!-- Confidence Indicator (for transcriptions with low confidence) -->
-      @if (isTranscription() && message().confidence !== undefined && message().confidence < 0.8) {
+      @if (showLowConfidenceWarning()) {
         <div class="message__confidence-warning" role="status">
           <mat-icon [inline]="true">warning</mat-icon>
           <span>Low confidence transcription</span>

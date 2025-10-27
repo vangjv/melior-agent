@@ -7,10 +7,13 @@ Voice chat transcription application built with Angular 20, LiveKit, and Azure F
 - 🎤 **Voice Chat**: Connect to LiveKit voice agent for real-time conversation
 - 📝 **Live Transcription**: Real-time transcription of both user and agent speech
 - 💬 **Chat Mode Toggle**: Switch between voice and text-based chat responses
-- 🔄 **Auto-Reconnection**: Automatic reconnection with exponential backoff on network interruptions
+- �️ **Unified Conversation View**: Single timeline showing all messages (voice and chat) in chronological order
+- 💾 **Conversation Persistence**: History saved to sessionStorage and restored on reconnect
+- ⚡ **Virtual Scrolling**: Efficient rendering for conversations with 100+ messages
+- �🔄 **Auto-Reconnection**: Automatic reconnection with exponential backoff on network interruptions
 - 📱 **Mobile-First**: Responsive design optimized for mobile devices
 - ♿ **Accessible**: WCAG 2.1 AA compliant with screen reader support
-- � **Secure Authentication**: Microsoft Entra External ID authentication for frontend and backend
+- 🔐 **Secure Authentication**: Microsoft Entra External ID authentication for frontend and backend
 - 🔒 **Token-Based API Security**: Azure Functions protected with JWT token validation
 
 ## Quick Start
@@ -105,6 +108,26 @@ The mode toggle button allows you to choose how the agent responds:
 - Chat history is preserved during the session but cleared on disconnect
 - The button shows "Switching..." while waiting for agent confirmation
 
+### Unified Conversation View
+
+All conversation messages (both transcriptions and chat) appear in a single, chronological timeline:
+
+**Features:**
+- **Single Message Feed**: View all user speech and agent responses together
+- **Visual Distinctions**: User messages right-aligned (blue), agent messages left-aligned (gray)
+- **Delivery Badges**: Icons indicate if message was voice 🎤 or chat 💬
+- **Auto-Scroll**: Automatically scrolls to latest message
+- **Scroll Control**: Manual scrolling pauses auto-scroll; "scroll to bottom" button appears
+- **Session Boundaries**: Visual separator shows where previous session ended and new one began
+- **Persistent History**: Conversation saved to sessionStorage and restored on reconnect
+- **Virtual Scrolling**: Activates automatically for conversations with 100+ messages
+- **Clear History**: Optional button to clear all conversation history
+
+**Performance:**
+- Handles 500+ messages smoothly with virtual scrolling
+- Message rendering latency: <500ms
+- Efficient DOM updates using `trackBy` optimization
+
 ## Development
 
 ### Project Structure
@@ -114,19 +137,27 @@ src/
   app/
     components/          # UI components
       connection-button/ # Connect/disconnect button
-      mode-toggle-button/ # Voice/Chat mode toggle (NEW)
-      chat-message-display/ # Chat message list (NEW)
-      transcription-display/ # Transcription list view
+      mode-toggle-button/ # Voice/Chat mode toggle
+      unified-conversation-display/ # Unified message feed (NEW)
+      conversation-message/ # Individual message display (NEW)
+      transcription-display/ # DEPRECATED: Use unified-conversation-display
+      chat-message-display/ # DEPRECATED: Use unified-conversation-display
       voice-chat/        # Main chat container
     models/              # TypeScript interfaces
-      chat-message.model.ts     # Chat message types (NEW)
-      response-mode.model.ts    # Response mode types (NEW)
+      unified-conversation-message.model.ts # Unified message model (NEW)
+      conversation-feed-state.model.ts      # Conversation state (NEW)
+      chat-message.model.ts     # Chat message types
+      response-mode.model.ts    # Response mode types
     services/            # Business logic
       livekit-connection.service.ts  # Connection management
-      response-mode.service.ts      # Mode toggle logic (NEW)
-      chat-storage.service.ts       # Chat history (NEW)
+      conversation-storage.service.ts # Unified message storage (NEW)
+      response-mode.service.ts      # Mode toggle logic
+      chat-storage.service.ts       # DEPRECATED: Use conversation-storage
       transcription.service.ts       # Transcription handling
       token.service.ts              # Backend API integration
+    utils/               # Utility functions (NEW)
+      message-merger.util.ts      # Message sorting/deduplication
+      storage-migration.util.ts   # Legacy data migration
   environments/          # Environment configs
 api/
   src/functions/         # Azure Functions

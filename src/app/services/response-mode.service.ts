@@ -13,6 +13,7 @@ import {
 } from '../models/response-mode.model';
 import { ChatStorageService } from './chat-storage.service';
 import { ConversationStorageService } from './conversation-storage.service';
+import { createChatMessage } from '../models/unified-conversation-message.model';
 
 /**
  * Service for managing voice/chat response mode state and data channel communication
@@ -39,6 +40,9 @@ export class ResponseModeService {
 
   // Feature 005: Inject ConversationStorageService to sync mode changes
   private readonly conversationStorageService = inject(ConversationStorageService);
+
+  // Track streaming chat message IDs to enable real-time updates in unified conversation
+  private _streamingChatMessageIds = new Map<string, string>(); // chatMessageId -> unifiedMessageId
 
   // Private mutable state
   private _currentMode = signal<ResponseMode>(DEFAULT_RESPONSE_MODE);
@@ -178,6 +182,9 @@ export class ResponseModeService {
 
     // T127: Clear chat message history
     this.chatStorageService.clearHistory();
+
+    // Feature 005: Clear streaming message tracking
+    this._streamingChatMessageIds.clear();
 
     // T129: Reset state to voice mode (default) and confirmed
     this._room = null;
@@ -386,21 +393,27 @@ export class ResponseModeService {
       trimmedLength: message.trim().length,
     });
 
-    const beforeCount = this.chatStorageService.getHistory().length;
+    const beforeCount = this.conversationStorageService.messages().length;
     console.log(`📊 Messages before add: ${beforeCount}`);
 
-    // Add agent message to chat history (T108)
+    // Create unified chat message
+    const chatMessage = createChatMessage('agent', message, timestamp);
+
+    // Add to unified conversation storage (Feature 005)
+    this.conversationStorageService.addMessage(chatMessage);
+
+    // Also add to legacy chat storage for backward compatibility
     this.chatStorageService.addMessage(message, 'agent');
 
-    const afterCount = this.chatStorageService.getHistory().length;
+    const afterCount = this.conversationStorageService.messages().length;
     console.log(`📊 Messages after add: ${afterCount}`);
-    console.log(`✅ Message ${afterCount > beforeCount ? 'SUCCESSFULLY' : 'NOT'} added`);
-    console.log(`� All messages:`, this.chatStorageService.getHistory());
+    console.log(`✅ Message ${afterCount > beforeCount ? 'SUCCESSFULLY' : 'NOT'} added to unified conversation`);
   }
 
   /**
    * Handle AgentChatChunk from agent
    * Builds agent message incrementally as chunks stream in
+   * Feature 005: Updates unified conversation in real-time as chunks arrive
    *
    * @private
    */
@@ -412,24 +425,51 @@ export class ResponseModeService {
     console.log(`✅ Is Complete: ${isComplete}`);
     console.log(`⏰ Timestamp: ${timestamp}`);
 
-    // Check if message already exists by looking for it in history
+    // Check if message already exists in legacy storage
     const existingMessage = this.chatStorageService
       .getHistory()
       .find((msg) => msg.id === messageId);
 
     if (!existingMessage) {
-      // Start a new streaming message
+      // Start a new streaming message in legacy storage
       console.log(`🆕 Starting new streaming message: ${messageId}`);
       this.chatStorageService.startStreamingMessage(messageId, 'agent');
+
+      // Feature 005: Create initial message in unified conversation
+      const initialChatMessage = createChatMessage('agent', chunk, timestamp);
+      this.conversationStorageService.addMessage(initialChatMessage);
+
+      // Track the unified message ID for future updates
+      this._streamingChatMessageIds.set(messageId, initialChatMessage.id);
+      console.log(`🆕 Created streaming message in unified conversation: ${initialChatMessage.id}`);
+    } else {
+      // Message exists - get the unified message ID
+      const unifiedMessageId = this._streamingChatMessageIds.get(messageId);
+
+      if (unifiedMessageId) {
+        // Get current content from legacy storage
+        const currentContent = existingMessage.content;
+
+        // Feature 005: Update the unified conversation message with accumulated content
+        this.conversationStorageService.updateMessage(unifiedMessageId, {
+          content: currentContent + chunk,
+          timestamp: new Date(timestamp)
+        });
+        console.log(`🔄 Updated streaming message in unified conversation: ${unifiedMessageId}`);
+      }
     }
 
-    // Append the chunk to the streaming message
+    // Append the chunk to the streaming message in legacy storage
     this.chatStorageService.appendChunk(messageId, chunk);
-    console.log(`➕ Appended chunk to message ${messageId}`);
+    console.log(`➕ Appended chunk to legacy message ${messageId}`);
 
     // Mark message as complete if this is the final chunk
     if (isComplete) {
       this.chatStorageService.completeStreamingMessage(messageId);
+
+      // Clean up tracking
+      this._streamingChatMessageIds.delete(messageId);
+
       console.log(`✅ Completed streaming message ${messageId}`);
     }
   }
@@ -437,6 +477,8 @@ export class ResponseModeService {
   /**
    * Handle transcription events for user messages in chat mode (T109)
    * When in chat mode, store final user transcriptions as chat messages
+   * Feature 005: TranscriptionService already adds to unified conversation,
+   * so we only need to add to legacy chat storage here
    *
    * @private
    */
@@ -454,8 +496,12 @@ export class ResponseModeService {
     segments.forEach((segment) => {
       // Only store final transcriptions from the local participant (user)
       if (segment.final && participant?.isLocal) {
+        // Add to legacy chat storage (for backward compatibility)
         this.chatStorageService.addMessage(segment.text, 'user');
-        console.log(`Added user message to chat: ${segment.text}`);
+
+        // NOTE: We don't add to unified conversation here because
+        // TranscriptionService already does that, and we'd create duplicates
+        console.log(`Added user message to legacy chat storage: ${segment.text}`);
       }
     });
   }

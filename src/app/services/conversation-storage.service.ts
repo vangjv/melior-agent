@@ -27,12 +27,14 @@ export class ConversationStorageService {
   private readonly _currentMode = signal<ResponseMode>('voice');
   private readonly _sessionId = signal<string>(this.generateSessionId());
   private readonly _lastMessageAt = signal<Date | null>(null);
+  private readonly _sessionRestoredAt = signal<Date | null>(null);
 
   // Public readonly signals
   readonly messages = this._messages.asReadonly();
   readonly currentMode = this._currentMode.asReadonly();
   readonly sessionId = this._sessionId.asReadonly();
   readonly lastMessageAt = this._lastMessageAt.asReadonly();
+  readonly sessionRestoredAt = this._sessionRestoredAt.asReadonly();
 
   // Computed signals
   readonly messageCount = computed(() => this.messages().length);
@@ -40,6 +42,14 @@ export class ConversationStorageService {
     sortMessagesByTimestamp([...this.messages()])
   );
   readonly isEmpty = computed(() => this.messageCount() === 0);
+  readonly firstNewMessageId = computed(() => {
+    const restoredAt = this.sessionRestoredAt();
+    if (!restoredAt) return null;
+
+    const messages = this.sortedMessages();
+    const firstNew = messages.find(msg => msg.timestamp > restoredAt);
+    return firstNew?.id ?? null;
+  });
 
   // Storage debounce timer
   private saveTimer?: number;
@@ -54,11 +64,28 @@ export class ConversationStorageService {
    * Handles deduplication, sorting, and interim replacement
    */
   addMessage(message: UnifiedConversationMessage): void {
+    console.log('📝 ConversationStorageService.addMessage called:', {
+      messageId: message.id,
+      messageType: message.messageType,
+      sender: message.sender,
+      content: message.content.substring(0, 50),
+      isFinal: 'isFinal' in message ? message.isFinal : 'N/A',
+      currentMessageCount: this._messages().length
+    });
+
     const currentMessages = this._messages();
     const updated = addMessage([...currentMessages], message);
 
+    console.log('📝 After addMessage util:', {
+      previousCount: currentMessages.length,
+      newCount: updated.length,
+      added: updated.length > currentMessages.length
+    });
+
     this._messages.set(updated);
     this._lastMessageAt.set(message.timestamp);
+
+    console.log('✅ Message signal updated, new count:', this._messages().length);
 
     this.debouncedSave();
   }
@@ -80,6 +107,41 @@ export class ConversationStorageService {
       const lastMessage = messages[messages.length - 1];
       this._lastMessageAt.set(lastMessage.timestamp);
     }
+
+    this.debouncedSave();
+  }
+
+  /**
+   * Update an existing message by ID
+   * Used for updating interim transcription messages as they stream
+   */
+  updateMessage(messageId: string, updatedContent: Partial<UnifiedConversationMessage>): void {
+    console.log('🔄 ConversationStorageService.updateMessage called:', {
+      messageId,
+      updatedFields: Object.keys(updatedContent)
+    });
+
+    const currentMessages = this._messages();
+    const messageIndex = currentMessages.findIndex(msg => msg.id === messageId);
+
+    if (messageIndex === -1) {
+      console.warn(`⚠️ Message ${messageId} not found for update`);
+      return;
+    }
+
+    const updated = [...currentMessages];
+    const existingMessage = updated[messageIndex];
+
+    // Merge updates while preserving type
+    updated[messageIndex] = {
+      ...existingMessage,
+      ...updatedContent,
+      // Ensure we don't change the message type
+      messageType: existingMessage.messageType
+    } as UnifiedConversationMessage;
+
+    this._messages.set(updated);
+    console.log('✅ Message updated:', messageId);
 
     this.debouncedSave();
   }
@@ -127,6 +189,7 @@ export class ConversationStorageService {
         this._messages.set(restored.messages);
         this._currentMode.set(restored.currentMode);
         this._lastMessageAt.set(restored.lastMessageAt);
+        this._sessionRestoredAt.set(new Date());
 
         console.log(`Restored ${restored.messageCount} messages from storage`);
       }

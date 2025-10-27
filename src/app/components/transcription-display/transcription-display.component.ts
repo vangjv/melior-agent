@@ -7,6 +7,12 @@ import { TranscriptionMessage, InterimTranscription } from '../../models/transcr
  * T079-T087, T102-T105: Transcription Display Component
  * Presentational component for displaying transcription messages
  * Uses virtual scrolling for large message lists (>100 messages)
+ *
+ * @deprecated This component is deprecated as of feature 005-unified-conversation.
+ * Use UnifiedConversationDisplayComponent instead, which combines transcription
+ * and chat message display into a single unified interface.
+ * This component will be removed in a future release.
+ * Migration guide: See specs/005-unified-conversation/MIGRATION.md
  */
 @Component({
   selector: 'app-transcription-display',

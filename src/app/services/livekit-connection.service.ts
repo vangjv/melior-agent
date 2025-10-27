@@ -319,6 +319,21 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
         console.log('🔊 Track unmuted:', participant.identity, publication.source);
       });
 
+      // CRITICAL: Listen for TranscriptionReceived event
+      room.on(RoomEvent.TranscriptionReceived, (segments, participant, publication) => {
+        console.log('📝 TRANSCRIPTION RECEIVED EVENT:', {
+          participant: participant?.identity,
+          publication: publication?.source,
+          segmentCount: segments.length,
+          segments: segments.map(s => ({
+            id: s.id,
+            text: s.text,
+            final: s.final,
+            language: s.language
+          }))
+        });
+      });
+
       // T033: Add error handlers for network and server errors
       // T054: Handle both expected and unexpected disconnections
       room.on(RoomEvent.Disconnected, () => {

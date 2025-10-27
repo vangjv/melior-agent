@@ -12,6 +12,12 @@
  * - Angular 20 Signal-based state management
  * - Zoneless change detection compatible
  * - Type-safe with explicit interfaces
+ *
+ * @deprecated This service is deprecated as of feature 005-unified-conversation.
+ * Use ConversationStorageService instead, which handles both transcription
+ * and chat messages in a unified format with sessionStorage persistence.
+ * This service will be removed in a future release.
+ * Migration guide: See specs/005-unified-conversation/MIGRATION.md
  */
 
 import { Injectable, signal, Signal } from '@angular/core';

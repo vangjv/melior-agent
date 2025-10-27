@@ -25,6 +25,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { ScrollingModule, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { ConversationMessageComponent } from '../conversation-message/conversation-message.component';
 import { ConversationStorageService } from '../../services/conversation-storage.service';
 import { UnifiedConversationMessage } from '../../models/unified-conversation-message.model';
@@ -36,6 +37,7 @@ import { UnifiedConversationMessage } from '../../models/unified-conversation-me
     CommonModule,
     MatIconModule,
     MatButtonModule,
+    ScrollingModule,
     ConversationMessageComponent
   ],
   templateUrl: './unified-conversation-display.component.html',
@@ -50,10 +52,23 @@ export class UnifiedConversationDisplayComponent {
   @ViewChild('scrollContainer', { static: false })
   scrollContainer?: ElementRef<HTMLDivElement>;
 
+  @ViewChild(CdkVirtualScrollViewport, { static: false })
+  virtualScrollViewport?: CdkVirtualScrollViewport;
+
   /**
    * Track if user has manually scrolled up
    */
   userHasScrolledUp = signal(false);
+
+  /**
+   * Virtual scrolling item size (average message height in pixels)
+   */
+  readonly ITEM_SIZE = 80;
+
+  /**
+   * Threshold for enabling virtual scrolling
+   */
+  readonly VIRTUAL_SCROLL_THRESHOLD = 100;
 
   /**
    * Get messages from storage service
@@ -64,6 +79,11 @@ export class UnifiedConversationDisplayComponent {
    * Get current response mode from storage service
    */
   currentMode = this.conversationStorage.currentMode;
+
+  /**
+   * Get first new message ID (for session boundary separator)
+   */
+  firstNewMessageId = this.conversationStorage.firstNewMessageId;
 
   /**
    * Computed: Sorted messages in chronological order (oldest first)
@@ -81,9 +101,31 @@ export class UnifiedConversationDisplayComponent {
   hasMessages = computed(() => this.sortedMessages().length > 0);
 
   /**
+   * Computed: Whether to use virtual scrolling
+   * Activate when message count exceeds threshold
+   */
+  useVirtualScrolling = computed(() =>
+    this.sortedMessages().length > this.VIRTUAL_SCROLL_THRESHOLD
+  );
+
+  /**
    * Effect: Auto-scroll to latest message when new messages arrive
    */
   constructor() {
+    // Debug logging for message updates
+    effect(() => {
+      const messages = this.messages();
+      console.log('🔔 UnifiedConversationDisplay - messages signal updated:', {
+        count: messages.length,
+        messages: messages.map(m => ({
+          id: m.id,
+          type: m.messageType,
+          sender: m.sender,
+          content: m.content.substring(0, 30)
+        }))
+      });
+    });
+
     effect(() => {
       const messageCount = this.sortedMessages().length;
 
@@ -98,9 +140,15 @@ export class UnifiedConversationDisplayComponent {
 
   /**
    * Scroll to bottom of container
+   * Supports both regular and virtual scroll containers
    */
   private scrollToBottom(): void {
-    if (this.scrollContainer) {
+    if (this.useVirtualScrolling() && this.virtualScrollViewport) {
+      // Virtual scroll: scroll to last index
+      const lastIndex = this.sortedMessages().length - 1;
+      this.virtualScrollViewport.scrollToIndex(lastIndex, 'smooth');
+    } else if (this.scrollContainer) {
+      // Regular scroll: scroll to bottom
       const element = this.scrollContainer.nativeElement;
       element.scrollTop = element.scrollHeight;
     }
@@ -108,14 +156,24 @@ export class UnifiedConversationDisplayComponent {
 
   /**
    * Handle scroll event to detect manual scrolling
+   * Supports both regular and virtual scroll containers
    */
   onScroll(): void {
-    if (!this.scrollContainer) return;
+    let isAtBottom = false;
 
-    const element = this.scrollContainer.nativeElement;
-    const isAtBottom = Math.abs(
-      element.scrollHeight - element.scrollTop - element.clientHeight
-    ) < 10; // 10px threshold
+    if (this.useVirtualScrolling() && this.virtualScrollViewport) {
+      // Virtual scroll: check if scrolled to last item
+      const viewport = this.virtualScrollViewport;
+      const range = viewport.getRenderedRange();
+      const lastIndex = this.sortedMessages().length - 1;
+      isAtBottom = range.end >= lastIndex;
+    } else if (this.scrollContainer) {
+      // Regular scroll: check if at bottom with threshold
+      const element = this.scrollContainer.nativeElement;
+      isAtBottom = Math.abs(
+        element.scrollHeight - element.scrollTop - element.clientHeight
+      ) < 10; // 10px threshold
+    }
 
     // If user scrolled to bottom, resume auto-scroll
     // If user scrolled up, pause auto-scroll
@@ -136,5 +194,19 @@ export class UnifiedConversationDisplayComponent {
   scrollToLatest(): void {
     this.userHasScrolledUp.set(false);
     this.scrollToBottom();
+  }
+
+  /**
+   * Clear all conversation messages
+   * Prompts user for confirmation before clearing
+   */
+  clearConversation(): void {
+    const confirmed = confirm(
+      'Are you sure you want to clear the conversation history? This action cannot be undone.'
+    );
+
+    if (confirmed) {
+      this.conversationStorage.clearMessages();
+    }
   }
 }

@@ -170,13 +170,13 @@
 
 ### Implementation for User Story 4
 
-- [ ] T059 [US4] Implement sessionStorage save logic in ConversationStorageService (debounced, triggered on message add)
-- [ ] T060 [US4] Implement sessionStorage restore logic in ConversationStorageService constructor (load on service initialization)
-- [ ] T061 [US4] Add virtual scrolling support to UnifiedConversationDisplayComponent template using CdkVirtualScrollViewport (activated when messages.length > 100)
-- [ ] T062 [US4] Import Angular CDK ScrollingModule in UnifiedConversationDisplayComponent
-- [ ] T063 [US4] Add session boundary visual separator to ConversationMessageComponent (display timestamp/divider for restored vs new messages)
-- [ ] T064 [US4] Implement conversation clear functionality in ConversationStorageService (clear sessionStorage and reset state)
-- [ ] T065 [US4] Add clear conversation button to UnifiedConversationDisplayComponent (optional, for user-initiated history wipe)
+- [X] T059 [US4] Implement sessionStorage save logic in ConversationStorageService (debounced, triggered on message add)
+- [X] T060 [US4] Implement sessionStorage restore logic in ConversationStorageService constructor (load on service initialization)
+- [X] T061 [US4] Add virtual scrolling support to UnifiedConversationDisplayComponent template using CdkVirtualScrollViewport (activated when messages.length > 100)
+- [X] T062 [US4] Import Angular CDK ScrollingModule in UnifiedConversationDisplayComponent
+- [X] T063 [US4] Add session boundary visual separator to ConversationMessageComponent (display timestamp/divider for restored vs new messages)
+- [X] T064 [US4] Implement conversation clear functionality in ConversationStorageService (clear sessionStorage and reset state)
+- [X] T065 [US4] Add clear conversation button to UnifiedConversationDisplayComponent (optional, for user-initiated history wipe)
 - [ ] T066 [US4] Test virtual scrolling performance with 500+ messages (verify smooth scrolling, no jank)
 
 **Checkpoint**: User Story 4 complete - conversation history persists across sessions with efficient virtual scrolling for large message counts
@@ -189,25 +189,25 @@
 
 ### Documentation & Cleanup
 
-- [ ] T067 [P] Update README.md with unified conversation feature description and architecture overview
+- [X] T067 [P] Update README.md with unified conversation feature description and architecture overview
 - [ ] T068 [P] Update quickstart.md with final implementation details and developer guide in `specs/005-unified-conversation/quickstart.md`
 - [ ] T069 [P] Add JSDoc comments to all public methods in ConversationStorageService
 - [ ] T070 [P] Add JSDoc comments to component input/output signals in UnifiedConversationDisplayComponent and ConversationMessageComponent
 
 ### Deprecation & Migration
 
-- [ ] T071 Mark TranscriptionDisplayComponent as deprecated in `src/app/components/transcription-display/transcription-display.component.ts` (add deprecation comment)
-- [ ] T072 Mark ChatMessageDisplayComponent as deprecated in `src/app/components/chat-message-display/chat-message-display.component.ts` (add deprecation comment)
-- [ ] T073 Mark ChatStorageService as deprecated in `src/app/services/chat-storage.service.ts` (functionality merged into ConversationStorageService)
-- [ ] T074 Create migration guide document in `specs/005-unified-conversation/MIGRATION.md` for developers upgrading from separate displays
+- [X] T071 Mark TranscriptionDisplayComponent as deprecated in `src/app/components/transcription-display/transcription-display.component.ts` (add deprecation comment)
+- [X] T072 Mark ChatMessageDisplayComponent as deprecated in `src/app/components/chat-message-display/chat-message-display.component.ts` (add deprecation comment)
+- [X] T073 Mark ChatStorageService as deprecated in `src/app/services/chat-storage.service.ts` (functionality merged into ConversationStorageService)
+- [X] T074 Create migration guide document in `specs/005-unified-conversation/MIGRATION.md` for developers upgrading from separate displays
 
 ### Testing & Validation
 
-- [ ] T075 [P] Run full unit test suite and verify 80%+ coverage target met
+- [X] T075 [P] Run full unit test suite and verify 80%+ coverage target met
 - [ ] T076 [P] Run integration test suite for unified conversation flows
 - [ ] T077 [P] Run accessibility audit using axe-core or similar tool (WCAG 2.1 AA compliance)
 - [ ] T078 Perform manual testing of edge cases (rapid mode toggle, out-of-order transcriptions, long agent responses, connection drops)
-- [ ] T079 Validate bundle size budget compliance (stay under 500KB warning threshold)
+- [X] T079 Validate bundle size budget compliance (stay under 500KB warning threshold)
 - [ ] T080 Run performance profiling with Chrome DevTools (verify <500ms message rendering latency)
 
 ### Final Integration

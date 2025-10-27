@@ -88,6 +88,9 @@ export class TranscriptionService implements ITranscriptionService {
   // T071: Private state - interim transcription signal
   private _interimTranscription = signal<InterimTranscription | null>(null);
 
+  // Track interim message IDs by speaker to enable updates instead of creating duplicates
+  private _interimMessageIds = new Map<'user' | 'agent', string>();
+
   // Room reference for event handling
   private _room: Room | null = null;
 
@@ -160,6 +163,7 @@ export class TranscriptionService implements ITranscriptionService {
   clearTranscriptions(): void {
     this.conversationStorage.clearMessages();
     this._interimTranscription.set(null);
+    this._interimMessageIds.clear();
   }
 
   /**
@@ -212,8 +216,11 @@ export class TranscriptionService implements ITranscriptionService {
         segment.language
       );
 
-      // Add to conversation storage
+      // Add to conversation storage (replaceInterimWithFinal will handle removing interim)
       this.conversationStorage.addMessage(unifiedMessage);
+
+      // Clear interim tracking for this speaker
+      this._interimMessageIds.delete(speaker);
 
       // Clear interim transcription when final is received
       this._interimTranscription.set(null);
@@ -229,15 +236,38 @@ export class TranscriptionService implements ITranscriptionService {
         console.log(`⏱️ Transcription processed in ${latencyMeasure.duration.toFixed(2)}ms`);
       }
     } else {
-      // T076: Update interim transcription signal for non-final transcription
+      // T076: Handle interim transcription - update existing or create new
+      const existingInterimId = this._interimMessageIds.get(speaker);
+
+      if (existingInterimId) {
+        // Update existing interim message with new text
+        this.conversationStorage.updateMessage(existingInterimId, {
+          content: segment.text,
+          timestamp: new Date()
+        });
+        console.log('🔄 Interim transcription updated:', segment.text);
+      } else {
+        // Create new interim message and track its ID
+        const interimMessage = createTranscriptionMessage(
+          speaker,
+          segment.text,
+          false, // isFinal
+          undefined, // confidence (not provided by LiveKit segment)
+          segment.language
+        );
+
+        this.conversationStorage.addMessage(interimMessage);
+        this._interimMessageIds.set(speaker, interimMessage.id);
+        console.log('🆕 Interim transcription created:', segment.text);
+      }
+
+      // Also update interim transcription signal (for backward compatibility)
       const interim: InterimTranscription = {
         speaker: speaker,
         text: segment.text,
         timestamp: new Date(),
       };
       this._interimTranscription.set(interim);
-
-      console.log('🔄 Interim transcription updated:', segment.text);
     }
   }
 
