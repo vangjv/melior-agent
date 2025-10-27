@@ -16,6 +16,8 @@ Last updated: 2025-10-24
 - TypeScript 5.9.2, Angular 20.0.0, Node.js 18+ (Azure Functions) + @azure/msal-browser (frontend), @azure/msal-node (backend), Angular Router Guards, HTTP Interceptors (004-entra-external-id-auth)
 - Browser sessionStorage/localStorage for MSAL token cache (frontend), no persistent storage required (backend) (004-entra-external-id-auth)
 - Browser sessionStorage for conversation history persistence (5MB limit assumed) (005-unified-conversation)
+- TypeScript 5.9.2 with Angular 20.0.0 + Angular Material 20.0.0, LiveKit Client 2.x, RxJS 7.8, Angular CDK (006-auto-disconnect-idle)
+- Browser sessionStorage for idle timeout configuration persistence (006-auto-disconnect-idle)
 
 ## Project Structure
 
@@ -142,9 +144,9 @@ $theme: mat.define-light-theme((
 - Signals: `camelCase` (private with `_` prefix)
 
 ## Recent Changes
+- 006-auto-disconnect-idle: Added TypeScript 5.9.2 with Angular 20.0.0 + Angular Material 20.0.0, LiveKit Client 2.x, RxJS 7.8, Angular CDK
 - 005-unified-conversation: Added TypeScript 5.9.2, Angular 20.0.0 with Angular Material 20.0.0, Angular CDK 20.0.0 (ScrollingModule, A11y), RxJS 7.x, discriminated union pattern for unified message model, signal-based state management, virtual scrolling for conversation history, sessionStorage persistence
 - 004-entra-external-id-auth: Added TypeScript 5.9.2, Angular 20.0.0, Node.js 18+ (Azure Functions) + @azure/msal-browser (frontend), @azure/msal-node (backend), Angular Router Guards, HTTP Interceptors
-- 003-voice-chat-mode: Added TypeScript 5.9.2 with Angular 20.0.0
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
