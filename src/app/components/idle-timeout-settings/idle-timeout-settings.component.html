@@ -1,0 +1,95 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>timer</mat-icon>
+      Idle Timeout Settings
+    </mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="settings-form">
+      <!-- Enable/Disable Toggle -->
+      <div class="form-field">
+        <mat-slide-toggle
+          [(ngModel)]="enabled"
+          color="primary"
+          aria-label="Enable idle timeout">
+          Enable auto-disconnect on idle
+        </mat-slide-toggle>
+      </div>
+
+      <!-- Timeout Duration -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Timeout Duration (minutes)</mat-label>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="durationMinutes"
+          [min]="MIN_DURATION / 60"
+          [max]="MAX_DURATION / 60"
+          step="1"
+          aria-label="Timeout duration in minutes"
+          [disabled]="!enabled()" />
+        <mat-hint>{{ getDurationDisplay() }}</mat-hint>
+        @if (!isDurationValid()) {
+          <mat-error>
+            Duration must be between {{ MIN_DURATION / 60 }} and {{ MAX_DURATION / 60 }} minutes
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Warning Threshold -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Warning Threshold (seconds)</mat-label>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="warningSeconds"
+          [min]="MIN_WARNING"
+          [max]="durationSeconds() - 1"
+          step="5"
+          aria-label="Warning threshold in seconds"
+          [disabled]="!enabled()" />
+        <mat-hint>Show warning {{ warningSeconds() }} seconds before disconnect</mat-hint>
+        @if (!isWarningValid()) {
+          <mat-error>
+            Warning must be at least {{ MIN_WARNING }} seconds and less than timeout duration
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Validation Error Display -->
+      @if (validationError()) {
+        <div class="error-message" role="alert">
+          <mat-icon>error</mat-icon>
+          {{ validationError() }}
+        </div>
+      }
+
+      <!-- Success Message -->
+      @if (successMessage()) {
+        <div class="success-message" role="status">
+          <mat-icon>check_circle</mat-icon>
+          {{ successMessage() }}
+        </div>
+      }
+    </div>
+  </mat-card-content>
+
+  <mat-card-actions align="end">
+    <button
+      mat-button
+      (click)="onReset()"
+      aria-label="Reset to default settings">
+      Reset to Defaults
+    </button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="onSave()"
+      [disabled]="!isFormValid() || !enabled()"
+      aria-label="Save settings">
+      Save Settings
+    </button>
+  </mat-card-actions>
+</mat-card>

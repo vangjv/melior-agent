@@ -172,10 +172,10 @@ description: "Task list for auto-disconnect idle timeout feature implementation"
 - [X] T072 [US3] Handle validation errors with typed error returns (IdleTimeoutValidationError) in idle-timeout.service.ts
 - [X] T073 [US3] Update startTimer() to use configured durationSeconds from _config signal in idle-timeout.service.ts
 - [X] T074 [US3] Update warning logic to use configured warningThresholdSeconds in idle-timeout.service.ts
-- [ ] T075 [P] [US3] Create simple configuration UI component (optional - can be settings panel) in src/app/components/idle-timeout-settings/idle-timeout-settings.component.ts
-- [ ] T076 [US3] Add number input for timeout duration with min/max validation in idle-timeout-settings template (if component created)
-- [ ] T077 [US3] Wire configuration UI to idleTimeoutService.updateConfig() method (if component created)
-- [ ] T078 [US3] Display validation errors to user in configuration UI (if component created)
+- [X] T075 [P] [US3] Create simple configuration UI component (optional - can be settings panel) in src/app/components/idle-timeout-settings/idle-timeout-settings.component.ts
+- [X] T076 [US3] Add number input for timeout duration with min/max validation in idle-timeout-settings template (if component created)
+- [X] T077 [US3] Wire configuration UI to idleTimeoutService.updateConfig() method (if component created)
+- [X] T078 [US3] Display validation errors to user in configuration UI (if component created)
 
 **Run Tests** ✅ - All User Story 3 tests should now PASS
 
@@ -190,13 +190,13 @@ description: "Task list for auto-disconnect idle timeout feature implementation"
 - [X] T079 [P] Add comprehensive JSDoc comments to IdleTimeoutService public methods in idle-timeout.service.ts
 - [X] T080 [P] Add JSDoc comments to all model interfaces in src/app/models/
 - [X] T081 [P] Update project README.md with idle timeout feature documentation
-- [ ] T082 [P] Create user guide section in docs/ explaining timeout behavior and configuration
-- [ ] T083 [P] Add development notes to specs/006-auto-disconnect-idle/quickstart.md based on implementation learnings
-- [ ] T084 Run full test suite and verify minimum 80% code coverage across all idle timeout files
-- [ ] T085 Run integration tests end-to-end with real LiveKit connection (mark as pending if infrastructure unavailable)
-- [ ] T086 Perform accessibility audit on IdleWarningComponent with screen reader testing
+- [X] T082 [P] Create user guide section in docs/ explaining timeout behavior and configuration
+- [X] T083 [P] Add development notes to specs/006-auto-disconnect-idle/quickstart.md based on implementation learnings
+- [X] T084 Run full test suite and verify minimum 80% code coverage across all idle timeout files
+- [X] T085 Run integration tests end-to-end with real LiveKit connection (mark as pending if infrastructure unavailable)
+- [ ] T086 Perform accessibility audit on IdleWarningComponent with screen reader testing (MANUAL TEST - requires NVDA/JAWS)
 - [X] T087 [P] Verify WCAG 2.1 AA compliance for warning colors and contrast ratios
-- [ ] T088 Test idle timeout behavior across browsers (Chrome, Firefox, Safari, Edge)
+- [ ] T088 Test idle timeout behavior across browsers (Chrome, Firefox, Safari, Edge) (MANUAL TEST - requires multiple browsers)
 - [X] T089 [P] Review and refactor code for consistency with Angular 20 best practices
 - [X] T090 [P] Optimize RxJS subscriptions and verify proper cleanup with no memory leaks
 - [X] T091 Update .github/copilot-instructions.md with 006-auto-disconnect-idle feature context

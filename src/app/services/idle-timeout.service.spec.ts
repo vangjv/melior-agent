@@ -18,6 +18,9 @@ describe('IdleTimeoutService', () => {
   let connectionService: jasmine.SpyObj<LiveKitConnectionService>;
 
   beforeEach(() => {
+    // Clear sessionStorage before each test
+    sessionStorage.clear();
+
     // Create spies for dependent services
     const conversationSpy = jasmine.createSpyObj('ConversationStorageService', [], {
       lastMessageAt: jasmine.createSpy('lastMessageAt').and.returnValue(null),
@@ -43,8 +46,9 @@ describe('IdleTimeoutService', () => {
   });
 
   afterEach(() => {
-    // Clean up timers
+    // Clean up timers and storage
     service.stopTimer();
+    sessionStorage.clear();
   });
 
   describe('Initialization', () => {
@@ -129,8 +133,8 @@ describe('IdleTimeoutService', () => {
 
       service.startTimer();
 
-      // Fast forward to timeout
-      tick(DEFAULT_IDLE_TIMEOUT_CONFIG.durationSeconds * 1000);
+      // Fast forward to timeout (plus one more tick for the complete callback)
+      tick(DEFAULT_IDLE_TIMEOUT_CONFIG.durationSeconds * 1000 + 1000);
 
       expect(connectionService.disconnect).toHaveBeenCalled();
 
@@ -239,17 +243,52 @@ describe('IdleTimeoutService', () => {
         JSON.stringify(customConfig)
       );
 
-      // Create new service instance to test loading
-      const newService = TestBed.inject(IdleTimeoutService);
+      // Create a fresh TestBed and service instance to test loading
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          IdleTimeoutService,
+          {
+            provide: ConversationStorageService,
+            useValue: jasmine.createSpyObj('ConversationStorageService', [], {
+              lastMessageAt: jasmine.createSpy('lastMessageAt').and.returnValue(null),
+            }),
+          },
+          {
+            provide: LiveKitConnectionService,
+            useValue: jasmine.createSpyObj('LiveKitConnectionService', ['disconnect']),
+          },
+        ],
+      });
+
+      const newService: IdleTimeoutService = TestBed.inject(IdleTimeoutService);
 
       expect(newService.config().durationSeconds).toBe(300);
       expect(newService.config().warningThresholdSeconds).toBe(60);
     });
 
     it('should use default config if sessionStorage is empty', () => {
-      sessionStorage.removeItem('melior-agent:idle-timeout-config');
+      sessionStorage.clear();
 
-      const newService = TestBed.inject(IdleTimeoutService);
+      // Create a fresh TestBed and service instance
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          IdleTimeoutService,
+          {
+            provide: ConversationStorageService,
+            useValue: jasmine.createSpyObj('ConversationStorageService', [], {
+              lastMessageAt: jasmine.createSpy('lastMessageAt').and.returnValue(null),
+            }),
+          },
+          {
+            provide: LiveKitConnectionService,
+            useValue: jasmine.createSpyObj('LiveKitConnectionService', ['disconnect']),
+          },
+        ],
+      });
+
+      const newService: IdleTimeoutService = TestBed.inject(IdleTimeoutService);
 
       expect(newService.config()).toEqual(DEFAULT_IDLE_TIMEOUT_CONFIG);
     });
@@ -310,9 +349,11 @@ describe('IdleTimeoutService', () => {
   });
 
   describe('Formatted Time', () => {
-    it('should format time as MM:SS', () => {
+    it('should format time as MM:SS', fakeAsync(() => {
+      service.startTimer();
       expect(service.formattedTimeRemaining()).toBe('02:00'); // 120 seconds = 2:00
-    });
+      flush();
+    }));
 
     it('should format single digit seconds with leading zero', fakeAsync(() => {
       service.startTimer();
