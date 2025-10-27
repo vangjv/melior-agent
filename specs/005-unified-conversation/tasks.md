@@ -28,11 +28,11 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create unified conversation feature branch `005-unified-conversation` from main
-- [ ] T002 [P] Create directory structure for unified conversation components in `src/app/components/unified-conversation-display/`
-- [ ] T003 [P] Create directory structure for conversation message component in `src/app/components/conversation-message/`
-- [ ] T004 [P] Create directory structure for utilities in `src/app/utils/`
-- [ ] T005 Update GitHub Copilot instructions in `.github/copilot-instructions.md` with unified conversation technologies
+- [X] T001 Create unified conversation feature branch `005-unified-conversation` from main
+- [X] T002 [P] Create directory structure for unified conversation components in `src/app/components/unified-conversation-display/`
+- [X] T003 [P] Create directory structure for conversation message component in `src/app/components/conversation-message/`
+- [X] T004 [P] Create directory structure for utilities in `src/app/utils/`
+- [X] T005 Update GitHub Copilot instructions in `.github/copilot-instructions.md` with unified conversation technologies
 
 ---
 
@@ -44,29 +44,29 @@
 
 ### Core Model Implementation
 
-- [ ] T006 [P] Create UnifiedConversationMessage model in `src/app/models/unified-conversation-message.model.ts` with discriminated union pattern, type guards, and factory functions
-- [ ] T007 [P] Create ConversationFeedState model in `src/app/models/conversation-feed-state.model.ts` with serialization/deserialization functions
-- [ ] T008 [P] Create InterimTranscription model in `src/app/models/interim-transcription.model.ts`
-- [ ] T009 [P] Create MessageMetadata model in `src/app/models/message-metadata.model.ts` with factory functions
+- [X] T006 [P] Create UnifiedConversationMessage model in `src/app/models/unified-conversation-message.model.ts` with discriminated union pattern, type guards, and factory functions
+- [X] T007 [P] Create ConversationFeedState model in `src/app/models/conversation-feed-state.model.ts` with serialization/deserialization functions
+- [X] T008 [P] Create InterimTranscription model in `src/app/models/interim-transcription.model.ts`
+- [X] T009 [P] Create MessageMetadata model in `src/app/models/message-metadata.model.ts` with factory functions
 
 ### Core Model Tests
 
-- [ ] T010 [P] Write unit tests for UnifiedConversationMessage model in `src/app/models/unified-conversation-message.model.spec.ts` (type guards, factory functions, validation)
-- [ ] T011 [P] Write unit tests for ConversationFeedState model in `src/app/models/conversation-feed-state.model.spec.ts` (serialization, deserialization, empty state creation)
-- [ ] T012 [P] Write unit tests for InterimTranscription model in `src/app/models/interim-transcription.model.spec.ts`
-- [ ] T013 [P] Write unit tests for MessageMetadata model in `src/app/models/message-metadata.model.spec.ts`
+- [X] T010 [P] Write unit tests for UnifiedConversationMessage model in `src/app/models/unified-conversation-message.model.spec.ts` (type guards, factory functions, validation)
+- [X] T011 [P] Write unit tests for ConversationFeedState model in `src/app/models/conversation-feed-state.model.spec.ts` (serialization, deserialization, empty state creation)
+- [X] T012 [P] Write unit tests for InterimTranscription model in `src/app/models/interim-transcription.model.spec.ts`
+- [X] T013 [P] Write unit tests for MessageMetadata model in `src/app/models/message-metadata.model.spec.ts`
 
 ### Utility Functions
 
-- [ ] T014 [P] Create message merger utility in `src/app/utils/message-merger.util.ts` with sorting, deduplication, and interim transcription replacement logic
-- [ ] T015 [P] Create storage migration utility in `src/app/utils/storage-migration.util.ts` to convert legacy chat-storage format to unified format
-- [ ] T016 [P] Write unit tests for message merger utility in `src/app/utils/message-merger.util.spec.ts` (sorting, deduplication, out-of-order handling)
-- [ ] T017 [P] Write unit tests for storage migration utility in `src/app/utils/storage-migration.util.spec.ts` (legacy format conversion, fallback handling)
+- [X] T014 [P] Create message merger utility in `src/app/utils/message-merger.util.ts` with sorting, deduplication, and interim transcription replacement logic
+- [X] T015 [P] Create storage migration utility in `src/app/utils/storage-migration.util.ts` to convert legacy chat-storage format to unified format
+- [X] T016 [P] Write unit tests for message merger utility in `src/app/utils/message-merger.util.spec.ts` (sorting, deduplication, out-of-order handling)
+- [X] T017 [P] Write unit tests for storage migration utility in `src/app/utils/storage-migration.util.spec.ts` (legacy format conversion, fallback handling)
 
 ### Storage Service
 
-- [ ] T018 Create ConversationStorageService in `src/app/services/conversation-storage.service.ts` with signal-based state management, sessionStorage persistence, message add/clear operations
-- [ ] T019 Write unit tests for ConversationStorageService in `src/app/services/conversation-storage.service.spec.ts` (message operations, persistence, restoration, migration)
+- [X] T018 Create ConversationStorageService in `src/app/services/conversation-storage.service.ts` with signal-based state management, sessionStorage persistence, message add/clear operations
+- [X] T019 Write unit tests for ConversationStorageService in `src/app/services/conversation-storage.service.spec.ts` (message operations, persistence, restoration, migration)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

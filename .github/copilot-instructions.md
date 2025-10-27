@@ -142,7 +142,7 @@ $theme: mat.define-light-theme((
 - Signals: `camelCase` (private with `_` prefix)
 
 ## Recent Changes
-- 005-unified-conversation: Added TypeScript 5.9.2, Angular 20.0.0
+- 005-unified-conversation: Added TypeScript 5.9.2, Angular 20.0.0 with Angular Material 20.0.0, Angular CDK 20.0.0 (ScrollingModule, A11y), RxJS 7.x, discriminated union pattern for unified message model, signal-based state management, virtual scrolling for conversation history, sessionStorage persistence
 - 004-entra-external-id-auth: Added TypeScript 5.9.2, Angular 20.0.0, Node.js 18+ (Azure Functions) + @azure/msal-browser (frontend), @azure/msal-node (backend), Angular Router Guards, HTTP Interceptors
 - 003-voice-chat-mode: Added TypeScript 5.9.2 with Angular 20.0.0
 
