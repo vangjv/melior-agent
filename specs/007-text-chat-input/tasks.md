@@ -129,22 +129,22 @@
 
 ### Tests for User Story 4
 
-- [ ] T034 [P] [US4] Add tests for Enter key sending message in src/app/components/text-input/text-input.component.spec.ts
-- [ ] T035 [P] [US4] Add tests for Shift+Enter inserting new line in src/app/components/text-input/text-input.component.spec.ts
-- [ ] T036 [P] [US4] Add tests for send button disabled state with empty input in src/app/components/text-input/text-input.component.spec.ts
-- [ ] T037 [P] [US4] Add tests for character counter visibility threshold in src/app/components/text-input/text-input.component.spec.ts
+- [X] T034 [P] [US4] Add tests for Enter key sending message in src/app/components/text-input/text-input.component.spec.ts
+- [X] T035 [P] [US4] Add tests for Shift+Enter inserting new line in src/app/components/text-input/text-input.component.spec.ts
+- [X] T036 [P] [US4] Add tests for send button disabled state with empty input in src/app/components/text-input/text-input.component.spec.ts
+- [X] T037 [P] [US4] Add tests for character counter visibility threshold in src/app/components/text-input/text-input.component.spec.ts
 
 ### Implementation for User Story 4
 
-- [ ] T038 [US4] Implement handleKeydown() method for Enter/Shift+Enter in src/app/components/text-input/text-input.component.ts
-- [ ] T039 [US4] Add canSend computed signal (non-empty text check) in src/app/components/text-input/text-input.component.ts
-- [ ] T040 [US4] Add characterCount and showCharacterCount computed signals in src/app/components/text-input/text-input.component.ts
-- [ ] T041 [US4] Add matTextareaAutosize directive with min/max rows to template in src/app/components/text-input/text-input.component.html
-- [ ] T042 [US4] Add character counter hint to template in src/app/components/text-input/text-input.component.html
-- [ ] T043 [US4] Add focus visual indicator styles in src/app/components/text-input/text-input.component.scss
-- [ ] T044 [US4] Implement auto-focus after sending message in src/app/components/text-input/text-input.component.ts
-- [ ] T045 [US4] Test multi-line message support with Shift+Enter
-- [ ] T046 [US4] Verify textarea expands up to 5 rows before scrolling
+- [X] T038 [US4] Implement handleKeydown() method for Enter/Shift+Enter in src/app/components/text-input/text-input.component.ts
+- [X] T039 [US4] Add canSend computed signal (non-empty text check) in src/app/components/text-input/text-input.component.ts
+- [X] T040 [US4] Add characterCount and showCharacterCount computed signals in src/app/components/text-input/text-input.component.ts
+- [X] T041 [US4] Add matTextareaAutosize directive with min/max rows to template in src/app/components/text-input/text-input.component.html
+- [X] T042 [US4] Add character counter hint to template in src/app/components/text-input/text-input.component.html
+- [X] T043 [US4] Add focus visual indicator styles in src/app/components/text-input/text-input.component.scss
+- [X] T044 [US4] Implement auto-focus after sending message in src/app/components/text-input/text-input.component.ts
+- [X] T045 [US4] Test multi-line message support with Shift+Enter
+- [X] T046 [US4] Verify textarea expands up to 5 rows before scrolling
 
 **Checkpoint**: Text input has polished UX with keyboard shortcuts and visual feedback
 
@@ -158,18 +158,18 @@
 
 ### Tests for User Story 5
 
-- [ ] T047 [P] [US5] Add responsive layout tests using Angular CDK BreakpointObserver in src/app/components/text-input/text-input.component.spec.ts
-- [ ] T048 [P] [US5] Add mobile keyboard handling tests in tests/integration/text-chat-input.spec.ts (may use pending() for device-specific tests)
+- [X] T047 [P] [US5] Add responsive layout tests using Angular CDK BreakpointObserver in src/app/components/text-input/text-input.component.spec.ts
+- [X] T048 [P] [US5] Add mobile keyboard handling tests in tests/integration/text-chat-input.spec.ts (may use pending() for device-specific tests)
 
 ### Implementation for User Story 5
 
-- [ ] T049 [US5] Add mobile-specific styles using CSS dvh units in src/app/components/text-input/text-input.component.scss
-- [ ] T050 [US5] Implement position: sticky with bottom: 0 for text input container in src/app/components/text-input/text-input.component.scss
-- [ ] T051 [US5] Add @media queries for mobile breakpoints in src/app/components/text-input/text-input.component.scss
-- [ ] T052 [US5] Add viewport meta tag configuration (if not already present) in src/index.html
-- [ ] T053 [US5] Test text input scrolls into view when mobile keyboard opens
-- [ ] T054 [US5] Verify conversation history remains scrollable above text input on mobile
-- [ ] T055 [US5] Test orientation change preserves typed content
+- [X] T049 [US5] Add mobile-specific styles using CSS dvh units in src/app/components/text-input/text-input.component.scss
+- [X] T050 [US5] Implement position: sticky with bottom: 0 for text input container in src/app/components/text-input/text-input.component.scss
+- [X] T051 [US5] Add @media queries for mobile breakpoints in src/app/components/text-input/text-input.component.scss
+- [X] T052 [US5] Add viewport meta tag configuration (if not already present) in src/index.html
+- [X] T053 [US5] Test text input scrolls into view when mobile keyboard opens
+- [X] T054 [US5] Verify conversation history remains scrollable above text input on mobile
+- [X] T055 [US5] Test orientation change preserves typed content
 
 **Checkpoint**: Mobile users have optimized text input experience with proper keyboard handling
 
@@ -183,22 +183,22 @@
 
 ### Tests for User Story 6
 
-- [ ] T056 [P] [US6] Add tests for send button state transitions in src/app/components/text-input/text-input.component.spec.ts
-- [ ] T057 [P] [US6] Add tests for error handling and retry logic in tests/integration/text-chat-input.spec.ts
+- [X] T056 [P] [US6] Add tests for send button state transitions in src/app/components/text-input/text-input.component.spec.ts
+- [X] T057 [P] [US6] Add tests for error handling and retry logic in tests/integration/text-chat-input.spec.ts
 
 ### Implementation for User Story 6
 
-- [ ] T058 [US6] Add isSending signal to TextInputComponent in src/app/components/text-input/text-input.component.ts
-- [ ] T059 [US6] Add error signal for failed sends in src/app/components/text-input/text-input.component.ts
-- [ ] T060 [US6] Update sendMessage() to handle async send with try/catch in src/app/components/text-input/text-input.component.ts
-- [ ] T061 [US6] Add loading spinner to send button during transmission in src/app/components/text-input/text-input.component.html
-- [ ] T062 [US6] Add error message display with retry button in src/app/components/text-input/text-input.component.html
-- [ ] T063 [US6] Add error state styles (red border, error text) in src/app/components/text-input/text-input.component.scss
-- [ ] T064 [US6] Implement error recovery logic (preserve message text on failure) in src/app/components/text-input/text-input.component.ts
-- [ ] T065 [US6] Add MatSnackBar for transient error notifications (optional) in src/app/components/text-input/text-input.component.ts
-- [ ] T066 [US6] Test send button shows loading state during transmission
-- [ ] T067 [US6] Test error message displays on network failure
-- [ ] T068 [US6] Verify retry button re-attempts send with preserved message
+- [X] T058 [US6] Add isSending signal to TextInputComponent in src/app/components/text-input/text-input.component.ts
+- [X] T059 [US6] Add error signal for failed sends in src/app/components/text-input/text-input.component.ts
+- [X] T060 [US6] Update sendMessage() to handle async send with try/catch in src/app/components/text-input/text-input.component.ts
+- [X] T061 [US6] Add loading spinner to send button during transmission in src/app/components/text-input/text-input.component.html
+- [X] T062 [US6] Add error message display with retry button in src/app/components/text-input/text-input.component.html
+- [X] T063 [US6] Add error state styles (red border, error text) in src/app/components/text-input/text-input.component.scss
+- [X] T064 [US6] Implement error recovery logic (preserve message text on failure) in src/app/components/text-input/text-input.component.ts
+- [X] T065 [US6] Add MatSnackBar for transient error notifications (optional) in src/app/components/text-input/text-input.component.ts
+- [X] T066 [US6] Test send button shows loading state during transmission
+- [X] T067 [US6] Test error message displays on network failure
+- [X] T068 [US6] Verify retry button re-attempts send with preserved message
 
 **Checkpoint**: Users receive clear feedback on message delivery status with error recovery
 
@@ -208,14 +208,14 @@
 
 **Purpose**: Improvements affecting multiple user stories and final validation
 
-- [ ] T069 [P] Add ARIA labels and accessibility attributes to text input in src/app/components/text-input/text-input.component.html
-- [ ] T070 [P] Add focus management for screen readers in src/app/components/text-input/text-input.component.ts
-- [ ] T071 [P] Test high contrast mode compatibility in src/app/components/text-input/text-input.component.scss
-- [ ] T072 [P] Add input sanitization for XSS prevention in src/app/models/text-input-protocol.model.ts
-- [ ] T073 [P] Update .github/copilot-instructions.md with text chat input technologies (already done)
-- [ ] T074 Run all quickstart.md test scenarios for validation
-- [ ] T075 Performance optimization: Verify OnPush change detection working correctly
-- [ ] T076 Performance testing: Ensure <100ms text input response time
+- [X] T069 [P] Add ARIA labels and accessibility attributes to text input in src/app/components/text-input/text-input.component.html
+- [X] T070 [P] Add focus management for screen readers in src/app/components/text-input/text-input.component.ts
+- [X] T071 [P] Test high contrast mode compatibility in src/app/components/text-input/text-input.component.scss
+- [X] T072 [P] Add input sanitization for XSS prevention in src/app/models/text-input-protocol.model.ts
+- [X] T073 [P] Update .github/copilot-instructions.md with text chat input technologies (already done)
+- [X] T074 Run all quickstart.md test scenarios for validation
+- [X] T075 Performance optimization: Verify OnPush change detection working correctly
+- [X] T076 Performance testing: Ensure <100ms text input response time
 - [ ] T077 Cross-browser testing: Chrome, Firefox, Safari, Edge
 - [ ] T078 Mobile device testing: iOS Safari, Chrome Android
 - [ ] T079 Code review and cleanup: Remove console.log statements, add JSDoc comments

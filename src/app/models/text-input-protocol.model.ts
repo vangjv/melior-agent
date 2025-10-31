@@ -16,6 +16,34 @@ export interface TextMessageProtocol {
 }
 
 /**
+ * Sanitize input text to prevent XSS attacks (T072)
+ * Removes potentially dangerous HTML/script tags and normalizes whitespace
+ */
+export function sanitizeTextInput(content: string): string {
+  // Remove HTML tags and script content
+  let sanitized = content
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '');
+
+  // Normalize whitespace but preserve line breaks
+  sanitized = sanitized
+    .replace(/\t/g, ' ')
+    .replace(/ +/g, ' ');
+
+  // Trim leading/trailing whitespace
+  return sanitized.trim();
+}
+
+/**
+ * Validate text input length
+ */
+export function validateTextLength(content: string, maxLength: number = 5000): boolean {
+  return content.length <= maxLength;
+}
+
+/**
  * Factory: Create text message protocol object
  */
 export function createTextMessageProtocol(
@@ -23,10 +51,18 @@ export function createTextMessageProtocol(
   messageId: string = crypto.randomUUID(),
   timestamp: number = Date.now()
 ): TextMessageProtocol {
+  // Sanitize input for security (T072)
+  const sanitizedContent = sanitizeTextInput(content);
+
+  // Validate length
+  if (!validateTextLength(sanitizedContent)) {
+    throw new Error(`Text message exceeds maximum length of 5000 characters`);
+  }
+
   return {
     type: 'text_message',
     messageId,
-    content: content.trim(),
+    content: sanitizedContent,
     timestamp,
   };
 }

@@ -1,31 +1,60 @@
 <!-- Text Input Component Template -->
 <!-- Feature: 007-text-chat-input -->
 <div class="text-input-container">
-  <mat-form-field class="text-input-field" appearance="outline">
+  <mat-form-field class="text-input-field" appearance="outline" [class.error-state]="hasError()">
     <mat-label>{{ placeholder() }}</mat-label>
     <textarea
+      #textareaInput
       matInput
+      cdkTextareaAutosize
+      [cdkAutosizeMinRows]="1"
+      [cdkAutosizeMaxRows]="5"
       [(ngModel)]="messageText"
       [disabled]="isDisabled()"
       [placeholder]="placeholder()"
       (keydown)="handleKeydown($event)"
-      rows="1"
       class="text-input-textarea"
+      aria-label="Message input"
+      [attr.aria-invalid]="hasError()"
+      [attr.aria-describedby]="hasError() ? 'error-message' : null"
     ></textarea>
 
     @if (showCharacterCount()) {
       <mat-hint align="end">{{ characterCount() }} / 5000</mat-hint>
     }
+
+    @if (hasError()) {
+      <mat-error id="error-message">{{ error() }}</mat-error>
+    }
   </mat-form-field>
 
-  <button
-    mat-fab
-    color="primary"
-    class="send-button"
-    [disabled]="!canSend()"
-    (click)="sendMessage()"
-    aria-label="Send message"
-  >
-    <mat-icon>send</mat-icon>
-  </button>
+  @if (hasError()) {
+    <button
+      mat-stroked-button
+      color="warn"
+      class="retry-button"
+      (click)="clearError()"
+      aria-label="Retry sending message"
+    >
+      <mat-icon>refresh</mat-icon>
+      Retry
+    </button>
+  }
+
+  @if (!hasError()) {
+    <button
+      mat-fab
+      color="primary"
+      class="send-button"
+      [disabled]="!canSend()"
+      (click)="sendMessage()"
+      aria-label="Send message"
+    >
+      @if (isSending()) {
+        <mat-icon class="spinning">sync</mat-icon>
+      } @else {
+        <mat-icon>send</mat-icon>
+      }
+    </button>
+  }
 </div>

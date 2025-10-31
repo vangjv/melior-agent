@@ -16,6 +16,11 @@
   background-color: var(--mat-app-surface, #ffffff);
   border-top: 1px solid var(--mat-app-outline, #e0e0e0);
 
+  // Sticky positioning for mobile (T050)
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+
   .text-input-field {
     flex: 1;
     margin: 0;
@@ -42,6 +47,63 @@
   }
 }
 
+// Mobile-specific styles (T051)
+@media (max-width: 768px) {
+  .text-input-container {
+    gap: 8px;
+    padding: 12px;
+
+    // Use dvh (dynamic viewport height) for mobile keyboards (T049)
+    // This ensures the input stays visible when keyboard opens
+    max-height: 25dvh;
+
+    .text-input-field {
+      .text-input-textarea {
+        font-size: 16px; // Prevents auto-zoom on iOS
+        -webkit-text-size-adjust: 100%; // Prevent text size adjustment
+      }
+    }
+
+    .send-button {
+      width: 44px;
+      height: 44px;
+    }
+
+    .retry-button {
+      height: 44px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+  }
+}
+
+// Extra small mobile devices (T051)
+@media (max-width: 480px) {
+  .text-input-container {
+    padding: 8px;
+    gap: 6px;
+
+    .send-button {
+      width: 40px;
+      height: 40px;
+    }
+  }
+}
+
+// Landscape orientation on mobile (T051)
+@media (max-width: 768px) and (orientation: landscape) {
+  .text-input-container {
+    padding: 8px 12px;
+    max-height: 40dvh; // More space in landscape
+
+    .text-input-field {
+      .text-input-textarea {
+        max-height: 80px; // Reduced max height in landscape
+      }
+    }
+  }
+}
+
 // High contrast mode support
 @media (prefers-contrast: high) {
   .text-input-container {
@@ -53,4 +115,41 @@
 .text-input-field:focus-within {
   outline: 2px solid var(--mat-app-primary, #3f51b5);
   outline-offset: 2px;
+}
+
+// Error state styles (T063)
+.text-input-field.error-state {
+  .text-input-textarea {
+    border-color: var(--mat-app-error, #f44336);
+  }
+}
+
+// Retry button styles
+.retry-button {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// Loading spinner animation (T061)
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
