@@ -1,0 +1,56 @@
+/**
+ * Text Input Component Styles
+ * Feature: 007-text-chat-input
+ */
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.text-input-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--mat-app-surface, #ffffff);
+  border-top: 1px solid var(--mat-app-outline, #e0e0e0);
+
+  .text-input-field {
+    flex: 1;
+    margin: 0;
+
+    .text-input-textarea {
+      min-height: 24px;
+      max-height: 120px; // ~5 lines
+      resize: none;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+  }
+
+  .send-button {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .text-input-container {
+    border-top-width: 2px;
+  }
+}
+
+// Focus indicator
+.text-input-field:focus-within {
+  outline: 2px solid var(--mat-app-primary, #3f51b5);
+  outline-offset: 2px;
+}

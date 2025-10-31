@@ -131,6 +131,38 @@ export default defineAgent({
             });
           }
         }
+
+        // Handle text_message from user (Feature 007-text-chat-input)
+        if (message.type === 'text_message') {
+          const textContent = message.content as string;
+          const messageId = message.messageId as string;
+          
+          console.log(`📨 Received text message: "${textContent}" (ID: ${messageId})`);
+
+          // Inject the text message directly into the conversation session
+          // This bypasses VAD/STT pipeline for instant, accurate text input
+          session.conversation.item.create({
+            type: 'message',
+            role: 'user',
+            content: [{ type: 'input_text', text: textContent }],
+          });
+
+          // Optional: Send acknowledgment back to frontend
+          const ack = JSON.stringify({
+            type: 'text_message_ack',
+            messageId: messageId,
+            received: true,
+            timestamp: Date.now(),
+          });
+          const encoder = new TextEncoder();
+          const ackPayload = encoder.encode(ack);
+
+          await ctx.room.localParticipant?.publishData(ackPayload, {
+            reliable: true,
+          });
+
+          console.log(`✅ Text message injected into conversation (ID: ${messageId})`);
+        }
       } catch (error) {
         console.error('Error processing data channel message:', error);
       }

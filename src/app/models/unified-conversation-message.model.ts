@@ -17,6 +17,12 @@ export type MessageSender = 'user' | 'agent';
 export type ResponseMode = 'voice' | 'chat';
 
 /**
+ * Message input source type
+ * Distinguishes how the user message was created
+ */
+export type MessageSource = 'voice' | 'text';
+
+/**
  * Base message properties shared by all message types
  */
 export interface BaseConversationMessage {
@@ -47,6 +53,15 @@ export interface ChatConversationMessage extends BaseConversationMessage {
 }
 
 /**
+ * User text message (typed input sent via data channel)
+ * Extends ChatConversationMessage with source tracking
+ */
+export interface UserTextMessage extends ChatConversationMessage {
+  readonly sender: 'user';          // Always 'user' for typed messages
+  readonly source: 'text';          // Discriminates from voice transcription
+}
+
+/**
  * Unified message type using discriminated union pattern
  * Allows type-safe handling of both transcription and chat messages
  */
@@ -70,6 +85,15 @@ export function isChatMessage(
   message: UnifiedConversationMessage
 ): message is ChatConversationMessage {
   return message.messageType === 'chat';
+}
+
+/**
+ * Type guard for user text messages
+ */
+export function isUserTextMessage(
+  message: UnifiedConversationMessage
+): message is UserTextMessage {
+  return message.messageType === 'chat' && message.sender === 'user';
 }
 
 /**
@@ -116,6 +140,24 @@ export function createChatMessage(
     content,
     timestamp: typeof timestamp === 'number' ? new Date(timestamp) : timestamp,
     sender,
+    deliveryMethod: 'data-channel'
+  };
+}
+
+/**
+ * Factory: Create user text message from typed input
+ */
+export function createUserTextMessage(
+  content: string,
+  timestamp: Date = new Date()
+): UserTextMessage {
+  return {
+    id: crypto.randomUUID(),
+    messageType: 'chat',
+    content,
+    timestamp,
+    sender: 'user',
+    source: 'text',
     deliveryMethod: 'data-channel'
   };
 }

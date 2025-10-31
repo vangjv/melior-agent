@@ -1,0 +1,31 @@
+<!-- Text Input Component Template -->
+<!-- Feature: 007-text-chat-input -->
+<div class="text-input-container">
+  <mat-form-field class="text-input-field" appearance="outline">
+    <mat-label>{{ placeholder() }}</mat-label>
+    <textarea
+      matInput
+      [(ngModel)]="messageText"
+      [disabled]="isDisabled()"
+      [placeholder]="placeholder()"
+      (keydown)="handleKeydown($event)"
+      rows="1"
+      class="text-input-textarea"
+    ></textarea>
+    
+    @if (showCharacterCount()) {
+      <mat-hint align="end">{{ characterCount() }} / 5000</mat-hint>
+    }
+  </mat-form-field>
+
+  <button
+    mat-fab
+    color="primary"
+    class="send-button"
+    [disabled]="!canSend()"
+    (click)="sendMessage()"
+    aria-label="Send message"
+  >
+    <mat-icon>send</mat-icon>
+  </button>
+</div>

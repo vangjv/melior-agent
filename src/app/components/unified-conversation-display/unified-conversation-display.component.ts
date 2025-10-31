@@ -29,6 +29,9 @@ import { ScrollingModule, CdkVirtualScrollViewport } from '@angular/cdk/scrollin
 import { ConversationMessageComponent } from '../conversation-message/conversation-message.component';
 import { ConversationStorageService } from '../../services/conversation-storage.service';
 import { UnifiedConversationMessage } from '../../models/unified-conversation-message.model';
+import { TextInput } from '../text-input/text-input';
+import { LiveKitConnectionService } from '../../services/livekit-connection.service';
+import { ConnectionState } from '../../models/connection-state.model';
 
 @Component({
   selector: 'app-unified-conversation-display',
@@ -38,7 +41,8 @@ import { UnifiedConversationMessage } from '../../models/unified-conversation-me
     MatIconModule,
     MatButtonModule,
     ScrollingModule,
-    ConversationMessageComponent
+    ConversationMessageComponent,
+    TextInput
   ],
   templateUrl: './unified-conversation-display.component.html',
   styleUrl: './unified-conversation-display.component.scss',
@@ -47,6 +51,7 @@ import { UnifiedConversationMessage } from '../../models/unified-conversation-me
 export class UnifiedConversationDisplayComponent {
   // Inject services
   private conversationStorage = inject(ConversationStorageService);
+  private livekitConnection = inject(LiveKitConnectionService);
 
   // View references
   @ViewChild('scrollContainer', { static: false })
@@ -84,6 +89,19 @@ export class UnifiedConversationDisplayComponent {
    * Get first new message ID (for session boundary separator)
    */
   firstNewMessageId = this.conversationStorage.firstNewMessageId;
+
+  /**
+   * Get connection state for text input (Feature 007-text-chat-input)
+   */
+  connectionState = this.livekitConnection.connectionState;
+
+  /**
+   * Computed: Is text input disabled based on connection state
+   */
+  isTextInputDisabled = computed(() => {
+    const state = this.connectionState();
+    return state.status !== 'connected';
+  });
 
   /**
    * Computed: Sorted messages in chronological order (oldest first)
@@ -207,6 +225,20 @@ export class UnifiedConversationDisplayComponent {
 
     if (confirmed) {
       this.conversationStorage.clearMessages();
+    }
+  }
+
+  /**
+   * Handle text message sent from TextInputComponent
+   * Feature: 007-text-chat-input
+   */
+  async handleTextMessage(content: string): Promise<void> {
+    try {
+      await this.conversationStorage.sendTextMessage(content, this.livekitConnection);
+      console.log('✅ Text message sent successfully');
+    } catch (error) {
+      console.error('❌ Failed to send text message:', error);
+      // TODO: Show error to user via snackbar or inline message
     }
   }
 }

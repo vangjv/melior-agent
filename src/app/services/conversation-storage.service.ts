@@ -164,6 +164,45 @@ export class ConversationStorageService {
   }
 
   /**
+   * Send text message and add to conversation
+   * Feature: 007-text-chat-input
+   * @param content Text message content
+   * @param livekitService LiveKit connection service to send via data channel
+   * @returns Promise that resolves when message is sent and stored
+   */
+  async sendTextMessage(
+    content: string,
+    livekitService: { sendTextMessage: (content: string) => Promise<void> }
+  ): Promise<void> {
+    // Import models dynamically
+    const { createUserTextMessage } = await import(
+      '../models/unified-conversation-message.model'
+    );
+    const { validateTextMessageContent } = await import(
+      '../models/text-message-error.model'
+    );
+
+    // Validate content
+    const validation = validateTextMessageContent(content);
+    if (!validation.valid && validation.error) {
+      throw new Error(validation.error.message);
+    }
+
+    // Send via data channel first
+    await livekitService.sendTextMessage(content);
+
+    // Create and store message
+    const message = createUserTextMessage(content);
+    this.addMessage(message);
+
+    console.log('📤 Text message sent and stored:', {
+      messageId: message.id,
+      contentLength: content.length,
+      timestamp: message.timestamp,
+    });
+  }
+
+  /**
    * Get current conversation feed state
    */
   getState(): ConversationFeedState {

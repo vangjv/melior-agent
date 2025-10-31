@@ -67,6 +67,13 @@ export interface ILiveKitConnectionService {
    * @returns Room instance if connected, null otherwise
    */
   getRoom(): Room | null;
+
+  /**
+   * Send text message to agent via data channel
+   * @param content Text message content
+   * @returns Promise that resolves when message is sent
+   */
+  sendTextMessage(content: string): Promise<void>;
 }
 
 /**
@@ -623,6 +630,45 @@ export class LiveKitConnectionService implements ILiveKitConnectionService {
    */
   getRoom(): Room | null {
     return this._room;
+  }
+
+  /**
+   * Send text message to agent via data channel
+   * Feature: 007-text-chat-input
+   * @param content Text message content
+   * @returns Promise that resolves when message is sent
+   */
+  async sendTextMessage(content: string): Promise<void> {
+    if (!this._room) {
+      throw new Error('Cannot send text message: Not connected to room');
+    }
+
+    const state = this._connectionState();
+    if (state.status !== 'connected') {
+      throw new Error(`Cannot send text message: Connection state is ${state.status}`);
+    }
+
+    // Import protocol models dynamically
+    const { createTextMessageProtocol, serializeTextMessage } = await import(
+      '../models/text-input-protocol.model'
+    );
+
+    // Create protocol message
+    const protocolMessage = createTextMessageProtocol(content);
+
+    // Serialize and send via data channel
+    const data = serializeTextMessage(protocolMessage);
+
+    await this._room.localParticipant.publishData(data, {
+      reliable: true,
+      destinationIdentities: [], // Broadcast to all participants
+    });
+
+    console.log('📤 Text message sent:', {
+      messageId: protocolMessage.messageId,
+      contentLength: content.length,
+      timestamp: protocolMessage.timestamp,
+    });
   }
 
   /**

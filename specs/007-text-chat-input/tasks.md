@@ -26,12 +26,12 @@
 
 **Purpose**: Project initialization and model foundation
 
-- [ ] T001 [P] Create text input state model interfaces in src/app/models/text-input-state.model.ts
-- [ ] T002 [P] Create text message protocol models in src/app/models/text-input-protocol.model.ts
-- [ ] T003 [P] Create text message error models in src/app/models/text-message-error.model.ts
-- [ ] T004 [P] Create keyboard event utility models in src/app/models/keyboard-event.model.ts
-- [ ] T005 Extend unified conversation message model in src/app/models/unified-conversation-message.model.ts with UserTextMessage interface
-- [ ] T006 Add model exports to src/app/models/index.ts barrel file
+- [X] T001 [P] Create text input state model interfaces in src/app/models/text-input-state.model.ts
+- [X] T002 [P] Create text message protocol models in src/app/models/text-input-protocol.model.ts
+- [X] T003 [P] Create text message error models in src/app/models/text-message-error.model.ts
+- [X] T004 [P] Create keyboard event utility models in src/app/models/keyboard-event.model.ts
+- [X] T005 Extend unified conversation message model in src/app/models/unified-conversation-message.model.ts with UserTextMessage interface
+- [X] T006 Add model exports to src/app/models/index.ts barrel file
 
 ---
 
@@ -41,9 +41,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T007 Add sendTextMessage() method to LiveKitConnectionService in src/app/services/livekit-connection.service.ts
-- [ ] T008 Add sendTextMessage() method to ConversationService in src/app/services/conversation.service.ts
-- [ ] T009 Update LiveKit agent data channel handler in agent/agent.md to receive text_message protocol
+- [X] T007 Add sendTextMessage() method to LiveKitConnectionService in src/app/services/livekit-connection.service.ts
+- [X] T008 Add sendTextMessage() method to ConversationStorageService in src/app/services/conversation-storage.service.ts
+- [X] T009 Update LiveKit agent data channel handler in agent/agent.md to receive text_message protocol
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -57,17 +57,17 @@
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Create TextInputComponent unit tests in src/app/components/text-input/text-input.component.spec.ts
+- [ ] T010 [P] [US1] Create TextInputComponent unit tests in src/app/components/text-input/text-input.spec.ts
 - [ ] T011 [P] [US1] Create integration test for text message flow in tests/integration/text-chat-input.spec.ts
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Generate TextInputComponent with Angular CLI: ng generate component components/text-input --standalone
-- [ ] T013 [US1] Implement TextInputComponent TypeScript logic in src/app/components/text-input/text-input.component.ts
-- [ ] T014 [US1] Create TextInputComponent template in src/app/components/text-input/text-input.component.html
-- [ ] T015 [US1] Add TextInputComponent styles in src/app/components/text-input/text-input.component.scss
-- [ ] T016 [US1] Integrate TextInputComponent into ConversationComponent template at src/app/components/conversation/conversation.component.html
-- [ ] T017 [US1] Add handleTextMessage() method to ConversationComponent in src/app/components/conversation/conversation.component.ts
+- [X] T012 [US1] Generate TextInputComponent with Angular CLI: ng generate component components/text-input --standalone
+- [X] T013 [US1] Implement TextInputComponent TypeScript logic in src/app/components/text-input/text-input.ts
+- [X] T014 [US1] Create TextInputComponent template in src/app/components/text-input/text-input.html
+- [X] T015 [US1] Add TextInputComponent styles in src/app/components/text-input/text-input.scss
+- [X] T016 [US1] Integrate TextInputComponent into UnifiedConversationDisplayComponent template
+- [X] T017 [US1] Add handleTextMessage() method to UnifiedConversationDisplayComponent
 - [ ] T018 [US1] Test text message appears in conversation after sending
 - [ ] T019 [US1] Verify agent receives and processes text message from data channel
 

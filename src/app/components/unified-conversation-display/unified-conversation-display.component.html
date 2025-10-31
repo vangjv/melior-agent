@@ -111,4 +111,10 @@
       <mat-icon>arrow_downward</mat-icon>
     </button>
   }
+
+  <!-- Text Input Component (Feature 007-text-chat-input) -->
+  <app-text-input
+    [isDisabled]="isTextInputDisabled()"
+    (messageSent)="handleTextMessage($event)"
+  />
 </div>
