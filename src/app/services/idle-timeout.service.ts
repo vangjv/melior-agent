@@ -51,23 +51,31 @@ export class IdleTimeoutService {
 
   // Timer subscription
   private timerSubscription?: Subscription;
+  private lastActivityTimestamp: Date | null = null;
 
   constructor() {
     // Load configuration from sessionStorage
     const storedConfig = loadIdleTimeoutConfig();
     this._config.set(storedConfig);
 
-    // Monitor activity from conversation service
-    effect(
-      () => {
-        const lastActivity = this.conversationService.lastMessageAt();
+    // Monitor activity from conversation service using effect
+    // Track the last activity timestamp to prevent infinite loops
+    effect(() => {
+      const lastActivity = this.conversationService.lastMessageAt();
 
-        if (lastActivity && this._timerState().isActive) {
-          this.resetTimer();
-        }
-      },
-      { allowSignalWrites: true }
-    );
+      // Only reset if:
+      // 1. There is new activity
+      // 2. Timer is active
+      // 3. This is a NEW activity (different from last processed timestamp)
+      if (
+        lastActivity &&
+        this._timerState().isActive &&
+        lastActivity !== this.lastActivityTimestamp
+      ) {
+        this.lastActivityTimestamp = lastActivity;
+        this.resetTimer();
+      }
+    });
   }
 
   /**
@@ -120,6 +128,7 @@ export class IdleTimeoutService {
     }
 
     this._timerState.set(INITIAL_IDLE_TIMER_STATE);
+    this.lastActivityTimestamp = null;
   }
 
   /**
