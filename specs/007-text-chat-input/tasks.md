@@ -57,8 +57,8 @@
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Create TextInputComponent unit tests in src/app/components/text-input/text-input.spec.ts
-- [ ] T011 [P] [US1] Create integration test for text message flow in tests/integration/text-chat-input.spec.ts
+- [X] T010 [P] [US1] Create TextInputComponent unit tests in src/app/components/text-input/text-input.spec.ts
+- [X] T011 [P] [US1] Create integration test for text message flow in tests/integration/text-chat-input.spec.ts
 
 ### Implementation for User Story 1
 
@@ -68,8 +68,8 @@
 - [X] T015 [US1] Add TextInputComponent styles in src/app/components/text-input/text-input.scss
 - [X] T016 [US1] Integrate TextInputComponent into UnifiedConversationDisplayComponent template
 - [X] T017 [US1] Add handleTextMessage() method to UnifiedConversationDisplayComponent
-- [ ] T018 [US1] Test text message appears in conversation after sending
-- [ ] T019 [US1] Verify agent receives and processes text message from data channel
+- [X] T018 [US1] Test text message appears in conversation after sending
+- [X] T019 [US1] Verify agent receives and processes text message from data channel
 
 **Checkpoint**: Users can now type and send text messages to the agent
 
@@ -83,16 +83,16 @@
 
 ### Tests for User Story 2
 
-- [ ] T020 [P] [US2] Add tests for text input visibility in all connection states in src/app/components/text-input/text-input.component.spec.ts
-- [ ] T021 [P] [US2] Add tests for text input state transitions when switching modes in tests/integration/text-chat-input.spec.ts
+- [X] T020 [P] [US2] Add tests for text input visibility in all connection states in src/app/components/text-input/text-input.component.spec.ts
+- [X] T021 [P] [US2] Add tests for text input state transitions when switching modes in tests/integration/text-chat-input.spec.ts
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Add isDisabled input signal to TextInputComponent reflecting connection state in src/app/components/text-input/text-input.component.ts
-- [ ] T023 [US2] Wire connection state to text input disabled property in src/app/components/conversation/conversation.component.ts
-- [ ] T024 [US2] Add visual indicator (placeholder text) when disconnected in src/app/components/text-input/text-input.component.html
-- [ ] T025 [US2] Test text input persists when switching between voice and chat modes
-- [ ] T026 [US2] Verify typed text is preserved during mode transitions
+- [X] T022 [US2] Add isDisabled input signal to TextInputComponent reflecting connection state in src/app/components/text-input/text-input.component.ts
+- [X] T023 [US2] Wire connection state to text input disabled property in src/app/components/conversation/conversation.component.ts
+- [X] T024 [US2] Add visual indicator (placeholder text) when disconnected in src/app/components/text-input/text-input.component.html
+- [X] T025 [US2] Test text input persists when switching between voice and chat modes
+- [X] T026 [US2] Verify typed text is preserved during mode transitions
 
 **Checkpoint**: Text input remains available and visible across all application states
 
@@ -106,16 +106,16 @@
 
 ### Tests for User Story 3
 
-- [ ] T027 [P] [US3] Add test verifying text message bypasses STT pipeline in tests/integration/text-chat-input.spec.ts
-- [ ] T028 [P] [US3] Add test confirming message content accuracy (no transcription errors) in tests/integration/text-chat-input.spec.ts
+- [X] T027 [P] [US3] Add test verifying text message bypasses STT pipeline in tests/integration/text-chat-input.spec.ts
+- [X] T028 [P] [US3] Add test confirming message content accuracy (no transcription errors) in tests/integration/text-chat-input.spec.ts
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] Implement text message protocol validation in src/app/models/text-input-protocol.model.ts
-- [ ] T030 [US3] Add message source tracking ('text' vs 'voice') in ConversationService in src/app/services/conversation.service.ts
-- [ ] T031 [US3] Update agent to inject text messages directly into conversation bypassing VAD/STT in agent/agent.md
-- [ ] T032 [US3] Test text message latency is <100ms from send to conversation display
-- [ ] T033 [US3] Verify agent response mode (voice/chat) is respected for text input
+- [X] T029 [US3] Implement text message protocol validation in src/app/models/text-input-protocol.model.ts
+- [X] T030 [US3] Add message source tracking ('text' vs 'voice') in ConversationService in src/app/services/conversation.service.ts
+- [X] T031 [US3] Update agent to inject text messages directly into conversation bypassing VAD/STT in agent/agent.md
+- [X] T032 [US3] Test text message latency is <100ms from send to conversation display
+- [X] T033 [US3] Verify agent response mode (voice/chat) is respected for text input
 
 **Checkpoint**: Text messages bypass STT processing and are delivered accurately and instantly
 
