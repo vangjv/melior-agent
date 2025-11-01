@@ -6,20 +6,26 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ModeToggleButtonComponent } from './mode-toggle-button.component';
 import { ResponseMode } from '../../models/response-mode.model';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 describe('ModeToggleButtonComponent', () => {
   let component: ModeToggleButtonComponent;
   let fixture: ComponentFixture<ModeToggleButtonComponent>;
   let mockLiveAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
+  let mockSnackBar: jasmine.SpyObj<MatSnackBar>;
 
   beforeEach(async () => {
     // Create mock LiveAnnouncer
     mockLiveAnnouncer = jasmine.createSpyObj('LiveAnnouncer', ['announce']);
 
+    // Create mock MatSnackBar
+    mockSnackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
+
     await TestBed.configureTestingModule({
       imports: [ModeToggleButtonComponent],
       providers: [
-        { provide: LiveAnnouncer, useValue: mockLiveAnnouncer }
+        { provide: LiveAnnouncer, useValue: mockLiveAnnouncer },
+        { provide: MatSnackBar, useValue: mockSnackBar }
       ]
     }).compileComponents();
 
@@ -403,48 +409,149 @@ describe('ModeToggleButtonComponent', () => {
 
   // T065: Screen reader announces mode changes using Angular CDK LiveAnnouncer
   describe('screen reader announcements', () => {
-    it('should announce mode change to screen readers when mode changes', () => {
+    it('should NOT announce on initial render', () => {
       fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.componentRef.setInput('isPending', false);
       fixture.detectChanges();
 
-      // Change to chat mode
+      // Should not announce on first render
+      expect(mockLiveAnnouncer.announce).not.toHaveBeenCalled();
+    });
+
+    it('should announce mode change to screen readers when mode actually changes', () => {
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.componentRef.setInput('isPending', false);
+      fixture.detectChanges();
+
+      mockLiveAnnouncer.announce.calls.reset();
+
+      // Change to chat mode (confirmed)
       fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.componentRef.setInput('isPending', false);
       fixture.detectChanges();
 
       // LiveAnnouncer should have been called to announce the change
       expect(mockLiveAnnouncer.announce).toHaveBeenCalledWith(
-        jasmine.stringContaining('Chat Mode'),
-        jasmine.any(String)
+        'Switched to Chat Mode',
+        'polite'
       );
     });
 
     it('should announce voice mode to screen readers', () => {
       fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.componentRef.setInput('isPending', false);
       fixture.detectChanges();
 
       mockLiveAnnouncer.announce.calls.reset();
 
-      // Change to voice mode
+      // Change to voice mode (confirmed)
       fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.componentRef.setInput('isPending', false);
       fixture.detectChanges();
 
       expect(mockLiveAnnouncer.announce).toHaveBeenCalledWith(
-        jasmine.stringContaining('Voice Mode'),
-        jasmine.any(String)
+        'Switched to Voice Mode',
+        'polite'
       );
     });
 
-    it('should use polite announcement priority', () => {
+    it('should NOT announce when mode change is still pending', () => {
       fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.componentRef.setInput('isPending', false);
       fixture.detectChanges();
 
+      mockLiveAnnouncer.announce.calls.reset();
+
+      // Change to chat mode but still pending
       fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.componentRef.setInput('isPending', true);
       fixture.detectChanges();
 
-      expect(mockLiveAnnouncer.announce).toHaveBeenCalledWith(
-        jasmine.any(String),
-        'polite'
-      );
+      // Should not announce until confirmed
+      expect(mockLiveAnnouncer.announce).not.toHaveBeenCalled();
+    });
+  });
+
+  // Visual feedback with MatSnackBar
+  describe('visual mode change feedback', () => {
+    it('should NOT show snackbar on initial render', () => {
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.componentRef.setInput('isPending', false);
+      fixture.detectChanges();
+
+      expect(mockSnackBar.open).not.toHaveBeenCalled();
+    });
+
+    it('should show snackbar when mode changes to chat', (done) => {
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.componentRef.setInput('isPending', false);
+      fixture.detectChanges();
+
+      mockSnackBar.open.calls.reset();
+
+      // Change to chat mode (confirmed)
+      fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.componentRef.setInput('isPending', false);
+      fixture.detectChanges();
+
+      // Give the effect time to run
+      setTimeout(() => {
+        expect(mockSnackBar.open).toHaveBeenCalledWith(
+          'Switched to Chat Mode',
+          'Dismiss',
+          jasmine.objectContaining({
+            duration: 3000,
+            horizontalPosition: 'start',
+            verticalPosition: 'bottom',
+            panelClass: ['mode-change-snackbar']
+          })
+        );
+        done();
+      }, 10);
+    });
+
+    it('should show snackbar when mode changes to voice', (done) => {
+      fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.componentRef.setInput('isPending', false);
+      fixture.detectChanges();
+
+      mockSnackBar.open.calls.reset();
+
+      // Change to voice mode (confirmed)
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.componentRef.setInput('isPending', false);
+      fixture.detectChanges();
+
+      // Give the effect time to run
+      setTimeout(() => {
+        expect(mockSnackBar.open).toHaveBeenCalledWith(
+          'Switched to Voice Mode',
+          'Dismiss',
+          jasmine.objectContaining({
+            duration: 3000,
+            horizontalPosition: 'start',
+            verticalPosition: 'bottom',
+            panelClass: ['mode-change-snackbar']
+          })
+        );
+        done();
+      }, 10);
+    });
+
+    it('should NOT show snackbar when mode change is still pending', () => {
+      fixture.componentRef.setInput('currentMode', 'voice');
+      fixture.componentRef.setInput('isPending', false);
+      fixture.detectChanges();
+
+      mockSnackBar.open.calls.reset();
+
+      // Change to chat mode but still pending
+      fixture.componentRef.setInput('currentMode', 'chat');
+      fixture.componentRef.setInput('isPending', true);
+      fixture.detectChanges();
+
+      // Should not show snackbar until confirmed
+      expect(mockSnackBar.open).not.toHaveBeenCalled();
     });
   });
 });

@@ -27,6 +27,19 @@ $voice-chat-theme: mat.m2-define-light-theme(
 // Include theme styles for core and each component used in your app
 @include mat.all-component-themes($voice-chat-theme);
 
+// Ensure CDK visually-hidden styles are applied for screen reader announcements
+.cdk-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 // Mobile-first breakpoints
 $breakpoint-xs: 320px;
 $breakpoint-sm: 480px;
@@ -118,6 +131,19 @@ body {
 
     .mat-mdc-button {
       font-weight: 600;
+    }
+  }
+}
+
+// Mode change notification snackbar styles
+.mode-change-snackbar {
+  .mat-mdc-snack-bar-container {
+    --mdc-snackbar-container-color: #5c6bc0; // Indigo for mode changes
+    --mdc-snackbar-supporting-text-color: #ffffff;
+    --mat-snack-bar-button-color: #ffffff;
+
+    .mdc-snackbar__label {
+      font-weight: 500;
     }
   }
 }

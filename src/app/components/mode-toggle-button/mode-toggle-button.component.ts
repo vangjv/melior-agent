@@ -2,10 +2,11 @@
  * Mode Toggle Button Component
  * T040-T050: Presentational component for toggling between voice and chat response modes
  */
-import { Component, input, output, computed, effect, inject } from '@angular/core';
+import { Component, input, output, computed, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ResponseMode } from '../../models/response-mode.model';
 
@@ -16,13 +17,22 @@ import { ResponseMode } from '../../models/response-mode.model';
 @Component({
   selector: 'app-mode-toggle-button',
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatSnackBarModule],
   templateUrl: './mode-toggle-button.component.html',
   styleUrl: './mode-toggle-button.component.scss',
 })
 export class ModeToggleButtonComponent {
-  // T070: Inject Angular CDK LiveAnnouncer
+  // T070: Inject Angular CDK LiveAnnouncer for screen reader announcements
   private liveAnnouncer = inject(LiveAnnouncer);
+
+  // Inject MatSnackBar for visual toast notifications
+  private snackBar = inject(MatSnackBar);
+
+  // Track previous mode to detect actual changes (not initial render)
+  private previousMode = signal<ResponseMode | null>(null);
+
+  // Track if this is the first render to avoid announcing initial state
+  private isInitialRender = true;
 
   // T041: Component inputs
   /**
@@ -84,14 +94,39 @@ export class ModeToggleButtonComponent {
     return this.isPending() || this.isDisabled();
   });
 
-  // T071: Effect to announce mode changes to screen readers
+  // T071: Effect to announce mode changes to screen readers and show visual feedback
   constructor() {
     effect(() => {
       const mode = this.currentMode();
+      const prevMode = this.previousMode();
+      const isPendingMode = this.isPending();
       const label = this.buttonLabel();
 
-      // Announce mode change (polite priority so it doesn't interrupt)
-      this.liveAnnouncer.announce(`Switched to ${label}`, 'polite');
+      // Skip announcements on initial render
+      if (this.isInitialRender) {
+        this.isInitialRender = false;
+        this.previousMode.set(mode);
+        return;
+      }
+
+      // Only announce and show feedback when:
+      // 1. Mode has actually changed (not just re-rendered)
+      // 2. Change is confirmed (not pending)
+      if (prevMode !== null && prevMode !== mode && !isPendingMode) {
+        // Visual feedback: Show toast notification
+        this.snackBar.open(`Switched to ${label}`, 'Dismiss', {
+          duration: 3000,
+          horizontalPosition: 'start',
+          verticalPosition: 'bottom',
+          panelClass: ['mode-change-snackbar'],
+        });
+
+        // Screen reader announcement (polite priority so it doesn't interrupt)
+        this.liveAnnouncer.announce(`Switched to ${label}`, 'polite');
+      }
+
+      // Update previous mode for next comparison
+      this.previousMode.set(mode);
     });
   }
 
