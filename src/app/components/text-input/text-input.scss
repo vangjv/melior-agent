@@ -111,12 +111,6 @@
   }
 }
 
-// Focus indicator
-.text-input-field:focus-within {
-  outline: 2px solid var(--mat-app-primary, #3f51b5);
-  outline-offset: 2px;
-}
-
 // Error state styles (T063)
 .text-input-field.error-state {
   .text-input-textarea {

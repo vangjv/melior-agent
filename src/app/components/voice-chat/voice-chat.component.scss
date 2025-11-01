@@ -2,7 +2,7 @@
 .voice-chat-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   padding: var(--spacing-md);
   gap: var(--spacing-lg);
   background-color: #fafafa;
@@ -206,13 +206,13 @@
   align-items: center;
   padding: var(--spacing-md);
 
-  // T140: Desktop - top-right positioning
+  // T140: Desktop - top-right positioning (below navigation toolbar)
   @media (min-width: 768px) {
     position: fixed;
-    top: var(--spacing-lg);
+    top: calc(64px + var(--spacing-md)); // 64px = toolbar height + spacing
     right: var(--spacing-lg);
     padding: 0;
-    z-index: 100;
+    z-index: 999; // Below navigation (1000) but above other content
   }
 
   // T140: Mobile - bottom-right fixed position
@@ -221,7 +221,7 @@
     bottom: calc(var(--spacing-xl) + 60px); // Above connection button
     right: var(--spacing-md);
     padding: 0;
-    z-index: 100;
+    z-index: 999; // Below navigation (1000) but above other content
   }
 
   // T142: Landscape mode handling
