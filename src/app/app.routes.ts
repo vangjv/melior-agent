@@ -11,13 +11,13 @@ export const routes: Routes = [
   {
     path: '',
     component: LandingComponent,
-    title: 'Welcome - Melior Agent'
+    title: 'Welcome - MeliorAgent'
   },
   {
     path: 'voice-chat',
     component: VoiceChatComponent,
     canActivate: [MsalGuard],
-    title: 'Voice Chat - Melior Agent'
+    title: 'Voice Chat - MeliorAgent'
   },
   {
     path: '**',
