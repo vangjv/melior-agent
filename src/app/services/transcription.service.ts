@@ -387,14 +387,14 @@ export class TranscriptionService implements ITranscriptionService {
     // Check if this is the local participant (user)
     const isLocal = participant.isLocal ?? false;
     const speaker = isLocal ? 'user' : 'agent';
-    
+
     console.log('🎯 Speaker determined:', {
       participantIdentity: participant.identity,
       isLocal: isLocal,
       speaker: speaker,
       participantMetadata: participant.metadata
     });
-    
+
     return speaker;
   }
 }
