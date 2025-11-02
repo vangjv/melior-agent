@@ -124,8 +124,10 @@ export class TranscriptionService implements ITranscriptionService {
       participant?: Participant,
       publication?: TrackPublication
     ) => {
-      console.log('� TranscriptionReceived event:', {
+      console.log('📝 TranscriptionReceived event:', {
         participantIdentity: participant?.identity,
+        participantIsLocal: participant?.isLocal,
+        localParticipantIdentity: room.localParticipant?.identity,
         segmentCount: segments.length,
         segments: segments.map(s => ({
           id: s.id,
@@ -146,6 +148,7 @@ export class TranscriptionService implements ITranscriptionService {
 
     console.log('✅ Transcription service started for room:', room.name);
     console.log('🔍 Listening for: TranscriptionReceived events');
+    console.log('👤 Local participant identity:', room.localParticipant?.identity);
   }  /**
    * T077: Stop listening for transcriptions and cleanup
    */
@@ -205,11 +208,14 @@ export class TranscriptionService implements ITranscriptionService {
     const perfMark = `transcription-${segment.id}`;
     performance.mark(perfMark);
 
-    console.log('Processing transcription segment:', {
+    console.log('📝 Processing transcription segment:', {
       id: segment.id,
       text: segment.text,
       final: segment.final,
       participantIdentity: participant?.identity,
+      participantIsLocal: participant?.isLocal,
+      hasParticipant: !!participant,
+      language: segment.language
     });
 
     // Determine speaker
@@ -372,14 +378,23 @@ export class TranscriptionService implements ITranscriptionService {
    * Determine if speaker is user or agent based on LiveKit participant
    */
   private determineSpeaker(participant?: Participant): 'user' | 'agent' {
-    // If no participant or participant is local, it's the user
-    // Otherwise it's the agent
+    // Enhanced logging for debugging speaker identification
     if (!participant) {
+      console.warn('⚠️ No participant provided for transcription - defaulting to agent');
       return 'agent'; // Default to agent for server-generated transcriptions
     }
 
     // Check if this is the local participant (user)
     const isLocal = participant.isLocal ?? false;
-    return isLocal ? 'user' : 'agent';
+    const speaker = isLocal ? 'user' : 'agent';
+    
+    console.log('🎯 Speaker determined:', {
+      participantIdentity: participant.identity,
+      isLocal: isLocal,
+      speaker: speaker,
+      participantMetadata: participant.metadata
+    });
+    
+    return speaker;
   }
 }
