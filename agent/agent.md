@@ -1,16 +1,9 @@
 ```typescript
-import {
-  type JobContext,
-  type JobProcess,
-  WorkerOptions,
-  cli,
-  defineAgent,
-  metrics,
-  voice,
-} from '@livekit/agents';
+import { type JobContext, type JobProcess, WorkerOptions, cli, defineAgent, metrics, voice } from '@livekit/agents';
 import * as livekit from '@livekit/agents-plugin-livekit';
 import * as openai from '@livekit/agents-plugin-openai';
 import * as silero from '@livekit/agents-plugin-silero';
+import { LettaClient } from '@letta-ai/letta-client';
 import { BackgroundVoiceCancellation } from '@livekit/noise-cancellation-node';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
@@ -64,7 +57,8 @@ export default defineAgent({
     const lettaClient = new openai.LLM({
       //baseURL: `https://api.letta.com/v1/agents/${lettaAgentId}/messages`,
       baseURL: `https://api.letta.com/v1`,
-      apiKey: process.env.LETTA_API_KEY,
+      apiKey:
+        process.env.LETTA_API_KEY,
       model: lettaAgentId, // This can be any string since Letta uses the agent ID in the URL
     });
 
@@ -83,8 +77,23 @@ export default defineAgent({
 
       // VAD and turn detection are used to determine when the user is speaking and when the agent should respond
       // See more at https://docs.livekit.io/agents/build/turns
-      turnDetection: new livekit.turnDetector.MultilingualModel(),
+      // Configure MultilingualModel with a higher unlikely threshold (0.8) to wait longer before detecting end of turn
+      // Lower values = more aggressive (faster interrupts), Higher values = more patient (waits for complete thoughts)
+      turnDetection: new livekit.turnDetector.MultilingualModel(0.8),
       vad: ctx.proc.userData.vad! as silero.VAD,
+
+      // Voice interaction options - configure endpointing delays for natural conversation flow
+      voiceOptions: {
+        allowInterruptions: true,
+        minInterruptionDuration: 500,
+        minInterruptionWords: 0,
+        // Minimum delay before considering end of turn (increased from default 500ms to 1000ms)
+        minEndpointingDelay: 1000,
+        // Maximum delay to wait for end of turn (increased from default 6000ms to 8000ms)
+        // This allows for longer natural pauses without fragmenting speech
+        maxEndpointingDelay: 8000,
+        maxToolSteps: 3,
+      },
     });
 
     const usageCollector = new metrics.UsageCollector();
@@ -131,7 +140,7 @@ export default defineAgent({
             });
           }
         }
-
+        
         // Handle text_message from user (Feature 007-text-chat-input)
         if (message.type === 'text_message') {
           const textContent = message.content as string;
@@ -139,15 +148,108 @@ export default defineAgent({
           
           console.log(`📨 Received text message: "${textContent}" (ID: ${messageId})`);
 
-          // Inject the text message directly into the conversation session
-          // This bypasses VAD/STT pipeline for instant, accurate text input
-          session.conversation.item.create({
-            type: 'message',
-            role: 'user',
-            content: [{ type: 'input_text', text: textContent }],
-          });
+          // Hybrid approach: Use Letta SDK for chat mode, LiveKit pipeline for voice mode
+          try {
+            if (responseMode === 'chat') {
+              // Chat mode: Use Letta SDK for streaming to data channel
+              const streamMessageId = `msg-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+              currentChatMessageId = streamMessageId;
+              currentStreamAbortController = new AbortController();
 
-          // Optional: Send acknowledgment back to frontend
+              console.log('💬 Chat mode: Streaming via Letta SDK');
+              
+              // Create Letta client instance
+              const lettaClient = new LettaClient({
+                token: process.env.LETTA_API_KEY,
+              });
+
+              try {
+                // Use Letta SDK's streaming API
+                const stream = await lettaClient.agents.messages.createStream(lettaAgentId, {
+                  messages: [{ role: 'user', content: textContent }],
+                  streamTokens: true, // Token-by-token streaming for real-time UX
+                });
+
+                // Process stream chunks
+                for await (const chunk of stream) {
+                  if (currentStreamAbortController?.signal.aborted) {
+                    console.log('🛑 Stream aborted');
+                    break;
+                  }
+
+                  // Handle assistant message chunks
+                  if (chunk.messageType === 'assistant_message') {
+                    // Type assertion for content property
+                    const contentChunk = chunk as { content?: string };
+                    const chunkText = contentChunk.content;
+                    
+                    if (chunkText) {
+                      const chatChunk = JSON.stringify({
+                        type: 'chat_chunk',
+                        messageId: streamMessageId,
+                        chunk: chunkText,
+                        isComplete: false,
+                        timestamp: Date.now(),
+                      });
+
+                      const encoder = new TextEncoder();
+                      await ctx.room.localParticipant?.publishData(encoder.encode(chatChunk), {
+                        reliable: true,
+                      });
+                    }
+                  }
+                }
+
+                // Send completion chunk
+                const finalChunk = JSON.stringify({
+                  type: 'chat_chunk',
+                  messageId: streamMessageId,
+                  chunk: '',
+                  isComplete: true,
+                  timestamp: Date.now(),
+                });
+
+                const encoder = new TextEncoder();
+                await ctx.room.localParticipant?.publishData(encoder.encode(finalChunk), {
+                  reliable: true,
+                });
+
+                console.log(`✅ Chat streaming complete for ${streamMessageId}`);
+              } catch (lettaError) {
+                if (lettaError instanceof Error && lettaError.name === 'AbortError') {
+                  console.log('⚠️ Letta stream aborted');
+                } else {
+                  console.error('Error streaming from Letta:', lettaError);
+                }
+              } finally {
+                currentStreamAbortController = null;
+              }
+            } else {
+              // Voice mode: Use LiveKit's integrated pipeline with generateReply
+              console.log(`🎙️ Voice mode: Using LiveKit pipeline with generateReply`);
+              
+              // Interrupt any ongoing speech
+              session.interrupt();
+              
+              // Use LiveKit's generateReply to trigger the full voice pipeline
+              // This integrates with LLM → TTS → Audio and manages chat context
+              session.generateReply({ 
+                userInput: textContent,
+                allowInterruptions: true 
+              });
+              
+              console.log('✅ Voice mode reply triggered via LiveKit pipeline');
+            }
+          } catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
+              console.log('⚠️ Text message stream aborted');
+            } else {
+              console.error('Error processing text message:', error);
+            }
+            currentStreamAbortController = null;
+          }
+
+          // Send acknowledgment back to frontend
           const ack = JSON.stringify({
             type: 'text_message_ack',
             messageId: messageId,
@@ -161,8 +263,9 @@ export default defineAgent({
             reliable: true,
           });
 
-          console.log(`✅ Text message injected into conversation (ID: ${messageId})`);
+          console.log(`✅ Text message processed (ID: ${messageId})`);
         }
+
       } catch (error) {
         console.error('Error processing data channel message:', error);
       }
@@ -185,14 +288,14 @@ export default defineAgent({
     session.on(voice.AgentSessionEventTypes.ConversationItemAdded, async (ev) => {
       if (responseMode === 'chat') {
         const item = ev.item;
-
+        
         // Check if it's a user message
         if (item.role === 'user' && item.type === 'message') {
           const messageText = item.content
             .filter((c): c is string => typeof c === 'string')
             .join('')
             .trim();
-
+          
           if (messageText) {
             // Cancel any ongoing stream from previous message
             if (currentStreamAbortController) {
@@ -250,10 +353,10 @@ export default defineAgent({
               }
 
               let buffer = '';
-
+              
               while (true) {
                 const { done, value } = await reader.read();
-
+                
                 if (done) {
                   // Send final chunk
                   const finalChunk = JSON.stringify({
@@ -280,7 +383,7 @@ export default defineAgent({
 
                 for (const line of lines) {
                   const trimmedLine = line.trim();
-
+                  
                   if (trimmedLine === '' || trimmedLine === 'data: [DONE]') {
                     continue;
                   }
@@ -288,10 +391,10 @@ export default defineAgent({
                   if (trimmedLine.startsWith('data: ')) {
                     try {
                       const jsonData = JSON.parse(trimmedLine.substring(6));
-
+                      
                       if (jsonData.choices?.[0]?.delta?.content) {
                         const chunkText = jsonData.choices[0].delta.content;
-
+                        
                         const chatChunk = JSON.stringify({
                           type: 'chat_chunk',
                           messageId: currentChatMessageId,
@@ -317,7 +420,7 @@ export default defineAgent({
               // Check if error is due to abort
               if (error instanceof Error && error.name === 'AbortError') {
                 console.log('⚠️ Stream aborted by user interruption');
-
+                
                 // Send interrupted completion chunk
                 const interruptedChunk = JSON.stringify({
                   type: 'chat_chunk',
@@ -333,7 +436,7 @@ export default defineAgent({
                 });
               } else {
                 console.error('Error streaming from Letta:', error);
-
+                
                 // Send error as final chunk
                 const errorChunk = JSON.stringify({
                   type: 'chat_chunk',
@@ -348,7 +451,7 @@ export default defineAgent({
                   reliable: true,
                 });
               }
-
+              
               currentStreamAbortController = null;
             }
           }
@@ -383,4 +486,5 @@ export default defineAgent({
 });
 
 cli.runApp(new WorkerOptions({ agent: fileURLToPath(import.meta.url) }));
+
 ```

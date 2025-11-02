@@ -91,10 +91,14 @@ export class TranscriptionService implements ITranscriptionService {
   // Track interim message IDs by speaker to enable updates instead of creating duplicates
   private _interimMessageIds = new Map<'user' | 'agent', string>();
 
-  // Room reference for event handling
-  private _room: Room | null = null;
+  // Track current final message IDs by speaker to accumulate segments from same turn
+  private _currentFinalMessageIds = new Map<'user' | 'agent', string>();
 
-  // Event handler references for cleanup
+  // Track last speaker to detect turn boundaries (when speaker changes)
+  private _lastSpeakerWithFinalSegment: 'user' | 'agent' | null = null;
+
+  // Room reference for event handling
+  private _room: Room | null = null;  // Event handler references for cleanup
   private _transcriptionReceivedHandler: ((
     segments: TranscriptionSegment[],
     participant?: Participant,
@@ -154,16 +158,21 @@ export class TranscriptionService implements ITranscriptionService {
       }
     }
     this._room = null;
-    console.log('Transcription service stopped');
-  }
 
-  /**
+    // Clear turn tracking state
+    this._currentFinalMessageIds.clear();
+    this._lastSpeakerWithFinalSegment = null;
+
+    console.log('Transcription service stopped');
+  }  /**
    * T078: Clear all transcriptions and reset state
    */
   clearTranscriptions(): void {
     this.conversationStorage.clearMessages();
     this._interimTranscription.set(null);
     this._interimMessageIds.clear();
+    this._currentFinalMessageIds.clear();
+    this._lastSpeakerWithFinalSegment = null;
   }
 
   /**
@@ -207,25 +216,92 @@ export class TranscriptionService implements ITranscriptionService {
     const speaker = this.determineSpeaker(participant);
 
     if (segment.final) {
-      // T075: Create unified message for final transcription
-      const unifiedMessage = createTranscriptionMessage(
-        speaker,
-        segment.text,
-        true, // isFinal
-        undefined, // confidence (not provided by LiveKit segment)
-        segment.language
-      );
+      // Detect if this is a speaker change (turn boundary)
+      const lastSpeaker = this._lastSpeakerWithFinalSegment;
+      const isSpeakerChange = lastSpeaker !== null && lastSpeaker !== speaker;
 
-      // Add to conversation storage (replaceInterimWithFinal will handle removing interim)
-      this.conversationStorage.addMessage(unifiedMessage);
+      if (isSpeakerChange) {
+        // Speaker changed - this is a new turn, clear the previous speaker's message tracking
+        this._currentFinalMessageIds.delete(lastSpeaker!);
+        console.log(`🔄 Speaker changed: ${lastSpeaker} → ${speaker}, starting new turn`);
+      }
 
-      // Clear interim tracking for this speaker
-      this._interimMessageIds.delete(speaker);
+      // Update last speaker
+      this._lastSpeakerWithFinalSegment = speaker;
 
-      // Clear interim transcription when final is received
+      // Check if there's an existing interim message that should be converted to final
+      const interimMessageId = this._interimMessageIds.get(speaker);
+      const currentFinalMessageId = this._currentFinalMessageIds.get(speaker);
+
+      if (interimMessageId && !currentFinalMessageId) {
+        // Convert the interim message to final (first final segment for this speaker)
+        // This works even after speaker change since we're working with the NEW speaker's interim
+        this.conversationStorage.updateMessage(interimMessageId, {
+          content: segment.text,
+          isFinal: true,
+          timestamp: new Date()
+        });
+        // Track this as the final message
+        this._currentFinalMessageIds.set(speaker, interimMessageId);
+        console.log('✅ Converted interim to final:', segment.text);
+      } else if (currentFinalMessageId && !isSpeakerChange) {
+        // Continue accumulating to existing final message (same speaker, same turn)
+        const existingMessages = this.conversationStorage.messages();
+        const existingMessage = existingMessages.find(msg => msg.id === currentFinalMessageId);
+
+        if (existingMessage) {
+          // Append segment text to existing message (with space separator)
+          const updatedContent = existingMessage.content.trim() + ' ' + segment.text.trim();
+          this.conversationStorage.updateMessage(currentFinalMessageId, {
+            content: updatedContent,
+            timestamp: new Date()
+          });
+          console.log('🔄 Accumulated segment to existing final message:', updatedContent);
+        } else {
+          // Message not found - create new one
+          const unifiedMessage = createTranscriptionMessage(
+            speaker,
+            segment.text,
+            true, // isFinal
+            undefined,
+            segment.language
+          );
+          this.conversationStorage.addMessage(unifiedMessage);
+          this._currentFinalMessageIds.set(speaker, unifiedMessage.id);
+          console.log('🆕 New final transcription (no existing):', segment.text);
+        }
+      } else {
+        // First final segment for this speaker OR speaker changed - create new message
+        const unifiedMessage = createTranscriptionMessage(
+          speaker,
+          segment.text,
+          true, // isFinal
+          undefined,
+          segment.language
+        );
+
+        this.conversationStorage.addMessage(unifiedMessage);
+        this._currentFinalMessageIds.set(speaker, unifiedMessage.id);
+
+        console.log('🆕 New final transcription created:', segment.text);
+      }
+
+      // Keep the message ID tracking - don't delete it!
+      // If we converted interim to final, keep tracking this message ID
+      // so that future segments (interim or final) continue updating it
+      if (interimMessageId && !currentFinalMessageId) {
+        // We just converted interim to final, so update the interim tracker
+        // to point to the same message (which is now final)
+        // Don't delete it - future segments should update this message
+      } else {
+        // Clear interim tracking only if we created a brand new final message
+        this._interimMessageIds.delete(speaker);
+      }
+
+      // Clear interim transcription signal when final is received
       this._interimTranscription.set(null);
 
-      console.log('✅ Final transcription added:', segment.text);
+      console.log('✅ Final transcription processed:', segment.text);
 
       // T123: Measure transcription latency
       performance.mark(`${perfMark}-end`);
@@ -237,9 +313,29 @@ export class TranscriptionService implements ITranscriptionService {
       }
     } else {
       // T076: Handle interim transcription - update existing or create new
+      // Also check for speaker change for interim segments
+      const lastSpeaker = this._lastSpeakerWithFinalSegment;
+      const isSpeakerChange = lastSpeaker !== null && lastSpeaker !== speaker;
+
+      if (isSpeakerChange) {
+        // Speaker changed - clear the previous speaker's interim message tracking
+        this._interimMessageIds.delete(lastSpeaker!);
+        // Also clear the current final message tracking for the NEW speaker
+        // This allows interruptions (like saying "stop") to create new messages
+        this._currentFinalMessageIds.delete(speaker);
+        console.log(`🔄 Speaker changed (interim): ${lastSpeaker} → ${speaker}, cleared tracking for interruption`);
+      }
+
+      // Check if there's an existing message to update
+      const currentFinalMessageId = this._currentFinalMessageIds.get(speaker);
       const existingInterimId = this._interimMessageIds.get(speaker);
 
-      if (existingInterimId) {
+      if (currentFinalMessageId && !isSpeakerChange) {
+        // There's already a final message AND no speaker change - DON'T append interim (causes duplication)
+        // Interim segments should only update in-progress messages, not final ones
+        // Just ignore this interim since we already have final text
+        console.log('⏭️ Skipping interim (already have final message, same turn):', segment.text);
+      } else if (existingInterimId) {
         // Update existing interim message with new text
         this.conversationStorage.updateMessage(existingInterimId, {
           content: segment.text,
@@ -248,6 +344,7 @@ export class TranscriptionService implements ITranscriptionService {
         console.log('🔄 Interim transcription updated:', segment.text);
       } else {
         // Create new interim message and track its ID
+        // This will happen on speaker changes (like interruptions)
         const interimMessage = createTranscriptionMessage(
           speaker,
           segment.text,
@@ -258,7 +355,7 @@ export class TranscriptionService implements ITranscriptionService {
 
         this.conversationStorage.addMessage(interimMessage);
         this._interimMessageIds.set(speaker, interimMessage.id);
-        console.log('🆕 Interim transcription created:', segment.text);
+        console.log('🆕 Interim transcription created (possibly interruption):', segment.text);
       }
 
       // Also update interim transcription signal (for backward compatibility)
