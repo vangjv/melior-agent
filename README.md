@@ -1,9 +1,51 @@
 # MeliorAgent
 
-Voice chat transcription application built with Angular 20, LiveKit, and Azure Functions.
+Voice chat transcription application built with Angular 20, LiveKit, Letta AI, and Azure Functions.
+
+## Overview
+
+MeliorAgent is an AI-powered voice and text conversation application that combines real-time voice communication with stateful AI memory. The application uses **Letta** as its AI backend to provide intelligent, context-aware conversations with persistent memory across sessions.
+
+### Architecture
+
+The application follows a proxied architecture where:
+
+1. **Frontend (Angular)** - Handles user interface, authentication, and WebRTC connections
+2. **LiveKit** - Manages real-time voice/video transport and WebRTC connections
+3. **Agent (Node.js)** - Proxies conversation requests to Letta AI and handles voice pipeline
+4. **Letta AI** - Provides stateful AI with memory, tool use, and conversation context
+5. **Azure Functions** - Generates secure LiveKit access tokens
+
+```
+User Browser (Angular)
+    ↓ WebRTC/WebSocket
+LiveKit Server
+    ↓ Voice + Data Channel
+Agent (Node.js)
+    ↓ HTTP API
+Letta AI (https://api.letta.com)
+```
+
+### What is Letta?
+
+[Letta](https://www.letta.com) is a stateful AI platform that provides:
+
+- **Persistent Memory**: Agents remember conversations across sessions, not just within a single chat
+- **Contextual Understanding**: Maintains conversation context with archival memory for long-term information storage
+- **Tool Integration**: Supports custom tools and function calling for extended capabilities
+- **Streaming Responses**: Token-by-token streaming for real-time user experience
+- **Agent State Management**: Each agent maintains its own state, personality, and knowledge base
+
+In MeliorAgent, Letta serves as the "brain" of the AI assistant, while LiveKit handles the voice transport layer. This separation allows for sophisticated AI capabilities while maintaining low-latency voice communication.
 
 ## Features
 
+### AI Capabilities (Powered by Letta)
+- 🧠 **Stateful Memory**: Agent remembers conversations across sessions
+- 🤖 **Context-Aware Responses**: Maintains conversation context with archival memory
+- 🔧 **Tool Integration**: Extensible with custom tools and function calling
+
+### Communication Features
 - 🎤 **Voice Chat**: Connect to LiveKit voice agent for real-time conversation
 - 📝 **Live Transcription**: Real-time transcription of both user and agent speech
 - 💬 **Chat Mode Toggle**: Switch between voice and text-based chat responses
@@ -25,6 +67,7 @@ Voice chat transcription application built with Angular 20, LiveKit, and Azure F
 - **npm**: v10.x or later
 - **Angular CLI**: v20.x (`npm install -g @angular/cli`)
 - **LiveKit Account**: Sign up at https://cloud.livekit.io
+- **Letta API Key**: Sign up at https://www.letta.com to get an API key for AI capabilities
 - **Microsoft Entra External ID**: Tenant with application registration (see Authentication Setup below)
 
 ### Installation
@@ -214,12 +257,39 @@ tests/
 
 ### Architecture
 
+#### Technology Stack
+
 - **Angular 20**: Standalone components with zoneless change detection
 - **TypeScript 5.9**: Strict mode enabled
 - **Angular Material 20**: UI components and theming
 - **LiveKit Client SDK 2.x**: WebRTC voice communication
 - **Angular Signals**: Reactive state management
 - **RxJS 7.x**: Reactive programming for HTTP calls
+
+#### Letta AI Integration
+
+The application uses Letta as its AI backend through a proxied architecture:
+
+**Request Flow**:
+1. User speaks or types a message in the Angular frontend
+2. Audio/text is transmitted via LiveKit's WebRTC connection
+3. LiveKit Agent (Node.js) receives the input:
+   - **Voice Mode**: Speech → AssemblyAI (STT) → Letta (LLM) → Cartesia (TTS) → Audio
+   - **Chat Mode**: Text → Letta API (streaming) → Text chunks via data channel
+4. Letta processes the request using its stateful agent with memory
+5. Response is streamed back through the agent to the frontend
+
+**Letta Capabilities Used**:
+- **Stateful Agents**: Each agent maintains persistent memory across sessions
+- **Streaming API**: Token-by-token streaming for real-time responses (`/v1/chat/completions`)
+- **Agent Memory**: Conversation history and context preserved by Letta's memory system
+- **OpenAI-Compatible API**: Agent uses OpenAI SDK configured with Letta's base URL
+
+**Key Features**:
+- Hybrid voice/text communication with mode switching
+- Seamless interruption handling (user can interrupt agent mid-response)
+- Persistent conversation context via Letta's agent ID
+- Real-time streaming in chat mode for immediate feedback
 
 ## Configuration
 
@@ -291,7 +361,36 @@ Edit `api/local.settings.json`:
 }
 ```
 
-#### 5. Test Authentication Flow
+#### 5. Configure Letta Agent
+
+The LiveKit agent requires Letta API credentials to connect to the AI backend:
+
+1. **Get Letta API Key**:
+   - Sign up at https://www.letta.com
+   - Navigate to your account settings
+   - Generate an API key
+
+2. **Create Agent Configuration** (in `agent/` directory if running locally):
+   ```bash
+   # Create .env.local file
+   cp .env.local.example .env.local
+   ```
+
+3. **Set Environment Variables**:
+   ```bash
+   LETTA_API_KEY=your-letta-api-key-here
+   LETTA_AGENT_ID=your-agent-id  # Optional: defaults to embedded agent ID
+   ```
+
+4. **Agent Features**:
+   - **Memory Management**: The agent maintains conversation history across sessions
+   - **Streaming Responses**: Token-by-token streaming in chat mode for real-time UX
+   - **Voice Pipeline**: In voice mode, integrates Letta with AssemblyAI (STT) and Cartesia (TTS)
+   - **Hybrid Communication**: Seamlessly switches between voice and text responses
+
+**Note**: The agent runs as a separate Node.js process and connects to LiveKit to handle voice/text conversations. It proxies all AI requests to Letta's API.
+
+#### 6. Test Authentication Flow
 
 1. Start both backend and frontend
 2. Navigate to `http://localhost:4200`
@@ -306,10 +405,17 @@ Edit `api/local.settings.json`:
 - `tokenApiUrl`: Backend API endpoint for token generation
 - `liveKitUrl`: LiveKit server WebSocket URL
 
-**Backend** (`api/local.settings.json`):
+**Backend API** (`api/local.settings.json`):
 - `LIVEKIT_URL`: LiveKit server URL
 - `LIVEKIT_API_KEY`: Your LiveKit API key
 - `LIVEKIT_API_SECRET`: Your LiveKit API secret
+- `ENTRA_TENANT_ID`: Microsoft Entra tenant ID
+- `ENTRA_CLIENT_ID`: Microsoft Entra application client ID
+- `ENTRA_AUTHORITY`: Microsoft Entra authority URL
+
+**LiveKit Agent** (`agent/.env.local`):
+- `LETTA_API_KEY`: Your Letta API key for AI backend
+- `LETTA_AGENT_ID`: (Optional) Specific Letta agent ID to use
 
 ### Performance Budgets
 
