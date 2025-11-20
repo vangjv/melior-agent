@@ -531,9 +531,28 @@ Enable console logging by opening browser DevTools (F12). The app logs:
 - [Voice Chat Transcription](specs/001-voice-chat-transcription/spec.md)
 - [LiveKit Token API](specs/002-livekit-token-api/spec.md)
 - [Voice/Chat Mode Toggle](specs/003-voice-chat-mode/spec.md)
-- [Microsoft Entra External ID Authentication](specs/004-entra-external-id-auth/spec.md) **NEW**
+- [Microsoft Entra External ID Authentication](specs/004-entra-external-id-auth/spec.md)
 - [Implementation Plan](specs/001-voice-chat-transcription/plan.md)
 - [Angular Best Practices](.github/copilot-instructions.md)
+- [Security Policy](SECURITY.md) - **Important for contributors**
+
+## Security
+
+This is an open source project. Please review our [Security Policy](SECURITY.md) before contributing.
+
+**Key security practices:**
+- Never commit secrets, API keys, or real credentials to version control
+- Use `.local.ts` files for development configuration (automatically git-ignored)
+- Run `npm audit` regularly to check for dependency vulnerabilities
+- Report security issues responsibly (see SECURITY.md)
+- Follow secure coding practices outlined in our security documentation
+
+**For development setup:**
+1. Copy `src/environments/environment.development.local.ts.example` to `.local.ts`
+2. Add your real credentials to the `.local.ts` file
+3. The `.local.ts` file is git-ignored and will never be committed
+
+See [SECURITY.md](SECURITY.md) for complete security guidelines.
 
 ## License
 
@@ -542,3 +561,5 @@ Enable console logging by opening browser DevTools (F12). The app logs:
 ## Support
 
 For issues and questions, please open a GitHub issue.
+
+**Security vulnerabilities:** Please follow responsible disclosure practices outlined in [SECURITY.md](SECURITY.md).

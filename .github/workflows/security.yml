@@ -1,0 +1,151 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly security checks
+    - cron: '0 0 * * 0'
+
+jobs:
+  dependency-audit:
+    name: NPM Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install frontend dependencies
+        run: npm ci
+        
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+        
+      - name: Install API dependencies
+        run: |
+          cd api
+          npm ci
+          
+      - name: Audit API dependencies
+        run: |
+          cd api
+          npm audit --audit-level=moderate
+        continue-on-error: true
+
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+      
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'typescript' ]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+      
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  environment-check:
+    name: Environment File Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for hardcoded secrets in environment files
+        run: |
+          echo "Checking environment files for real credentials..."
+          
+          # Check for real LiveKit URLs (not placeholders)
+          if grep -r "wss://.*\.livekit\.cloud" src/environments/ --exclude="*.local.ts" --exclude="*.example" | grep -v "your-project"; then
+            echo "::error::Found real LiveKit URL in tracked environment files"
+            exit 1
+          fi
+          
+          # Check for real GUIDs (Azure AD client IDs and tenant IDs)
+          if grep -rE "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" src/environments/ --exclude="*.local.ts" --exclude="*.example" | grep -v "YOUR_.*_ID_HERE"; then
+            echo "::error::Found real GUID in tracked environment files"
+            exit 1
+          fi
+          
+          # Check for real API keys in backend examples
+          if grep -r "API[A-Za-z0-9]{20,}" api/ --exclude="local.settings.json" --include="*.json" | grep -v "APIxxx"; then
+            echo "::error::Found real API key pattern in tracked files"
+            exit 1
+          fi
+          
+          echo "Environment file check passed!"
+
+  license-check:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Check licenses
+        run: npx license-checker --summary
+        continue-on-error: true

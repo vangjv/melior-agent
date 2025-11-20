@@ -17,6 +17,7 @@ import {
 import { ResponseMode } from '../models/unified-conversation-message.model';
 import { addMessage, sortMessagesByTimestamp } from '../utils/message-merger.util';
 import { loadWithMigrationFallback, getUnifiedStorageKey } from '../utils/storage-migration.util';
+import { Logger } from '../utils/logger.util';
 
 @Injectable({
   providedIn: 'root'
@@ -64,11 +65,11 @@ export class ConversationStorageService {
    * Handles deduplication, sorting, and interim replacement
    */
   addMessage(message: UnifiedConversationMessage): void {
-    console.log('📝 ConversationStorageService.addMessage called:', {
+    Logger.debug('ConversationStorageService.addMessage called', {
       messageId: message.id,
       messageType: message.messageType,
       sender: message.sender,
-      content: message.content.substring(0, 50),
+      contentPreview: message.content.substring(0, 50),
       isFinal: 'isFinal' in message ? message.isFinal : 'N/A',
       currentMessageCount: this._messages().length
     });
@@ -76,7 +77,7 @@ export class ConversationStorageService {
     const currentMessages = this._messages();
     const updated = addMessage([...currentMessages], message);
 
-    console.log('📝 After addMessage util:', {
+    Logger.debug('After addMessage util', {
       previousCount: currentMessages.length,
       newCount: updated.length,
       added: updated.length > currentMessages.length
@@ -85,7 +86,7 @@ export class ConversationStorageService {
     this._messages.set(updated);
     this._lastMessageAt.set(message.timestamp);
 
-    console.log('✅ Message signal updated, new count:', this._messages().length);
+    Logger.debug('Message signal updated', { newCount: this._messages().length });
 
     this.debouncedSave();
   }
@@ -116,7 +117,7 @@ export class ConversationStorageService {
    * Used for updating interim transcription messages as they stream
    */
   updateMessage(messageId: string, updatedContent: Partial<UnifiedConversationMessage>): void {
-    console.log('🔄 ConversationStorageService.updateMessage called:', {
+    Logger.debug('ConversationStorageService.updateMessage called', {
       messageId,
       updatedFields: Object.keys(updatedContent)
     });
@@ -125,7 +126,7 @@ export class ConversationStorageService {
     const messageIndex = currentMessages.findIndex(msg => msg.id === messageId);
 
     if (messageIndex === -1) {
-      console.warn(`⚠️ Message ${messageId} not found for update`);
+      Logger.warn(`Message ${messageId} not found for update`);
       return;
     }
 
@@ -141,7 +142,7 @@ export class ConversationStorageService {
     } as UnifiedConversationMessage;
 
     this._messages.set(updated);
-    console.log('✅ Message updated:', messageId);
+    Logger.debug('Message updated', { messageId });
 
     this.debouncedSave();
   }
@@ -195,7 +196,7 @@ export class ConversationStorageService {
     const message = createUserTextMessage(content);
     this.addMessage(message);
 
-    console.log('📤 Text message sent and stored:', {
+    Logger.debug('Text message sent and stored', {
       messageId: message.id,
       contentLength: content.length,
       timestamp: message.timestamp,
@@ -230,10 +231,10 @@ export class ConversationStorageService {
         this._lastMessageAt.set(restored.lastMessageAt);
         this._sessionRestoredAt.set(new Date());
 
-        console.log(`Restored ${restored.messageCount} messages from storage`);
+        Logger.info(`Restored ${restored.messageCount} messages from storage`);
       }
     } catch (error) {
-      console.error('Failed to restore conversation from storage:', error);
+      Logger.error('Failed to restore conversation from storage', error);
     }
   }
 
@@ -261,7 +262,7 @@ export class ConversationStorageService {
 
       sessionStorage.setItem(key, serialized);
     } catch (error) {
-      console.error('Failed to save conversation to storage:', error);
+      Logger.error('Failed to save conversation to storage', error);
     }
   }
 

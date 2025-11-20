@@ -45,3 +45,20 @@ Thumbs.db
 # Environment files with secrets
 src/environments/*.local.ts
 src/environments/environment.production.ts
+.env
+.env.local
+.env.*.local
+*.env
+
+# Secrets and credentials
+secrets/
+.secrets
+*.key
+*.pem
+*.cert
+*.p12
+*.pfx
+
+# Local configuration files with sensitive data
+**/local.settings.json
+config.local.*

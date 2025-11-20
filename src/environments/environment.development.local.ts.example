@@ -1,11 +1,30 @@
 /**
  * Local development environment configuration (example)
- * Copy this file to environment.development.local.ts and add your credentials
+ * 
+ * SETUP INSTRUCTIONS:
+ * 1. Copy this file to: environment.development.local.ts
+ * 2. Replace placeholder values with your actual credentials
+ * 3. The .local.ts file is automatically ignored by git
+ * 
+ * SECURITY NOTES:
+ * - NEVER commit real credentials to version control
+ * - Keep your .local.ts file private and secure
+ * - Rotate credentials if accidentally exposed
+ * - Use different credentials for development vs production
  */
 export const environment = {
   production: false,
-  livekit: {
-    serverUrl: 'wss://your-project.livekit.cloud',
-    // Add your local development settings here
-  },
+  tokenApiUrl: 'http://localhost:7071/api',
+  liveKitUrl: 'wss://your-project.livekit.cloud',  // Get from https://cloud.livekit.io
+
+  // Microsoft Entra External ID configuration
+  // Get these values from Azure Portal > App Registrations
+  entraConfig: {
+    clientId: 'YOUR_CLIENT_ID_HERE',
+    tenantId: 'YOUR_TENANT_ID_HERE', 
+    authority: 'https://login.microsoftonline.com/YOUR_TENANT_ID_HERE',
+    redirectUri: 'http://localhost:4200',
+    postLogoutRedirectUri: 'http://localhost:4200',
+    scopes: ['openid', 'profile', 'email', 'offline_access']
+  }
 };
