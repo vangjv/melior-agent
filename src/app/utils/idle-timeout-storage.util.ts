@@ -11,6 +11,7 @@ import {
   IDLE_TIMEOUT_CONSTRAINTS,
   IdleTimeoutValidationError,
 } from '../models/idle-timeout-config';
+import { Logger } from './logger.util';
 
 /**
  * Save idle timeout configuration to sessionStorage
@@ -20,7 +21,7 @@ export function saveIdleTimeoutConfig(config: IdleTimeoutConfig): void {
     const serialized = JSON.stringify(config);
     sessionStorage.setItem(IDLE_TIMEOUT_CONSTRAINTS.STORAGE_KEY, serialized);
   } catch (error) {
-    console.error('Failed to save idle timeout config:', error);
+    Logger.error('Failed to save idle timeout config', error);
   }
 }
 
@@ -40,13 +41,13 @@ export function loadIdleTimeoutConfig(): IdleTimeoutConfig {
     const validation = validateIdleTimeoutConfig(parsed);
 
     if (validation !== null) {
-      console.warn('Invalid stored config, using defaults:', validation);
+      Logger.warn('Invalid stored config, using defaults', validation);
       return { ...DEFAULT_IDLE_TIMEOUT_CONFIG };
     }
 
     return parsed;
   } catch (error) {
-    console.error('Failed to load idle timeout config:', error);
+    Logger.error('Failed to load idle timeout config', error);
     return { ...DEFAULT_IDLE_TIMEOUT_CONFIG };
   }
 }
@@ -58,7 +59,7 @@ export function clearIdleTimeoutConfig(): void {
   try {
     sessionStorage.removeItem(IDLE_TIMEOUT_CONSTRAINTS.STORAGE_KEY);
   } catch (error) {
-    console.error('Failed to clear idle timeout config:', error);
+    Logger.error('Failed to clear idle timeout config', error);
   }
 }
 

@@ -27,6 +27,7 @@ import {
   createUserMessage,
   createAgentMessage,
 } from '../models/chat-message.model';
+import { Logger } from '../utils/logger.util';
 
 @Injectable({
   providedIn: 'root',
@@ -102,7 +103,7 @@ export class ChatStorageService {
       const index = messages.findIndex((msg) => msg.id === messageId);
 
       if (index === -1) {
-        console.warn(`Message with ID ${messageId} not found`);
+        Logger.warn(`Message with ID ${messageId} not found`);
         return messages;
       }
 

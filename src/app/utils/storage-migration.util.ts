@@ -13,6 +13,7 @@ import {
   deserializeConversationFeed
 } from '../models/conversation-feed-state.model';
 import { ChatMessageState } from '../models/chat-message.model';
+import { Logger } from './logger.util';
 
 /**
  * Legacy chat storage format interface
@@ -65,7 +66,7 @@ export function migrateLegacyChatStorage(
     const parsed: LegacyChatStorage = JSON.parse(legacyData);
 
     if (!parsed.messages || !Array.isArray(parsed.messages)) {
-      console.warn('Legacy chat storage has invalid format');
+      Logger.warn('Legacy chat storage has invalid format');
       return null;
     }
 
@@ -99,7 +100,7 @@ export function migrateLegacyChatStorage(
 
     return feedState;
   } catch (error) {
-    console.error('Failed to migrate legacy chat storage:', error);
+    Logger.error('Failed to migrate legacy chat storage', error);
     return null;
   }
 }
@@ -130,10 +131,10 @@ export function migrateAndCleanup(
     // Remove legacy storage
     sessionStorage.removeItem('chat-storage');
 
-    console.log(`Migrated ${migrated.messageCount} messages from legacy storage`);
+    Logger.info(`Migrated ${migrated.messageCount} messages from legacy storage`);
     return true;
   } catch (error) {
-    console.error('Migration and cleanup failed:', error);
+    Logger.error('Migration and cleanup failed', error);
     return false;
   }
 }
@@ -177,12 +178,12 @@ export function loadWithMigrationFallback(
       return deserializeConversationFeed(data);
     }
   } catch (error) {
-    console.warn('Failed to load unified storage:', error);
+    Logger.warn('Failed to load unified storage', error);
   }
 
   // Fall back to legacy migration
   if (hasLegacyChatData()) {
-    console.log('No unified storage found, attempting legacy migration');
+    Logger.info('No unified storage found, attempting legacy migration');
     const migrated = migrateLegacyChatStorage(sessionId);
 
     if (migrated) {
@@ -192,7 +193,7 @@ export function loadWithMigrationFallback(
         sessionStorage.setItem(key, serialized);
         sessionStorage.removeItem('chat-storage');
       } catch (error) {
-        console.error('Failed to save migrated data:', error);
+        Logger.error('Failed to save migrated data', error);
       }
     }
 

@@ -7,6 +7,7 @@
 
 import { UnifiedConversationMessage } from './unified-conversation-message.model';
 import { ResponseMode } from './unified-conversation-message.model';
+import { Logger } from '../utils/logger.util';
 
 /**
  * Complete conversation feed state
@@ -97,7 +98,7 @@ export function deserializeConversationFeed(
 
     // Validate version
     if (data.version !== '1.0.0') {
-      console.warn('Unknown conversation feed version:', data.version);
+      Logger.warn('Unknown conversation feed version', { version: data.version });
       return null;
     }
 
@@ -115,7 +116,7 @@ export function deserializeConversationFeed(
       messageCount: data.messageCount
     };
   } catch (error) {
-    console.error('Failed to deserialize conversation feed:', error);
+    Logger.error('Failed to deserialize conversation feed', error);
     return null;
   }
 }

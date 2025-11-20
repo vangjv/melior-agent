@@ -3,6 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 import { Subject, takeUntil } from 'rxjs';
 import { NavigationComponent } from './components/navigation/navigation.component';
+import { Logger } from './utils/logger.util';
 
 /**
  * Root application component
@@ -28,11 +29,11 @@ export class App implements OnInit, OnDestroy {
       .subscribe({
         next: (result) => {
           if (result) {
-            console.log('Authentication redirect handled successfully');
+            Logger.info('Authentication redirect handled successfully');
           }
         },
         error: (error) => {
-          console.error('Error handling authentication redirect:', error);
+          Logger.error('Error handling authentication redirect', error);
         }
       });
   }
