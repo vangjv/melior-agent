@@ -3,11 +3,21 @@
   "Values": {
     "FUNCTIONS_WORKER_RUNTIME": "node",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "LIVEKIT_API_KEY": "APIxxxxxxxx",
-    "LIVEKIT_API_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    "LIVEKIT_API_KEY": "APIxxxxxxxxxxxxxxx",
+    "LIVEKIT_API_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "ENTRA_TENANT_ID": "YOUR_TENANT_ID_HERE",
+    "ENTRA_CLIENT_ID": "YOUR_CLIENT_ID_HERE",
+    "ENTRA_AUTHORITY": "https://login.microsoftonline.com/YOUR_TENANT_ID_HERE"
   },
   "Host": {
     "CORS": "http://localhost:4200",
     "CORSCredentials": false
+  },
+  "_comments": {
+    "security": "NEVER commit real credentials to version control",
+    "setup": "Copy this file to local.settings.json and replace placeholder values",
+    "livekit": "Get API Key and Secret from https://cloud.livekit.io/projects",
+    "entra": "Get credentials from Azure Portal > App Registrations",
+    "cors": "Update CORS for production deployment to match your frontend domain"
   }
 }
